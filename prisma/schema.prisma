@@ -1,0 +1,202 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  hsnCode   String   @unique @map("hsn_code")
+  gstRate   Float    @map("gst_rate")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  products Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  name       String
+  grade      String?
+  categoryId String   @map("category_id")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  category     Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  inwardItems  InwardItem[]
+  outwardItems OutwardItem[]
+  stockBatches StockBatch[]
+
+  @@unique([name, grade])
+  @@map("products")
+}
+
+model Vendor {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inwardInvoices InwardInvoice[]
+  stockBatches   StockBatch[]
+
+  @@map("vendors")
+}
+
+model Customer {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  outwardInvoices OutwardInvoice[]
+
+  @@map("customers")
+}
+
+model Location {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  inwardInvoices  InwardInvoice[]
+  outwardInvoices OutwardInvoice[]
+  stockBatches    StockBatch[]
+
+  @@map("locations")
+}
+
+model InwardInvoice {
+  id         String   @id @default(cuid())
+  invoiceNo  String   @unique @map("invoice_no")
+  date       DateTime
+  vendorId   String   @map("vendor_id")
+  locationId String   @map("location_id")
+  totalCost  Float    @map("total_cost")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  vendor   Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  location Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  items    InwardItem[]
+
+  @@map("inward_invoices")
+}
+
+model InwardItem {
+  id              String @id @default(cuid())
+  inwardInvoiceId String @map("inward_invoice_id")
+  productId       String @map("product_id")
+  boxes           Int
+  pcsPerBox       Int    @map("pcs_per_box")
+  totalPcs        Int    @map("total_pcs")
+  ratePerBox      Float  @map("rate_per_box")
+  ratePerPcs      Float  @map("rate_per_pcs")
+  gstAmount       Float  @map("gst_amount")
+  totalCost       Float  @map("total_cost")
+
+  inwardInvoice InwardInvoice @relation(fields: [inwardInvoiceId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("inward_items")
+}
+
+model OutwardInvoice {
+  id         String   @id @default(cuid())
+  invoiceNo  String   @unique @map("invoice_no")
+  date       DateTime
+  customerId String   @map("customer_id")
+  locationId String   @map("location_id")
+  saleType   String   @map("sale_type") // 'export' or 'domestic'
+  expense    Float    @default(0)
+  totalCost  Float    @map("total_cost")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  customer Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  location Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  items    OutwardItem[]
+
+  @@map("outward_invoices")
+}
+
+model OutwardItem {
+  id               String @id @default(cuid())
+  outwardInvoiceId String @map("outward_invoice_id")
+  productId        String @map("product_id")
+  stockBatchId     String @map("stock_batch_id")
+  saleUnit         String @map("sale_unit") // 'box' or 'piece'
+  quantity         Int
+  ratePerUnit      Float  @map("rate_per_unit")
+  totalCost        Float  @map("total_cost")
+
+  outwardInvoice OutwardInvoice @relation(fields: [outwardInvoiceId], references: [id], onDelete: Cascade)
+  product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stockBatch     StockBatch     @relation(fields: [stockBatchId], references: [id], onDelete: Cascade)
+
+  @@map("outward_items")
+}
+
+model StockBatch {
+  id               String   @id @default(cuid())
+  productId        String   @map("product_id")
+  vendorId         String   @map("vendor_id")
+  locationId       String   @map("location_id")
+  inwardDate       DateTime @map("inward_date")
+  boxes            Int
+  pcsPerBox        Int      @map("pcs_per_box")
+  totalPcs         Int      @map("total_pcs")
+  remainingBoxes   Int      @map("remaining_boxes")
+  remainingPcs     Int      @map("remaining_pcs")
+  costPerBox       Float    @map("cost_per_box")
+  costPerPcs       Float    @map("cost_per_pcs")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  vendor       Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  location     Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  outwardItems OutwardItem[]
+
+  @@map("stock_batches")
+}
+
+model StockMovement {
+  id            String   @id @default(cuid())
+  type          String   // 'inward' or 'outward'
+  referenceId   String   @map("reference_id") // InwardInvoice or OutwardInvoice ID
+  productId     String   @map("product_id")
+  locationId    String   @map("location_id")
+  quantity      Int
+  movementDate  DateTime @map("movement_date")
+  createdAt     DateTime @default(now())
+
+  @@map("stock_movements")
+}
