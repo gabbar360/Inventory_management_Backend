@@ -51,4 +51,14 @@ export class DashboardController {
       return sendError(res, 500, error.message);
     }
   }
+
+  static async getPerformanceMetrics(req: Request, res: Response) {
+    try {
+      const { period } = req.query;
+      const result = await DashboardService.getPerformanceMetrics(period as 'week' | 'month' | 'year');
+      return sendResponse(res, 200, true, result, 'Performance metrics retrieved successfully');
+    } catch (error: any) {
+      return sendError(res, 500, error.message);
+    }
+  }
 }

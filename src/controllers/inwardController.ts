@@ -32,6 +32,16 @@ export class InwardController {
     }
   }
 
+  static async update(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+      const invoice = await InwardService.update(id, req.body);
+      return sendResponse(res, 200, true, invoice, 'Inward invoice updated successfully');
+    } catch (error: any) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
   static async delete(req: Request, res: Response) {
     try {
       const { id } = req.params;
