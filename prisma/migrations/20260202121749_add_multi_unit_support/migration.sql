@@ -1,0 +1,17 @@
+-- AlterTable
+ALTER TABLE "inward_items" ADD COLUMN     "pack_per_box" INTEGER,
+ADD COLUMN     "quantity" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "rate_per_unit" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "unit" TEXT NOT NULL DEFAULT 'box',
+ALTER COLUMN "boxes" DROP NOT NULL,
+ALTER COLUMN "rate_per_box" DROP NOT NULL;
+
+-- AlterTable
+ALTER TABLE "stock_batches" ADD COLUMN     "cost_per_unit" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "pack_per_box" INTEGER,
+ADD COLUMN     "quantity" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "remaining_quantity" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "unit" TEXT NOT NULL DEFAULT 'box',
+ALTER COLUMN "boxes" DROP NOT NULL,
+ALTER COLUMN "remaining_boxes" DROP NOT NULL,
+ALTER COLUMN "cost_per_box" DROP NOT NULL;

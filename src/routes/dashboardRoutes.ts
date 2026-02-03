@@ -11,5 +11,6 @@ router.get('/revenue-chart', DashboardController.getRevenueChart);
 router.get('/top-products', DashboardController.getTopProducts);
 router.get('/top-customers', DashboardController.getTopCustomers);
 router.get('/inventory-alerts', DashboardController.getInventoryAlerts);
+router.get('/performance-metrics', DashboardController.getPerformanceMetrics);
 
 export default router;

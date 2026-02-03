@@ -85,7 +85,8 @@ export class InwardService {
     items: Array<{
       productId: string;
       boxes: number;
-      pcsPerBox: number;
+      packPerBox: number;
+      packPerPiece: number;
       ratePerBox: number;
     }>;
   }) {
@@ -102,15 +103,19 @@ export class InwardService {
             throw new Error(`Product not found: ${item.productId}`);
           }
 
-          const totalPcs = item.boxes * item.pcsPerBox;
-          const ratePerPcs = item.ratePerBox / item.pcsPerBox;
+          const totalPacks = item.boxes * item.packPerBox;
+          const totalPcs = totalPacks * item.packPerPiece;
+          const ratePerPack = item.ratePerBox / item.packPerBox;
+          const ratePerPcs = ratePerPack / item.packPerPiece;
           const baseAmount = item.boxes * item.ratePerBox;
           const gstAmount = (baseAmount * product.category.gstRate) / 100;
           const totalCost = baseAmount + gstAmount;
 
           return {
             ...item,
+            totalPacks,
             totalPcs,
+            ratePerPack,
             ratePerPcs,
             gstAmount,
             totalCost,
@@ -139,9 +144,12 @@ export class InwardService {
               inwardInvoiceId: invoice.id,
               productId: item.productId,
               boxes: item.boxes,
-              pcsPerBox: item.pcsPerBox,
+              packPerBox: item.packPerBox,
+              packPerPiece: item.packPerPiece,
+              totalPacks: item.totalPacks,
               totalPcs: item.totalPcs,
               ratePerBox: item.ratePerBox,
+              ratePerPack: item.ratePerPack,
               ratePerPcs: item.ratePerPcs,
               gstAmount: item.gstAmount,
               totalCost: item.totalCost,
@@ -188,6 +196,140 @@ export class InwardService {
         },
       });
     });
+  }
+
+  static async update(id: string, data: {
+    invoiceNo: string;
+    date: string;
+    vendorId: string;
+    locationId: string;
+    items: Array<{
+      productId: string;
+      boxes: number;
+      packPerBox: number;
+      packPerPiece: number;
+      ratePerBox: number;
+    }>;
+  }) {
+    return await prisma.$transaction(async (tx) => {
+      const existingInvoice = await tx.inwardInvoice.findUnique({
+        where: { id },
+        include: { items: true },
+      });
+
+      if (!existingInvoice) {
+        throw new Error('Invoice not found');
+      }
+
+      // Check if any stock has been sold
+      const soldItems = await tx.outwardItem.findMany({
+        where: {
+          stockBatch: {
+            productId: { in: existingInvoice.items.map(item => item.productId) },
+            vendorId: existingInvoice.vendorId,
+            locationId: existingInvoice.locationId,
+            inwardDate: existingInvoice.date,
+          },
+        },
+      });
+
+      if (soldItems.length > 0) {
+        throw new Error('Cannot update invoice with sold stock');
+      }
+
+      // Delete existing data
+      await tx.stockBatch.deleteMany({
+        where: {
+          productId: { in: existingInvoice.items.map(item => item.productId) },
+          vendorId: existingInvoice.vendorId,
+          locationId: existingInvoice.locationId,
+          inwardDate: existingInvoice.date,
+        },
+      });
+      await tx.stockMovement.deleteMany({ where: { referenceId: id, type: 'inward' } });
+      await tx.inwardItem.deleteMany({ where: { inwardInvoiceId: id } });
+
+      // Process new items
+      const processedItems = await Promise.all(
+        data.items.map(async (item) => {
+          const product = await tx.product.findUnique({
+            where: { id: item.productId },
+            include: { category: true },
+          });
+          if (!product) throw new Error(`Product not found: ${item.productId}`);
+
+          const totalPacks = item.boxes * item.packPerBox;
+          const totalPcs = totalPacks * item.packPerPiece;
+          const ratePerPack = item.ratePerBox / item.packPerBox;
+          const ratePerPcs = ratePerPack / item.packPerPiece;
+          const baseAmount = item.boxes * item.ratePerBox;
+          const gstAmount = (baseAmount * product.category.gstRate) / 100;
+          const totalCost = baseAmount + gstAmount;
+
+          return { ...item, totalPacks, totalPcs, ratePerPack, ratePerPcs, gstAmount, totalCost };
+        })
+      );
+
+      const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
+
+      // Update invoice
+      const invoice = await tx.inwardInvoice.update({
+        where: { id },
+        data: {
+          invoiceNo: data.invoiceNo,
+          date: new Date(data.date),
+          vendorId: data.vendorId,
+          locationId: data.locationId,
+          totalCost: totalInvoiceCost,
+        },
+      });
+
+      // Create new items
+      const items = await Promise.all(
+        processedItems.map((item) =>
+          tx.inwardItem.create({
+            data: {
+              inwardInvoiceId: invoice.id,
+              productId: item.productId,
+              boxes: item.boxes,
+              packPerBox: item.packPerBox,
+              packPerPiece: item.packPerPiece,
+              totalPacks: item.totalPacks,
+              totalPcs: item.totalPcs,
+              ratePerBox: item.ratePerBox,
+              ratePerPack: item.ratePerPack,
+              ratePerPcs: item.ratePerPcs,
+              gstAmount: item.gstAmount,
+              totalCost: item.totalCost,
+            },
+          })
+        )
+      );
+
+      // Create stock batches and movements
+      for (const item of items) {
+        await InventoryService.createStockBatch(item, invoice);
+        await tx.stockMovement.create({
+          data: {
+            type: 'inward',
+            referenceId: invoice.id,
+            productId: item.productId,
+            locationId: data.locationId,
+            quantity: item.totalPcs,
+            movementDate: new Date(data.date),
+          },
+        });
+      }
+
+      return await tx.inwardInvoice.findUnique({
+        where: { id: invoice.id },
+        include: {
+          vendor: true,
+          location: true,
+          items: { include: { product: { include: { category: true } } } },
+        },
+      });
+    }, { timeout: 10000 });
   }
 
   static async delete(id: string) {

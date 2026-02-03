@@ -6,18 +6,24 @@ export class DashboardService {
   static async getKPIs(period: 'week' | 'month' | 'year' = 'month') {
     const now = new Date();
     let startDate: Date;
+    let previousStartDate: Date;
 
     switch (period) {
       case 'week':
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
         break;
       case 'month':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         break;
       case 'year':
         startDate = new Date(now.getFullYear(), 0, 1);
+        previousStartDate = new Date(now.getFullYear() - 1, 0, 1);
         break;
     }
+
+    const previousEndDate = startDate;
 
     // Calculate total stock value
     const stockBatches = await prisma.stockBatch.findMany({
@@ -30,8 +36,7 @@ export class DashboardService {
     });
 
     const totalStockValue = stockBatches.reduce((sum, batch) => {
-      return sum + (batch.remainingBoxes * batch.costPerBox) + 
-             ((batch.remainingPcs % batch.pcsPerBox) * batch.costPerPcs);
+      return sum + (batch.remainingPcs * batch.costPerPcs);
     }, 0);
 
     // Calculate total revenue
@@ -41,7 +46,14 @@ export class DashboardService {
       },
     });
 
+    const previousOutwardInvoices = await prisma.outwardInvoice.findMany({
+      where: {
+        date: { gte: previousStartDate, lt: previousEndDate },
+      },
+    });
+
     const totalRevenue = outwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
+    const previousRevenue = previousOutwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
 
     // Calculate total purchase
     const inwardInvoices = await prisma.inwardInvoice.findMany({
@@ -50,17 +62,83 @@ export class DashboardService {
       },
     });
 
-    const totalPurchase = inwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
+    const previousInwardInvoices = await prisma.inwardInvoice.findMany({
+      where: {
+        date: { gte: previousStartDate, lt: previousEndDate },
+      },
+    });
 
-    // Calculate gross profit (simplified)
+    const totalPurchase = inwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
+    const previousPurchase = previousInwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
+
+    // Calculate total expenses from outward invoices
     const totalExpenses = outwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
-    const grossProfit = totalRevenue - totalExpenses;
+    const previousExpenses = previousOutwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
+
+    // Calculate gross profit (Revenue - Cost of Goods Sold)
+    // Get all outward items to calculate actual cost of goods sold
+    const outwardItems = await prisma.outwardItem.findMany({
+      where: {
+        outwardInvoice: {
+          date: { gte: startDate },
+        },
+      },
+      include: {
+        stockBatch: true,
+      },
+    });
+
+    const previousOutwardItems = await prisma.outwardItem.findMany({
+      where: {
+        outwardInvoice: {
+          date: { gte: previousStartDate, lt: previousEndDate },
+        },
+      },
+      include: {
+        stockBatch: true,
+      },
+    });
+
+    // Calculate Cost of Goods Sold (COGS)
+    const totalCOGS = outwardItems.reduce((sum, item) => {
+      const costPerUnit = item.saleUnit === 'box' 
+        ? item.stockBatch.costPerBox 
+        : item.saleUnit === 'pack'
+        ? (item.stockBatch.costPerPack || item.stockBatch.costPerBox / (item.stockBatch.packPerBox || 1))
+        : item.stockBatch.costPerPcs;
+      return sum + (item.quantity * costPerUnit);
+    }, 0);
+
+    const previousCOGS = previousOutwardItems.reduce((sum, item) => {
+      const costPerUnit = item.saleUnit === 'box' 
+        ? item.stockBatch.costPerBox 
+        : item.saleUnit === 'pack'
+        ? (item.stockBatch.costPerPack || item.stockBatch.costPerBox / (item.stockBatch.packPerBox || 1))
+        : item.stockBatch.costPerPcs;
+      return sum + (item.quantity * costPerUnit);
+    }, 0);
+
+    const grossProfit = totalRevenue - totalCOGS;
+    const previousGrossProfit = previousRevenue - previousCOGS;
+    const netProfit = grossProfit - totalExpenses;
+    const previousNetProfit = previousGrossProfit - previousExpenses;
 
     return {
       totalStockValue,
       totalRevenue,
       totalPurchase,
+      totalCOGS,
+      totalExpenses,
       grossProfit,
+      netProfit,
+      // Previous period data for trend calculation
+      previousRevenue,
+      previousPurchase,
+      previousCOGS,
+      previousExpenses,
+      previousGrossProfit,
+      previousNetProfit,
+      previousStockValue: totalStockValue, // Assuming same for now
     };
   }
 
@@ -226,6 +304,78 @@ export class DashboardService {
 
     return {
       lowStockAlerts,
+    };
+  }
+
+  static async getPerformanceMetrics(period: 'week' | 'month' | 'year' = 'month') {
+    const now = new Date();
+    let startDate: Date;
+    let previousStartDate: Date;
+
+    switch (period) {
+      case 'week':
+        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+        break;
+      case 'month':
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        break;
+      case 'year':
+        startDate = new Date(now.getFullYear(), 0, 1);
+        previousStartDate = new Date(now.getFullYear() - 1, 0, 1);
+        break;
+    }
+
+    const previousEndDate = startDate;
+
+    // Calculate inventory turnover
+    const avgInventoryValue = await prisma.stockBatch.aggregate({
+      _avg: {
+        costPerBox: true,
+      },
+    });
+
+    const totalSales = await prisma.outwardInvoice.aggregate({
+      where: { date: { gte: startDate } },
+      _sum: { totalCost: true },
+    });
+
+    const inventoryTurnover = (totalSales._sum.totalCost || 0) / (avgInventoryValue._avg.costPerBox || 1);
+
+    // Calculate average order value
+    const orderStats = await prisma.outwardInvoice.aggregate({
+      where: { date: { gte: startDate } },
+      _avg: { totalCost: true },
+      _count: true,
+    });
+
+    const avgOrderValue = orderStats._avg.totalCost || 0;
+
+    // Calculate customer retention (simplified)
+    const totalCustomers = await prisma.customer.count();
+    const activeCustomers = await prisma.outwardInvoice.groupBy({
+      by: ['customerId'],
+      where: { date: { gte: startDate } },
+    });
+
+    const customerRetention = (activeCustomers.length / totalCustomers) * 100;
+
+    // Low stock count
+    const lowStockCount = await prisma.stockBatch.count({
+      where: {
+        remainingPcs: { lt: 10 },
+      },
+    });
+
+    return {
+      inventoryTurnover,
+      inventoryTurnoverTrend: 5.2, // Mock trend for now
+      avgOrderValue,
+      avgOrderValueTrend: 3.1, // Mock trend for now
+      customerRetention,
+      customerRetentionTrend: 2.8, // Mock trend for now
+      lowStockCount,
     };
   }
 }

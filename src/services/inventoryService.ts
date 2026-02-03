@@ -4,8 +4,10 @@ const prisma = new PrismaClient();
 
 export class InventoryService {
   static async createStockBatch(inwardItem: any, inwardInvoice: any) {
-    const totalPcs = inwardItem.boxes * inwardItem.pcsPerBox;
+    const totalPacks = inwardItem.boxes * inwardItem.packPerBox;
+    const totalPcs = totalPacks * inwardItem.packPerPiece;
     const costPerBox = inwardItem.totalCost / inwardItem.boxes;
+    const costPerPack = inwardItem.totalCost / totalPacks;
     const costPerPcs = inwardItem.totalCost / totalPcs;
 
     return await prisma.stockBatch.create({
@@ -15,11 +17,15 @@ export class InventoryService {
         locationId: inwardInvoice.locationId,
         inwardDate: inwardInvoice.date,
         boxes: inwardItem.boxes,
-        pcsPerBox: inwardItem.pcsPerBox,
+        packPerBox: inwardItem.packPerBox,
+        packPerPiece: inwardItem.packPerPiece,
+        totalPacks,
         totalPcs,
         remainingBoxes: inwardItem.boxes,
+        remainingPacks: totalPacks,
         remainingPcs: totalPcs,
         costPerBox,
+        costPerPack,
         costPerPcs,
       },
     });
@@ -72,7 +78,8 @@ export class InventoryService {
       }
 
       const requiredQuantity = item.saleUnit === 'box' ? item.quantity : item.quantity;
-      const availableQuantity = item.saleUnit === 'box' ? stockBatch.remainingBoxes : stockBatch.remainingPcs;
+      const availableQuantity = item.saleUnit === 'box' ? stockBatch.remainingBoxes : 
+                               item.saleUnit === 'pack' ? stockBatch.remainingPacks : stockBatch.remainingPcs;
 
       if (requiredQuantity > availableQuantity) {
         throw new Error(`Insufficient stock. Available: ${availableQuantity}, Required: ${requiredQuantity}`);
@@ -89,30 +96,34 @@ export class InventoryService {
       if (!stockBatch) continue;
 
       let updatedRemainingBoxes = stockBatch.remainingBoxes;
+      let updatedRemainingPacks = stockBatch.remainingPacks;
       let updatedRemainingPcs = stockBatch.remainingPcs;
 
       if (item.saleUnit === 'box') {
         updatedRemainingBoxes -= item.quantity;
-        updatedRemainingPcs -= item.quantity * stockBatch.pcsPerBox;
-      } else {
-        const boxesToDeduct = Math.floor(item.quantity / stockBatch.pcsPerBox);
-        const pcsToDeduct = item.quantity % stockBatch.pcsPerBox;
-
+        updatedRemainingPacks -= item.quantity * stockBatch.packPerBox;
+        updatedRemainingPcs -= item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
+      } else if (item.saleUnit === 'pack') {
+        const boxesToDeduct = Math.floor(item.quantity / stockBatch.packPerBox);
+        const packsToDeduct = item.quantity % stockBatch.packPerBox;
+        
         updatedRemainingBoxes -= boxesToDeduct;
+        updatedRemainingPacks -= item.quantity;
+        updatedRemainingPcs -= item.quantity * stockBatch.packPerPiece;
+      } else {
+        const packsToDeduct = Math.floor(item.quantity / stockBatch.packPerPiece);
+        const boxesToDeduct = Math.floor(packsToDeduct / stockBatch.packPerBox);
+        
+        updatedRemainingBoxes -= boxesToDeduct;
+        updatedRemainingPacks -= packsToDeduct;
         updatedRemainingPcs -= item.quantity;
-
-        // If we have loose pieces that complete a box, adjust accordingly
-        if (updatedRemainingPcs < 0) {
-          const additionalBoxes = Math.ceil(Math.abs(updatedRemainingPcs) / stockBatch.pcsPerBox);
-          updatedRemainingBoxes -= additionalBoxes;
-          updatedRemainingPcs = stockBatch.pcsPerBox - (Math.abs(updatedRemainingPcs) % stockBatch.pcsPerBox);
-        }
       }
 
       await prisma.stockBatch.update({
         where: { id: item.stockBatchId },
         data: {
           remainingBoxes: Math.max(0, updatedRemainingBoxes),
+          remainingPacks: Math.max(0, updatedRemainingPacks),
           remainingPcs: Math.max(0, updatedRemainingPcs),
         },
       });
@@ -149,17 +160,20 @@ export class InventoryService {
     stockBatches.forEach((batch) => {
       const key = batch.productId;
       const value = batch.remainingBoxes * batch.costPerBox + 
-                   (batch.remainingPcs % batch.pcsPerBox) * batch.costPerPcs;
+                   (batch.remainingPacks || 0) * (batch.costPerPack || batch.costPerBox / (batch.packPerBox || 1)) +
+                   (batch.remainingPcs % ((batch.packPerBox || 1) * (batch.packPerPiece || 1))) * batch.costPerPcs;
 
       if (summary.has(key)) {
         const existing = summary.get(key);
         existing.totalBoxes += batch.remainingBoxes;
+        existing.totalPacks = (existing.totalPacks || 0) + (batch.remainingPacks || 0);
         existing.totalPcs += batch.remainingPcs;
         existing.totalValue += value;
         
         const locationIndex = existing.locations.findIndex((l: any) => l.locationId === batch.locationId);
         if (locationIndex >= 0) {
           existing.locations[locationIndex].boxes += batch.remainingBoxes;
+          existing.locations[locationIndex].packs = (existing.locations[locationIndex].packs || 0) + (batch.remainingPacks || 0);
           existing.locations[locationIndex].pcs += batch.remainingPcs;
           existing.locations[locationIndex].value += value;
         } else {
@@ -167,6 +181,7 @@ export class InventoryService {
             locationId: batch.locationId,
             locationName: batch.location.name,
             boxes: batch.remainingBoxes,
+            packs: batch.remainingPacks || 0,
             pcs: batch.remainingPcs,
             value,
           });
@@ -177,12 +192,14 @@ export class InventoryService {
           productName: batch.product.name,
           categoryName: batch.product.category.name,
           totalBoxes: batch.remainingBoxes,
+          totalPacks: batch.remainingPacks || 0,
           totalPcs: batch.remainingPcs,
           totalValue: value,
           locations: [{
             locationId: batch.locationId,
             locationName: batch.location.name,
             boxes: batch.remainingBoxes,
+            packs: batch.remainingPacks || 0,
             pcs: batch.remainingPcs,
             value,
           }],
@@ -202,7 +219,9 @@ export class InventoryService {
       });
 
       if (stockBatch) {
-        const unitCost = item.saleUnit === 'box' ? stockBatch.costPerBox : stockBatch.costPerPcs;
+        const unitCost = item.saleUnit === 'box' ? stockBatch.costPerBox : 
+                        item.saleUnit === 'pack' ? (stockBatch.costPerPack || stockBatch.costPerBox / (stockBatch.packPerBox || 1)) : 
+                        stockBatch.costPerPcs;
         totalCOGS += unitCost * item.quantity;
       }
     }
