@@ -219,16 +219,28 @@ export class OutwardService {
       for (const item of existingInvoice.items) {
         const stockBatch = await tx.stockBatch.findUnique({ where: { id: item.stockBatchId } });
         if (stockBatch) {
-          const restoredBoxes = item.saleUnit === 'box' 
-            ? stockBatch.remainingBoxes + item.quantity
-            : stockBatch.remainingBoxes;
-          const restoredPcs = item.saleUnit === 'piece'
-            ? stockBatch.remainingPcs + item.quantity
-            : stockBatch.remainingPcs + (item.quantity * stockBatch.pcsPerBox);
+          let restoredBoxes = stockBatch.remainingBoxes;
+          let restoredPacks = stockBatch.remainingPacks;
+          let restoredPcs = stockBatch.remainingPcs;
+
+          if (item.saleUnit === 'box') {
+            restoredBoxes += item.quantity;
+            restoredPacks += item.quantity * stockBatch.packPerBox;
+            restoredPcs += item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
+          } else if (item.saleUnit === 'pack') {
+            restoredPacks += item.quantity;
+            restoredPcs += item.quantity * stockBatch.packPerPiece;
+          } else {
+            restoredPcs += item.quantity;
+          }
 
           await tx.stockBatch.update({
             where: { id: item.stockBatchId },
-            data: { remainingBoxes: restoredBoxes, remainingPcs: restoredPcs },
+            data: { 
+              remainingBoxes: restoredBoxes, 
+              remainingPacks: restoredPacks,
+              remainingPcs: restoredPcs 
+            },
           });
         }
       }
@@ -329,25 +341,25 @@ export class OutwardService {
 
         if (stockBatch) {
           let restoredBoxes = stockBatch.remainingBoxes;
+          let restoredPacks = stockBatch.remainingPacks;
           let restoredPcs = stockBatch.remainingPcs;
 
           if (item.saleUnit === 'box') {
             restoredBoxes += item.quantity;
-            restoredPcs += item.quantity * stockBatch.pcsPerBox;
+            restoredPacks += item.quantity * stockBatch.packPerBox;
+            restoredPcs += item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
+          } else if (item.saleUnit === 'pack') {
+            restoredPacks += item.quantity;
+            restoredPcs += item.quantity * stockBatch.packPerPiece;
           } else {
             restoredPcs += item.quantity;
-            // Convert excess pieces to boxes if possible
-            const additionalBoxes = Math.floor(restoredPcs / stockBatch.pcsPerBox);
-            if (additionalBoxes > 0) {
-              restoredBoxes += additionalBoxes;
-              restoredPcs = restoredPcs % stockBatch.pcsPerBox;
-            }
           }
 
           await tx.stockBatch.update({
             where: { id: item.stockBatchId },
             data: {
               remainingBoxes: restoredBoxes,
+              remainingPacks: restoredPacks,
               remainingPcs: restoredPcs,
             },
           });

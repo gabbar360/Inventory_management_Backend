@@ -36,8 +36,7 @@ export class DashboardService {
     });
 
     const totalStockValue = stockBatches.reduce((sum, batch) => {
-      return sum + (batch.remainingBoxes * batch.costPerBox) + 
-             ((batch.remainingPcs % batch.pcsPerBox) * batch.costPerPcs);
+      return sum + (batch.remainingPcs * batch.costPerPcs);
     }, 0);
 
     // Calculate total revenue
@@ -104,6 +103,8 @@ export class DashboardService {
     const totalCOGS = outwardItems.reduce((sum, item) => {
       const costPerUnit = item.saleUnit === 'box' 
         ? item.stockBatch.costPerBox 
+        : item.saleUnit === 'pack'
+        ? (item.stockBatch.costPerPack || item.stockBatch.costPerBox / (item.stockBatch.packPerBox || 1))
         : item.stockBatch.costPerPcs;
       return sum + (item.quantity * costPerUnit);
     }, 0);
@@ -111,6 +112,8 @@ export class DashboardService {
     const previousCOGS = previousOutwardItems.reduce((sum, item) => {
       const costPerUnit = item.saleUnit === 'box' 
         ? item.stockBatch.costPerBox 
+        : item.saleUnit === 'pack'
+        ? (item.stockBatch.costPerPack || item.stockBatch.costPerBox / (item.stockBatch.packPerBox || 1))
         : item.stockBatch.costPerPcs;
       return sum + (item.quantity * costPerUnit);
     }, 0);

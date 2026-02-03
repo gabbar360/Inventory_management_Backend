@@ -52,7 +52,8 @@ export const locationSchema = z.object({
 export const inwardItemSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   boxes: z.number().min(1, 'Boxes must be at least 1'),
-  pcsPerBox: z.number().min(1, 'PCS per box must be at least 1'),
+  packPerBox: z.number().min(1, 'Pack per box must be at least 1'),
+  packPerPiece: z.number().min(1, 'Pack per piece must be at least 1'),
   ratePerBox: z.number().min(0, 'Rate per box must be positive'),
 });
 
@@ -68,7 +69,7 @@ export const inwardInvoiceSchema = z.object({
 export const outwardItemSchema = z.object({
   productId: z.string().min(1, 'Product is required'),
   stockBatchId: z.string().min(1, 'Stock batch is required'),
-  saleUnit: z.enum(['box', 'piece'], { required_error: 'Sale unit is required' }),
+  saleUnit: z.enum(['box', 'pack', 'piece'], { required_error: 'Sale unit is required' }),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   ratePerUnit: z.number().min(0, 'Rate per unit must be positive'),
 });

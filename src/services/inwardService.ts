@@ -85,7 +85,8 @@ export class InwardService {
     items: Array<{
       productId: string;
       boxes: number;
-      pcsPerBox: number;
+      packPerBox: number;
+      packPerPiece: number;
       ratePerBox: number;
     }>;
   }) {
@@ -102,15 +103,19 @@ export class InwardService {
             throw new Error(`Product not found: ${item.productId}`);
           }
 
-          const totalPcs = item.boxes * item.pcsPerBox;
-          const ratePerPcs = item.ratePerBox / item.pcsPerBox;
+          const totalPacks = item.boxes * item.packPerBox;
+          const totalPcs = totalPacks * item.packPerPiece;
+          const ratePerPack = item.ratePerBox / item.packPerBox;
+          const ratePerPcs = ratePerPack / item.packPerPiece;
           const baseAmount = item.boxes * item.ratePerBox;
           const gstAmount = (baseAmount * product.category.gstRate) / 100;
           const totalCost = baseAmount + gstAmount;
 
           return {
             ...item,
+            totalPacks,
             totalPcs,
+            ratePerPack,
             ratePerPcs,
             gstAmount,
             totalCost,
@@ -139,9 +144,12 @@ export class InwardService {
               inwardInvoiceId: invoice.id,
               productId: item.productId,
               boxes: item.boxes,
-              pcsPerBox: item.pcsPerBox,
+              packPerBox: item.packPerBox,
+              packPerPiece: item.packPerPiece,
+              totalPacks: item.totalPacks,
               totalPcs: item.totalPcs,
               ratePerBox: item.ratePerBox,
+              ratePerPack: item.ratePerPack,
               ratePerPcs: item.ratePerPcs,
               gstAmount: item.gstAmount,
               totalCost: item.totalCost,
@@ -198,7 +206,8 @@ export class InwardService {
     items: Array<{
       productId: string;
       boxes: number;
-      pcsPerBox: number;
+      packPerBox: number;
+      packPerPiece: number;
       ratePerBox: number;
     }>;
   }) {
@@ -249,13 +258,15 @@ export class InwardService {
           });
           if (!product) throw new Error(`Product not found: ${item.productId}`);
 
-          const totalPcs = item.boxes * item.pcsPerBox;
-          const ratePerPcs = item.ratePerBox / item.pcsPerBox;
+          const totalPacks = item.boxes * item.packPerBox;
+          const totalPcs = totalPacks * item.packPerPiece;
+          const ratePerPack = item.ratePerBox / item.packPerBox;
+          const ratePerPcs = ratePerPack / item.packPerPiece;
           const baseAmount = item.boxes * item.ratePerBox;
           const gstAmount = (baseAmount * product.category.gstRate) / 100;
           const totalCost = baseAmount + gstAmount;
 
-          return { ...item, totalPcs, ratePerPcs, gstAmount, totalCost };
+          return { ...item, totalPacks, totalPcs, ratePerPack, ratePerPcs, gstAmount, totalCost };
         })
       );
 
@@ -281,9 +292,12 @@ export class InwardService {
               inwardInvoiceId: invoice.id,
               productId: item.productId,
               boxes: item.boxes,
-              pcsPerBox: item.pcsPerBox,
+              packPerBox: item.packPerBox,
+              packPerPiece: item.packPerPiece,
+              totalPacks: item.totalPacks,
               totalPcs: item.totalPcs,
               ratePerBox: item.ratePerBox,
+              ratePerPack: item.ratePerPack,
               ratePerPcs: item.ratePerPcs,
               gstAmount: item.gstAmount,
               totalCost: item.totalCost,
