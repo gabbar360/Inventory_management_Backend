@@ -389,7 +389,24 @@ class BulkUploadController {
           if (!product) throw new Error(`Product '${productName}' not found`);
 
           const invoiceNo = row.invoiceNo || row.InvoiceNo || row.invoice_no;
-          const date = new Date(row.date || row.Date || row.DATE);
+          const dateValue = row.date || row.Date || row.DATE;
+          let date;
+          
+          // Handle Excel date serial numbers and various date formats
+          if (typeof dateValue === 'number') {
+            // Excel serial date number
+            date = new Date((dateValue - 25569) * 86400 * 1000);
+          } else if (typeof dateValue === 'string') {
+            date = new Date(dateValue);
+          } else {
+            date = new Date(dateValue);
+          }
+          
+          // Validate date
+          if (isNaN(date.getTime())) {
+            throw new Error(`Invalid date format: ${dateValue}`);
+          }
+          
           const boxes = parseInt(row.boxes || row.Boxes || row.BOXES);
           const packPerBox = parseInt(row.packPerBox || row.PackPerBox || row.pack_per_box);
           const packPerPiece = parseInt(row.packPerPiece || row.PackPerPiece || row.pack_per_piece || 1);
@@ -421,6 +438,22 @@ class BulkUploadController {
                 totalCost: 0,
               },
             });
+          }
+
+          // Check for duplicate inward item
+          const existingItem = await prisma.inwardItem.findFirst({
+            where: {
+              inwardInvoiceId: invoice.id,
+              productId: product.id,
+              boxes,
+              packPerBox,
+              packPerPiece,
+              ratePerBox,
+            },
+          });
+
+          if (existingItem) {
+            throw new Error(`Duplicate item: Product '${productName}' with same specifications already exists in invoice '${invoiceNo}'`);
           }
 
           await prisma.inwardItem.create({
@@ -539,7 +572,24 @@ class BulkUploadController {
           if (!stockBatch) throw new Error(`No stock available for product '${productName}' at location '${locationName}'`);
 
           const invoiceNo = row.invoiceNo || row.InvoiceNo || row.invoice_no;
-          const date = new Date(row.date || row.Date || row.DATE);
+          const dateValue = row.date || row.Date || row.DATE;
+          let date;
+          
+          // Handle Excel date serial numbers and various date formats
+          if (typeof dateValue === 'number') {
+            // Excel serial date number
+            date = new Date((dateValue - 25569) * 86400 * 1000);
+          } else if (typeof dateValue === 'string') {
+            date = new Date(dateValue);
+          } else {
+            date = new Date(dateValue);
+          }
+          
+          // Validate date
+          if (isNaN(date.getTime())) {
+            throw new Error(`Invalid date format: ${dateValue}`);
+          }
+          
           const saleUnit = (row.saleUnit || row.SaleUnit || row.sale_unit || 'box').toLowerCase();
           const quantity = parseInt(row.quantity || row.Quantity || row.QUANTITY);
           const ratePerUnit = parseFloat(row.ratePerUnit || row.RatePerUnit || row.rate_per_unit);
@@ -572,6 +622,19 @@ class BulkUploadController {
                 totalCost: 0,
               },
             });
+          }
+
+          // Check for duplicate outward item
+          const existingItem = await prisma.outwardItem.findFirst({
+            where: {
+              outwardInvoiceId: invoice.id,
+              productId: product.id,
+              saleUnit,
+            },
+          });
+
+          if (existingItem) {
+            throw new Error(`Duplicate item: Product '${productName}' with sale unit '${saleUnit}' already exists in invoice '${invoiceNo}'`);
           }
 
           await prisma.outwardItem.create({
@@ -789,6 +852,65 @@ class BulkUploadController {
             },
           });
           filename = `locations_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+          break;
+        
+        case 'inward':
+          data = await prisma.inwardItem.findMany({
+            include: {
+              inwardInvoice: {
+                include: {
+                  vendor: { select: { name: true } },
+                  location: { select: { name: true } },
+                },
+              },
+              product: { select: { name: true } },
+            },
+          });
+          data = data.map(item => ({
+            invoiceNo: item.inwardInvoice.invoiceNo,
+            date: item.inwardInvoice.date,
+            vendorName: item.inwardInvoice.vendor.name,
+            locationName: item.inwardInvoice.location.name,
+            productName: item.product.name,
+            boxes: item.boxes,
+            packPerBox: item.packPerBox,
+            packPerPiece: item.packPerPiece,
+            totalPacks: item.totalPacks,
+            totalPcs: item.totalPcs,
+            ratePerBox: item.ratePerBox,
+            ratePerPack: item.ratePerPack,
+            ratePerPcs: item.ratePerPcs,
+            gstAmount: item.gstAmount,
+            totalCost: item.totalCost,
+          }));
+          filename = `inward_export_${new Date().toISOString().split('T')[0]}.xlsx`;
+          break;
+        
+        case 'outward':
+          data = await prisma.outwardItem.findMany({
+            include: {
+              outwardInvoice: {
+                include: {
+                  customer: { select: { name: true } },
+                  location: { select: { name: true } },
+                },
+              },
+              product: { select: { name: true } },
+            },
+          });
+          data = data.map(item => ({
+            invoiceNo: item.outwardInvoice.invoiceNo,
+            date: item.outwardInvoice.date,
+            customerName: item.outwardInvoice.customer.name,
+            locationName: item.outwardInvoice.location.name,
+            productName: item.product.name,
+            saleUnit: item.saleUnit,
+            quantity: item.quantity,
+            ratePerUnit: item.ratePerUnit,
+            totalCost: item.totalCost,
+            saleType: item.outwardInvoice.saleType,
+          }));
+          filename = `outward_export_${new Date().toISOString().split('T')[0]}.xlsx`;
           break;
         
         default:
