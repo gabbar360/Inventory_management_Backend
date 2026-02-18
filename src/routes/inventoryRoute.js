@@ -6,7 +6,7 @@ const router = Router();
 
 router.use(authenticateToken);
 
-router.get('/stock-summary', InventoryController.getStockSummary);
-router.get('/available-stock', InventoryController.getAvailableStock);
+router.get('/inventory/stock-summary', InventoryController.getStockSummary);
+router.get('/inventory/available-stock', InventoryController.getAvailableStock);
 
 module.exports = router;

@@ -8,7 +8,7 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
   name      String
@@ -19,7 +19,7 @@ model User {
 }
 
 model Category {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   name      String   @unique
   hsnCode   String   @unique @map("hsn_code")
   gstRate   Float    @map("gst_rate")
@@ -32,10 +32,10 @@ model Category {
 }
 
 model Product {
-  id         String   @id @default(cuid())
+  id         Int      @id @default(autoincrement())
   name       String
   grade      String?
-  categoryId String   @map("category_id")
+  categoryId Int      @map("category_id")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -49,7 +49,7 @@ model Product {
 }
 
 model Vendor {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   code      String   @unique
   name      String
   email     String?
@@ -65,7 +65,7 @@ model Vendor {
 }
 
 model Customer {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   code      String   @unique
   name      String
   email     String?
@@ -80,7 +80,7 @@ model Customer {
 }
 
 model Location {
-  id        String   @id @default(cuid())
+  id        Int      @id @default(autoincrement())
   name      String   @unique
   address   String?
   createdAt DateTime @default(now())
@@ -94,11 +94,11 @@ model Location {
 }
 
 model InwardInvoice {
-  id         String   @id @default(cuid())
+  id         Int      @id @default(autoincrement())
   invoiceNo  String   @unique @map("invoice_no")
   date       DateTime
-  vendorId   String   @map("vendor_id")
-  locationId String   @map("location_id")
+  vendorId   Int      @map("vendor_id")
+  locationId Int      @map("location_id")
   totalCost  Float    @map("total_cost")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -111,9 +111,9 @@ model InwardInvoice {
 }
 
 model InwardItem {
-  id              String @id @default(cuid())
-  inwardInvoiceId String @map("inward_invoice_id")
-  productId       String @map("product_id")
+  id              Int    @id @default(autoincrement())
+  inwardInvoiceId Int    @map("inward_invoice_id")
+  productId       Int    @map("product_id")
   boxes           Int
   packPerBox      Int    @map("pack_per_box")
   packPerPiece    Int    @map("pack_per_piece")
@@ -132,11 +132,11 @@ model InwardItem {
 }
 
 model OutwardInvoice {
-  id         String   @id @default(cuid())
+  id         Int      @id @default(autoincrement())
   invoiceNo  String   @unique @map("invoice_no")
   date       DateTime
-  customerId String   @map("customer_id")
-  locationId String   @map("location_id")
+  customerId Int      @map("customer_id")
+  locationId Int      @map("location_id")
   saleType   String   @map("sale_type") // 'export' or 'domestic'
   expense    Float    @default(0)
   totalCost  Float    @map("total_cost")
@@ -151,10 +151,10 @@ model OutwardInvoice {
 }
 
 model OutwardItem {
-  id               String @id @default(cuid())
-  outwardInvoiceId String @map("outward_invoice_id")
-  productId        String @map("product_id")
-  stockBatchId     String @map("stock_batch_id")
+  id               Int    @id @default(autoincrement())
+  outwardInvoiceId Int    @map("outward_invoice_id")
+  productId        Int    @map("product_id")
+  stockBatchId     Int    @map("stock_batch_id")
   saleUnit         String @map("sale_unit") // 'box' or 'piece'
   quantity         Int
   ratePerUnit      Float  @map("rate_per_unit")
@@ -168,10 +168,10 @@ model OutwardItem {
 }
 
 model StockBatch {
-  id               String   @id @default(cuid())
-  productId        String   @map("product_id")
-  vendorId         String   @map("vendor_id")
-  locationId       String   @map("location_id")
+  id               Int      @id @default(autoincrement())
+  productId        Int      @map("product_id")
+  vendorId         Int      @map("vendor_id")
+  locationId       Int      @map("location_id")
   inwardDate       DateTime @map("inward_date")
   boxes            Int
   packPerBox       Int      @map("pack_per_box")
@@ -196,11 +196,11 @@ model StockBatch {
 }
 
 model StockMovement {
-  id            String   @id @default(cuid())
+  id            Int      @id @default(autoincrement())
   type          String   // 'inward' or 'outward'
-  referenceId   String   @map("reference_id") // InwardInvoice or OutwardInvoice ID
-  productId     String   @map("product_id")
-  locationId    String   @map("location_id")
+  referenceId   Int      @map("reference_id") // InwardInvoice or OutwardInvoice ID
+  productId     Int      @map("product_id")
+  locationId    Int      @map("location_id")
   quantity      Int
   movementDate  DateTime @map("movement_date")
   createdAt     DateTime @default(now())

@@ -43,7 +43,7 @@ class CategoryService {
 
   static async getById(id) {
     const category = await prisma.category.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         products: {
           select: {
@@ -82,7 +82,7 @@ class CategoryService {
 
   static async update(id, data) {
     return await prisma.category.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data,
       include: {
         _count: {
@@ -96,7 +96,7 @@ class CategoryService {
 
   static async delete(id) {
     const category = await prisma.category.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         _count: {
           select: {
@@ -115,7 +115,7 @@ class CategoryService {
     }
 
     await prisma.category.delete({
-      where: { id },
+      where: { id: parseInt(id) },
     });
 
     return { message: 'Category deleted successfully' };

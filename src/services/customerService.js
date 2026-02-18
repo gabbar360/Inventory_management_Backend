@@ -44,7 +44,7 @@ class CustomerService {
 
   static async getById(id) {
     const customer = await prisma.customer.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         outwardInvoices: {
           select: {
@@ -96,7 +96,7 @@ class CustomerService {
 
   static async update(id, data) {
     return await prisma.customer.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data,
       include: {
         _count: {
@@ -110,7 +110,7 @@ class CustomerService {
 
   static async delete(id) {
     const customer = await prisma.customer.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         _count: {
           select: {
@@ -129,7 +129,7 @@ class CustomerService {
     }
 
     await prisma.customer.delete({
-      where: { id },
+      where: { id: parseInt(id) },
     });
 
     return { message: 'Customer deleted successfully' };

@@ -54,7 +54,7 @@ class InwardService {
 
   static async getById(id) {
     const invoice = await prisma.inwardInvoice.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         vendor: true,
         location: true,
@@ -82,7 +82,7 @@ class InwardService {
       const processedItems = await Promise.all(
         data.items.map(async (item) => {
           const product = await tx.product.findUnique({
-            where: { id: item.productId },
+            where: { id: parseInt(item.productId) },
             include: { category: true },
           });
 
@@ -116,8 +116,8 @@ class InwardService {
         data: {
           invoiceNo: data.invoiceNo,
           date: new Date(data.date),
-          vendorId: data.vendorId,
-          locationId: data.locationId,
+          vendorId: parseInt(data.vendorId),
+          locationId: parseInt(data.locationId),
           totalCost: totalInvoiceCost,
         },
       });
@@ -127,7 +127,7 @@ class InwardService {
           tx.inwardItem.create({
             data: {
               inwardInvoiceId: invoice.id,
-              productId: item.productId,
+              productId: parseInt(item.productId),
               boxes: item.boxes,
               packPerBox: item.packPerBox,
               packPerPiece: item.packPerPiece,
@@ -153,8 +153,8 @@ class InwardService {
             data: {
               type: 'inward',
               referenceId: invoice.id,
-              productId: item.productId,
-              locationId: data.locationId,
+              productId: parseInt(item.productId),
+              locationId: parseInt(data.locationId),
               quantity: item.totalPcs,
               movementDate: new Date(data.date),
             },
@@ -184,7 +184,7 @@ class InwardService {
   static async update(id, data) {
     return await prisma.$transaction(async (tx) => {
       const existingInvoice = await tx.inwardInvoice.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
         include: { items: true },
       });
 
@@ -215,13 +215,13 @@ class InwardService {
           inwardDate: existingInvoice.date,
         },
       });
-      await tx.stockMovement.deleteMany({ where: { referenceId: id, type: 'inward' } });
-      await tx.inwardItem.deleteMany({ where: { inwardInvoiceId: id } });
+      await tx.stockMovement.deleteMany({ where: { referenceId: parseInt(id), type: 'inward' } });
+      await tx.inwardItem.deleteMany({ where: { inwardInvoiceId: parseInt(id) } });
 
       const processedItems = await Promise.all(
         data.items.map(async (item) => {
           const product = await tx.product.findUnique({
-            where: { id: item.productId },
+            where: { id: parseInt(item.productId) },
             include: { category: true },
           });
           if (!product) throw new Error(`Product not found: ${item.productId}`);
@@ -241,12 +241,12 @@ class InwardService {
       const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
 
       const invoice = await tx.inwardInvoice.update({
-        where: { id },
+        where: { id: parseInt(id) },
         data: {
           invoiceNo: data.invoiceNo,
           date: new Date(data.date),
-          vendorId: data.vendorId,
-          locationId: data.locationId,
+          vendorId: parseInt(data.vendorId),
+          locationId: parseInt(data.locationId),
           totalCost: totalInvoiceCost,
         },
       });
@@ -256,7 +256,7 @@ class InwardService {
           tx.inwardItem.create({
             data: {
               inwardInvoiceId: invoice.id,
-              productId: item.productId,
+              productId: parseInt(item.productId),
               boxes: item.boxes,
               packPerBox: item.packPerBox,
               packPerPiece: item.packPerPiece,
@@ -278,8 +278,8 @@ class InwardService {
           data: {
             type: 'inward',
             referenceId: invoice.id,
-            productId: item.productId,
-            locationId: data.locationId,
+            productId: parseInt(item.productId),
+            locationId: parseInt(data.locationId),
             quantity: item.totalPcs,
             movementDate: new Date(data.date),
           },
@@ -300,7 +300,7 @@ class InwardService {
   static async delete(id) {
     return await prisma.$transaction(async (tx) => {
       const invoice = await tx.inwardInvoice.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
         include: { items: true },
       });
 
@@ -334,13 +334,13 @@ class InwardService {
 
       await tx.stockMovement.deleteMany({
         where: {
-          referenceId: id,
+          referenceId: parseInt(id),
           type: 'inward',
         },
       });
 
       await tx.inwardInvoice.delete({
-        where: { id },
+        where: { id: parseInt(id) },
       });
 
       return { message: 'Invoice deleted successfully' };

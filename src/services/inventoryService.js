@@ -34,7 +34,7 @@ class InventoryService {
 
   static async getAvailableStock(productId, locationId) {
     const where = {
-      productId,
+      productId: parseInt(productId),
       OR: [
         { remainingBoxes: { gt: 0 } },
         { remainingPcs: { gt: 0 } },
@@ -42,7 +42,7 @@ class InventoryService {
     };
 
     if (locationId) {
-      where.locationId = locationId;
+      where.locationId = parseInt(locationId);
     }
 
     return await prisma.stockBatch.findMany({
@@ -71,14 +71,14 @@ class InventoryService {
           },
         },
       },
-      orderBy: { inwardDate: 'asc' }, // FIFO
+      orderBy: { inwardDate: 'asc' },
     });
   }
 
   static async validateStockAvailability(items) {
     for (const item of items) {
       const stockBatch = await prisma.stockBatch.findUnique({
-        where: { id: item.stockBatchId },
+        where: { id: parseInt(item.stockBatchId) },
       });
 
       if (!stockBatch) {
@@ -98,7 +98,7 @@ class InventoryService {
   static async updateStockOnSale(outwardItems) {
     for (const item of outwardItems) {
       const stockBatch = await prisma.stockBatch.findUnique({
-        where: { id: item.stockBatchId },
+        where: { id: parseInt(item.stockBatchId) },
       });
 
       if (!stockBatch) continue;
@@ -128,7 +128,7 @@ class InventoryService {
       }
 
       await prisma.stockBatch.update({
-        where: { id: item.stockBatchId },
+        where: { id: parseInt(item.stockBatchId) },
         data: {
           remainingBoxes: Math.max(0, updatedRemainingBoxes),
           remainingPacks: Math.max(0, updatedRemainingPacks),
@@ -147,7 +147,7 @@ class InventoryService {
     };
 
     if (locationId) {
-      where.locationId = locationId;
+      where.locationId = parseInt(locationId);
     }
 
     const stockBatches = await prisma.stockBatch.findMany({
@@ -223,7 +223,7 @@ class InventoryService {
 
     for (const item of outwardItems) {
       const stockBatch = await prisma.stockBatch.findUnique({
-        where: { id: item.stockBatchId },
+        where: { id: parseInt(item.stockBatchId) },
       });
 
       if (stockBatch) {

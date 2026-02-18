@@ -44,7 +44,7 @@ class VendorService {
 
   static async getById(id) {
     const vendor = await prisma.vendor.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         inwardInvoices: {
           select: {
@@ -96,7 +96,7 @@ class VendorService {
 
   static async update(id, data) {
     return await prisma.vendor.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data,
       include: {
         _count: {
@@ -110,7 +110,7 @@ class VendorService {
 
   static async delete(id) {
     const vendor = await prisma.vendor.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         _count: {
           select: {
@@ -129,7 +129,7 @@ class VendorService {
     }
 
     await prisma.vendor.delete({
-      where: { id },
+      where: { id: parseInt(id) },
     });
 
     return { message: 'Vendor deleted successfully' };
