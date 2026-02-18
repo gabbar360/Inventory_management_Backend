@@ -53,7 +53,7 @@ class ProductService {
 
   static async getById(id) {
     const product = await prisma.product.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         category: true,
         stockBatches: {
@@ -95,7 +95,10 @@ class ProductService {
 
   static async create(data) {
     return await prisma.product.create({
-      data,
+      data: {
+        ...data,
+        categoryId: parseInt(data.categoryId)
+      },
       include: {
         category: {
           select: {
@@ -117,8 +120,11 @@ class ProductService {
 
   static async update(id, data) {
     return await prisma.product.update({
-      where: { id },
-      data,
+      where: { id: parseInt(id) },
+      data: {
+        ...data,
+        categoryId: parseInt(data.categoryId)
+      },
       include: {
         category: {
           select: {
@@ -140,7 +146,7 @@ class ProductService {
 
   static async delete(id) {
     const product = await prisma.product.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         _count: {
           select: {
@@ -161,7 +167,7 @@ class ProductService {
     }
 
     await prisma.product.delete({
-      where: { id },
+      where: { id: parseInt(id) },
     });
 
     return { message: 'Product deleted successfully' };

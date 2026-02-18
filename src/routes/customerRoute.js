@@ -7,10 +7,10 @@ const router = Router();
 
 router.use(authenticateToken);
 
-router.get('/customers', CustomerController.getAll);
-router.get('/customers/:id', CustomerController.getById);
-router.post('/customers', validateRequest(customerSchema), CustomerController.create);
-router.put('/customers/:id', validateRequest(customerSchema.partial()), CustomerController.update);
-router.delete('/customers/:id', CustomerController.delete);
+router.get('/getall-customers', CustomerController.getAll);
+router.get('/get-customers/:id', CustomerController.getById);
+router.post('/add-customers', validateRequest(customerSchema), CustomerController.create);
+router.put('/update-customers/:id', validateRequest(customerSchema.partial()), CustomerController.update);
+router.delete('/delete-customers/:id', CustomerController.delete);
 
 module.exports = router;

@@ -45,7 +45,7 @@ class LocationService {
 
   static async getById(id) {
     const location = await prisma.location.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         stockBatches: {
           where: {
@@ -102,7 +102,7 @@ class LocationService {
 
   static async update(id, data) {
     return await prisma.location.update({
-      where: { id },
+      where: { id: parseInt(id) },
       data,
       include: {
         _count: {
@@ -118,7 +118,7 @@ class LocationService {
 
   static async delete(id) {
     const location = await prisma.location.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         _count: {
           select: { 
@@ -139,7 +139,7 @@ class LocationService {
     }
 
     await prisma.location.delete({
-      where: { id },
+      where: { id: parseInt(id) },
     });
 
     return { message: 'Location deleted successfully' };

@@ -7,10 +7,10 @@ const router = Router();
 
 router.use(authenticateToken);
 
-router.get('/vendors', VendorController.getAll);
-router.get('/vendors/:id', VendorController.getById);
-router.post('/vendors', validateRequest(vendorSchema), VendorController.create);
-router.put('/vendors/:id', validateRequest(vendorSchema.partial()), VendorController.update);
-router.delete('/vendors/:id', VendorController.delete);
+router.get('/getall-vendors', VendorController.getAll);
+router.get('/get-vendors/:id', VendorController.getById);
+router.post('/add-vendors', validateRequest(vendorSchema), VendorController.create);
+router.put('/update-vendors/:id', validateRequest(vendorSchema.partial()), VendorController.update);
+router.delete('/delete-vendors/:id', VendorController.delete);
 
 module.exports = router;

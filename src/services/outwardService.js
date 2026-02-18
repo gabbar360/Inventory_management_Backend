@@ -75,7 +75,7 @@ class OutwardService {
 
   static async getById(id) {
     const invoice = await prisma.outwardInvoice.findUnique({
-      where: { id },
+      where: { id: parseInt(id) },
       include: {
         customer: true,
         location: true,
@@ -105,10 +105,8 @@ class OutwardService {
 
   static async create(data) {
     return await prisma.$transaction(async (tx) => {
-      // Validate stock availability
       await InventoryService.validateStockAvailability(data.items);
 
-      // Calculate totals for each item
       const processedItems = data.items.map((item) => ({
         ...item,
         totalCost: item.quantity * item.ratePerUnit,
@@ -116,27 +114,25 @@ class OutwardService {
 
       const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
 
-      // Create invoice
       const invoice = await tx.outwardInvoice.create({
         data: {
           invoiceNo: data.invoiceNo,
           date: new Date(data.date),
-          customerId: data.customerId,
-          locationId: data.locationId,
+          customerId: parseInt(data.customerId),
+          locationId: parseInt(data.locationId),
           saleType: data.saleType,
           expense: data.expense,
           totalCost: totalInvoiceCost,
         },
       });
 
-      // Create invoice items
       const items = await Promise.all(
         processedItems.map((item) =>
           tx.outwardItem.create({
             data: {
               outwardInvoiceId: invoice.id,
-              productId: item.productId,
-              stockBatchId: item.stockBatchId,
+              productId: parseInt(item.productId),
+              stockBatchId: parseInt(item.stockBatchId),
               saleUnit: item.saleUnit,
               quantity: item.quantity,
               ratePerUnit: item.ratePerUnit,
@@ -146,19 +142,17 @@ class OutwardService {
         )
       );
 
-      // Update stock batches
       await InventoryService.updateStockOnSale(items);
 
-      // Create stock movements
       await Promise.all(
         items.map((item) =>
           tx.stockMovement.create({
             data: {
               type: 'outward',
               referenceId: invoice.id,
-              productId: item.productId,
-              locationId: data.locationId,
-              quantity: -item.quantity, // Negative for outward
+              productId: parseInt(item.productId),
+              locationId: parseInt(data.locationId),
+              quantity: -item.quantity,
               movementDate: new Date(data.date),
             },
           })
@@ -192,7 +186,7 @@ class OutwardService {
   static async update(id, data) {
     return await prisma.$transaction(async (tx) => {
       const existingInvoice = await tx.outwardInvoice.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
         include: { items: true },
       });
 
@@ -200,7 +194,6 @@ class OutwardService {
         throw new Error('Invoice not found');
       }
 
-      // Restore stock from existing items
       for (const item of existingInvoice.items) {
         const stockBatch = await tx.stockBatch.findUnique({ 
           where: { id: item.stockBatchId } 
@@ -232,11 +225,9 @@ class OutwardService {
         }
       }
 
-      // Delete existing items and movements
-      await tx.outwardItem.deleteMany({ where: { outwardInvoiceId: id } });
-      await tx.stockMovement.deleteMany({ where: { referenceId: id, type: 'outward' } });
+      await tx.outwardItem.deleteMany({ where: { outwardInvoiceId: parseInt(id) } });
+      await tx.stockMovement.deleteMany({ where: { referenceId: parseInt(id), type: 'outward' } });
 
-      // Validate new stock availability
       await InventoryService.validateStockAvailability(data.items);
 
       const processedItems = data.items.map((item) => ({
@@ -246,28 +237,26 @@ class OutwardService {
 
       const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
 
-      // Update invoice
       const invoice = await tx.outwardInvoice.update({
-        where: { id },
+        where: { id: parseInt(id) },
         data: {
           invoiceNo: data.invoiceNo,
           date: new Date(data.date),
-          customerId: data.customerId,
-          locationId: data.locationId,
+          customerId: parseInt(data.customerId),
+          locationId: parseInt(data.locationId),
           saleType: data.saleType,
           expense: data.expense,
           totalCost: totalInvoiceCost,
         },
       });
 
-      // Create new items
       const items = await Promise.all(
         processedItems.map((item) =>
           tx.outwardItem.create({
             data: {
               outwardInvoiceId: invoice.id,
-              productId: item.productId,
-              stockBatchId: item.stockBatchId,
+              productId: parseInt(item.productId),
+              stockBatchId: parseInt(item.stockBatchId),
               saleUnit: item.saleUnit,
               quantity: item.quantity,
               ratePerUnit: item.ratePerUnit,
@@ -277,7 +266,6 @@ class OutwardService {
         )
       );
 
-      // Update stock and create movements
       await InventoryService.updateStockOnSale(items);
       
       for (const item of items) {
@@ -285,8 +273,8 @@ class OutwardService {
           data: {
             type: 'outward',
             referenceId: invoice.id,
-            productId: item.productId,
-            locationId: data.locationId,
+            productId: parseInt(item.productId),
+            locationId: parseInt(data.locationId),
             quantity: -item.quantity,
             movementDate: new Date(data.date),
           },
@@ -320,7 +308,7 @@ class OutwardService {
   static async delete(id) {
     return await prisma.$transaction(async (tx) => {
       const invoice = await tx.outwardInvoice.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
         include: { items: true },
       });
 
@@ -328,7 +316,6 @@ class OutwardService {
         throw new Error('Invoice not found');
       }
 
-      // Restore stock quantities
       for (const item of invoice.items) {
         const stockBatch = await tx.stockBatch.findUnique({
           where: { id: item.stockBatchId },
@@ -361,17 +348,15 @@ class OutwardService {
         }
       }
 
-      // Delete stock movements
       await tx.stockMovement.deleteMany({
         where: {
-          referenceId: id,
+          referenceId: parseInt(id),
           type: 'outward',
         },
       });
 
-      // Delete invoice (items will be deleted by cascade)
       await tx.outwardInvoice.delete({
-        where: { id },
+        where: { id: parseInt(id) },
       });
 
       return { message: 'Invoice deleted successfully' };

@@ -7,10 +7,10 @@ const router = Router();
 
 router.use(authenticateToken);
 
-router.get('/locations', LocationController.getAll);
-router.get('/locations/:id', LocationController.getById);
-router.post('/locations', validateRequest(locationSchema), LocationController.create);
-router.put('/locations/:id', validateRequest(locationSchema.partial()), LocationController.update);
-router.delete('/locations/:id', LocationController.delete);
+router.get('/getall-locations', LocationController.getAll);
+router.get('/get-locations/:id', LocationController.getById);
+router.post('/add-locations', validateRequest(locationSchema), LocationController.create);
+router.put('/update-locations/:id', validateRequest(locationSchema.partial()), LocationController.update);
+router.delete('/delete-locations/:id', LocationController.delete);
 
 module.exports = router;
