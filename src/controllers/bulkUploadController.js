@@ -751,7 +751,7 @@ class BulkUploadController {
         
         case 'inward':
           templateData = [
-            { invoiceNo: 'INW001', date: '2024-01-15', vendorName: 'Vendor 1', locationName: 'Main Warehouse', productName: 'Product 1', boxes: 10, packPerBox: 5, packPerPiece: 1, ratePerBox: 1000 },
+            { invoiceNo: 'INW001', date: '2024-01-15', vendorName: 'Vendor 1', locationName: 'Main Warehouse', productName: 'Product 1', boxes: 10, packPerBox: 5, packPerPiece: 1, totalPacks: 50, totalPcs: 50, ratePerBox: 1000, ratePerPack: 200, ratePerPcs: 200, gstAmount: 180, totalCost: 1180 },
           ];
           filename = 'inward_template.xlsx';
           break;
