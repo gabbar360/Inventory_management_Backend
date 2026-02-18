@@ -7,10 +7,10 @@ const router = Router();
 
 router.use(authenticateToken);
 
-router.get('/', InwardController.getAll);
-router.get('/:id', InwardController.getById);
-router.post('/', validateRequest(inwardInvoiceSchema), InwardController.create);
-router.put('/:id', validateRequest(inwardInvoiceSchema), InwardController.update);
-router.delete('/:id', InwardController.delete);
+router.get('/inward', InwardController.getAll);
+router.get('/inward/:id', InwardController.getById);
+router.post('/inward', validateRequest(inwardInvoiceSchema), InwardController.create);
+router.put('/inward/:id', validateRequest(inwardInvoiceSchema), InwardController.update);
+router.delete('/inward/:id', InwardController.delete);
 
 module.exports = router;
