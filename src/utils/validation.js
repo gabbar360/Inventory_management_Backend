@@ -23,7 +23,7 @@ const categorySchema = z.object({
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
   grade: z.string().optional(),
-  categoryId: z.string().min(1, 'Category is required'),
+  categoryId: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
 
 // Vendor schemas
@@ -50,7 +50,7 @@ const locationSchema = z.object({
 
 // Inward schemas
 const inwardItemSchema = z.object({
-  productId: z.string().min(1, 'Product is required'),
+  productId: z.union([z.string(), z.number()]).transform(val => String(val)),
   boxes: z.number().min(1, 'Boxes must be at least 1'),
   packPerBox: z.number().min(1, 'Pack per box must be at least 1'),
   packPerPiece: z.number().min(1, 'Pack per piece must be at least 1'),
@@ -60,15 +60,15 @@ const inwardItemSchema = z.object({
 const inwardInvoiceSchema = z.object({
   invoiceNo: z.string().min(1, 'Invoice number is required'),
   date: z.string().min(1, 'Date is required'),
-  vendorId: z.string().min(1, 'Vendor is required'),
-  locationId: z.string().min(1, 'Location is required'),
+  vendorId: z.union([z.string(), z.number()]).transform(val => String(val)),
+  locationId: z.union([z.string(), z.number()]).transform(val => String(val)),
   items: z.array(inwardItemSchema).min(1, 'At least one item is required'),
 });
 
 // Outward schemas
 const outwardItemSchema = z.object({
-  productId: z.string().min(1, 'Product is required'),
-  stockBatchId: z.string().min(1, 'Stock batch is required'),
+  productId: z.union([z.string(), z.number()]).transform(val => String(val)),
+  stockBatchId: z.union([z.string(), z.number()]).transform(val => String(val)),
   saleUnit: z.enum(['box', 'pack', 'piece'], { required_error: 'Sale unit is required' }),
   quantity: z.number().min(1, 'Quantity must be at least 1'),
   ratePerUnit: z.number().min(0, 'Rate per unit must be positive'),
@@ -77,8 +77,8 @@ const outwardItemSchema = z.object({
 const outwardInvoiceSchema = z.object({
   invoiceNo: z.string().min(1, 'Invoice number is required'),
   date: z.string().min(1, 'Date is required'),
-  customerId: z.string().min(1, 'Customer is required'),
-  locationId: z.string().min(1, 'Location is required'),
+  customerId: z.union([z.string(), z.number()]).transform(val => String(val)),
+  locationId: z.union([z.string(), z.number()]).transform(val => String(val)),
   saleType: z.enum(['export', 'domestic'], { required_error: 'Sale type is required' }),
   expense: z.number().min(0, 'Expense must be positive').default(0),
   items: z.array(outwardItemSchema).min(1, 'At least one item is required'),

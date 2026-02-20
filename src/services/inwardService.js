@@ -308,29 +308,36 @@ class InwardService {
         throw new Error('Invoice not found');
       }
 
-      const soldItems = await tx.outwardItem.findMany({
-        where: {
-          stockBatch: {
-            productId: { in: invoice.items.map(item => item.productId) },
+      for (const item of invoice.items) {
+        const stockBatches = await tx.stockBatch.findMany({
+          where: {
+            productId: item.productId,
             vendorId: invoice.vendorId,
             locationId: invoice.locationId,
             inwardDate: invoice.date,
+            boxes: item.boxes,
+            totalPcs: item.totalPcs,
           },
-        },
-      });
+          orderBy: { createdAt: 'asc' },
+        });
 
-      if (soldItems.length > 0) {
-        throw new Error('Cannot delete invoice with sold stock');
+        const stockBatch = stockBatches.find(
+          (batch) => 
+            Math.abs(new Date(batch.createdAt).getTime() - new Date(invoice.createdAt).getTime()) < 5000
+        );
+
+        if (stockBatch) {
+          const soldQuantity = stockBatch.boxes - stockBatch.remainingBoxes;
+          
+          if (soldQuantity > 0) {
+            throw new Error(`Cannot delete invoice. ${soldQuantity} boxes from this batch have been sold.`);
+          }
+
+          await tx.stockBatch.delete({
+            where: { id: stockBatch.id },
+          });
+        }
       }
-
-      await tx.stockBatch.deleteMany({
-        where: {
-          productId: { in: invoice.items.map(item => item.productId) },
-          vendorId: invoice.vendorId,
-          locationId: invoice.locationId,
-          inwardDate: invoice.date,
-        },
-      });
 
       await tx.stockMovement.deleteMany({
         where: {
