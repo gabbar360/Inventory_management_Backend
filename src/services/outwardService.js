@@ -105,8 +105,6 @@ class OutwardService {
 
   static async create(data) {
     return await prisma.$transaction(async (tx) => {
-      await InventoryService.validateStockAvailability(data.items);
-
       const processedItems = data.items.map((item) => ({
         ...item,
         totalCost: item.quantity * item.ratePerUnit,
@@ -142,22 +140,54 @@ class OutwardService {
         )
       );
 
-      await InventoryService.updateStockOnSale(items);
+      for (const item of items) {
+        const stockBatch = await tx.stockBatch.findUnique({
+          where: { id: item.stockBatchId },
+        });
 
-      await Promise.all(
-        items.map((item) =>
-          tx.stockMovement.create({
-            data: {
-              type: 'outward',
-              referenceId: invoice.id,
-              productId: parseInt(item.productId),
-              locationId: parseInt(data.locationId),
-              quantity: -item.quantity,
-              movementDate: new Date(data.date),
-            },
-          })
-        )
-      );
+        if (!stockBatch) {
+          throw new Error(`Stock batch not found`);
+        }
+
+        let updatedBoxes = stockBatch.remainingBoxes;
+        let updatedPacks = stockBatch.remainingPacks;
+        let updatedPcs = stockBatch.remainingPcs;
+
+        if (item.saleUnit === 'box') {
+          updatedBoxes -= item.quantity;
+          updatedPacks -= item.quantity * stockBatch.packPerBox;
+          updatedPcs -= item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
+        } else if (item.saleUnit === 'pack') {
+          updatedPacks -= item.quantity;
+          updatedPcs -= item.quantity * stockBatch.packPerPiece;
+        } else {
+          updatedPcs -= item.quantity;
+        }
+
+        if (updatedBoxes < 0 || updatedPacks < 0 || updatedPcs < 0) {
+          throw new Error('Insufficient stock');
+        }
+
+        await tx.stockBatch.update({
+          where: { id: item.stockBatchId },
+          data: {
+            remainingBoxes: updatedBoxes,
+            remainingPacks: updatedPacks,
+            remainingPcs: updatedPcs,
+          },
+        });
+
+        await tx.stockMovement.create({
+          data: {
+            type: 'outward',
+            referenceId: invoice.id,
+            productId: parseInt(item.productId),
+            locationId: parseInt(data.locationId),
+            quantity: -item.quantity,
+            movementDate: new Date(data.date),
+          },
+        });
+      }
 
       return await tx.outwardInvoice.findUnique({
         where: { id: invoice.id },
@@ -180,7 +210,7 @@ class OutwardService {
           },
         },
       });
-    });
+    }, { timeout: 30000 });
   }
 
   static async update(id, data) {
@@ -228,8 +258,6 @@ class OutwardService {
       await tx.outwardItem.deleteMany({ where: { outwardInvoiceId: parseInt(id) } });
       await tx.stockMovement.deleteMany({ where: { referenceId: parseInt(id), type: 'outward' } });
 
-      await InventoryService.validateStockAvailability(data.items);
-
       const processedItems = data.items.map((item) => ({
         ...item,
         totalCost: item.quantity * item.ratePerUnit,
@@ -266,9 +294,39 @@ class OutwardService {
         )
       );
 
-      await InventoryService.updateStockOnSale(items);
-      
       for (const item of items) {
+        const stockBatch = await tx.stockBatch.findUnique({
+          where: { id: item.stockBatchId },
+        });
+
+        if (!stockBatch) {
+          throw new Error(`Stock batch not found for item ${item.id}`);
+        }
+
+        let updatedBoxes = stockBatch.remainingBoxes;
+        let updatedPacks = stockBatch.remainingPacks;
+        let updatedPcs = stockBatch.remainingPcs;
+
+        if (item.saleUnit === 'box') {
+          updatedBoxes -= item.quantity;
+          updatedPacks -= item.quantity * stockBatch.packPerBox;
+          updatedPcs -= item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
+        } else if (item.saleUnit === 'pack') {
+          updatedPacks -= item.quantity;
+          updatedPcs -= item.quantity * stockBatch.packPerPiece;
+        } else {
+          updatedPcs -= item.quantity;
+        }
+
+        await tx.stockBatch.update({
+          where: { id: item.stockBatchId },
+          data: {
+            remainingBoxes: updatedBoxes,
+            remainingPacks: updatedPacks,
+            remainingPcs: updatedPcs,
+          },
+        });
+
         await tx.stockMovement.create({
           data: {
             type: 'outward',
@@ -302,7 +360,7 @@ class OutwardService {
           },
         },
       });
-    }, { timeout: 10000 });
+    }, { timeout: 30000 });
   }
 
   static async delete(id) {
