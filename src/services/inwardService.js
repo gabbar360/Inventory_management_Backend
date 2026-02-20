@@ -118,6 +118,7 @@ class InwardService {
           date: new Date(data.date),
           vendorId: parseInt(data.vendorId),
           locationId: parseInt(data.locationId),
+          expense: data.expense || 0,
           totalCost: totalInvoiceCost,
         },
       });
@@ -247,6 +248,7 @@ class InwardService {
           date: new Date(data.date),
           vendorId: parseInt(data.vendorId),
           locationId: parseInt(data.locationId),
+          expense: data.expense || 0,
           totalCost: totalInvoiceCost,
         },
       });
