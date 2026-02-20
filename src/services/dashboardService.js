@@ -69,12 +69,17 @@ class DashboardService {
       },
     });
 
-    const totalPurchase = inwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
-    const previousPurchase = previousInwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
+    const totalPurchase = inwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost + invoice.expense, 0);
+    const previousPurchase = previousInwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost + invoice.expense, 0);
 
-    // Calculate total expenses from outward invoices
-    const totalExpenses = outwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
-    const previousExpenses = previousOutwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
+    // Calculate total expenses from outward invoices and inward invoices
+    const outwardExpenses = outwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
+    const inwardExpenses = inwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
+    const totalExpenses = outwardExpenses + inwardExpenses;
+    
+    const previousOutwardExpenses = previousOutwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
+    const previousInwardExpenses = previousInwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
+    const previousExpenses = previousOutwardExpenses + previousInwardExpenses;
 
     // Calculate gross profit (Revenue - Cost of Goods Sold)
     const outwardItems = await prisma.outwardItem.findMany({
@@ -129,12 +134,16 @@ class DashboardService {
       totalPurchase,
       totalCOGS,
       totalExpenses,
+      inwardExpenses,
+      outwardExpenses,
       grossProfit,
       netProfit,
       previousRevenue,
       previousPurchase,
       previousCOGS,
       previousExpenses,
+      previousInwardExpenses,
+      previousOutwardExpenses,
       previousGrossProfit,
       previousNetProfit,
       previousStockValue: totalStockValue,

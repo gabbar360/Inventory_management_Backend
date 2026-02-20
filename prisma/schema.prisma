@@ -99,6 +99,7 @@ model InwardInvoice {
   date       DateTime
   vendorId   Int      @map("vendor_id")
   locationId Int      @map("location_id")
+  expense    Float    @default(0)
   totalCost  Float    @map("total_cost")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
