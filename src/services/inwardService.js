@@ -310,6 +310,7 @@ class InwardService {
         throw new Error('Invoice not found');
       }
 
+      // Check if any stock from this invoice has been sold
       for (const item of invoice.items) {
         const stockBatches = await tx.stockBatch.findMany({
           where: {
@@ -317,30 +318,29 @@ class InwardService {
             vendorId: invoice.vendorId,
             locationId: invoice.locationId,
             inwardDate: invoice.date,
-            boxes: item.boxes,
-            totalPcs: item.totalPcs,
           },
-          orderBy: { createdAt: 'asc' },
         });
 
-        const stockBatch = stockBatches.find(
-          (batch) => 
-            Math.abs(new Date(batch.createdAt).getTime() - new Date(invoice.createdAt).getTime()) < 5000
-        );
-
-        if (stockBatch) {
-          const soldQuantity = stockBatch.boxes - stockBatch.remainingBoxes;
+        for (const batch of stockBatches) {
+          const soldQuantity = batch.totalPcs - batch.remainingPcs;
           
           if (soldQuantity > 0) {
-            throw new Error(`Cannot delete invoice. ${soldQuantity} boxes from this batch have been sold.`);
+            throw new Error(`Cannot delete invoice. Stock from this batch has been sold.`);
           }
-
-          await tx.stockBatch.delete({
-            where: { id: stockBatch.id },
-          });
         }
       }
 
+      // Delete all stock batches related to this invoice
+      await tx.stockBatch.deleteMany({
+        where: {
+          productId: { in: invoice.items.map(item => item.productId) },
+          vendorId: invoice.vendorId,
+          locationId: invoice.locationId,
+          inwardDate: invoice.date,
+        },
+      });
+
+      // Delete stock movements
       await tx.stockMovement.deleteMany({
         where: {
           referenceId: parseInt(id),
@@ -348,6 +348,7 @@ class InwardService {
         },
       });
 
+      // Delete the invoice (cascade will delete items)
       await tx.inwardInvoice.delete({
         where: { id: parseInt(id) },
       });
