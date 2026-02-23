@@ -6,7 +6,16 @@ class AuthController {
     try {
       const { email, password, name } = req.body;
       const result = await AuthService.register(email, password, name);
-      return sendResponse(res, 201, true, result, 'User registered successfully');
+      
+      res.cookie('token', result.token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/'
+      });
+      
+      return sendResponse(res, 201, true, { user: result.user }, 'User registered successfully');
     } catch (error) {
       return sendError(res, 400, error.message);
     }
@@ -16,9 +25,35 @@ class AuthController {
     try {
       const { email, password } = req.body;
       const result = await AuthService.login(email, password);
-      return sendResponse(res, 200, true, result, 'Login successful');
+      
+      res.cookie('token', result.token, {
+        httpOnly: true,
+        secure: false,
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        path: '/'
+      });
+      
+      return sendResponse(res, 200, true, { user: result.user }, 'Login successful');
     } catch (error) {
       return sendError(res, 401, error.message);
+    }
+  }
+
+  static async logout(req, res) {
+    try {
+      res.clearCookie('token');
+      return sendResponse(res, 200, true, null, 'Logout successful');
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
+  static async getCurrentUser(req, res) {
+    try {
+      return sendResponse(res, 200, true, { user: req.user }, 'User fetched successfully');
+    } catch (error) {
+      return sendError(res, 400, error.message);
     }
   }
 }

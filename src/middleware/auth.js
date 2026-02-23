@@ -13,8 +13,7 @@ const authenticateToken = async (
   next
 ) => {
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1];
+    const token = req.cookies.token;
 
     if (!token) {
       return sendError(res, 401, 'Access token required');
