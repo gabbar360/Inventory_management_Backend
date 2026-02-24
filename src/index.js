@@ -34,9 +34,7 @@ const getAllowedOrigins = () => {
   }
 
   origins.push(
-    'http://localhost:5173',
     'http://localhost:3000',
-    'http://localhost:5000'
   );
 
   return [...new Set(origins)];

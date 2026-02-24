@@ -56,6 +56,36 @@ class AuthController {
       return sendError(res, 400, error.message);
     }
   }
+
+  static async updateProfile(req, res) {
+    try {
+      const { name, email } = req.body;
+      const result = await AuthService.updateProfile(req.user.id, { name, email });
+      return sendResponse(res, 200, true, { user: result }, 'Profile updated successfully');
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
+  static async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+      const result = await AuthService.forgotPassword(email);
+      return sendResponse(res, 200, true, null, result.message);
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
+  static async resetPassword(req, res) {
+    try {
+      const { token, newPassword } = req.body;
+      const result = await AuthService.resetPassword(token, newPassword);
+      return sendResponse(res, 200, true, null, result.message);
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
 }
 
 module.exports = { AuthController };
