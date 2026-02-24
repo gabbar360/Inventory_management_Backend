@@ -16,7 +16,7 @@ const authenticateToken = async (
     const token = req.cookies.token;
 
     if (!token) {
-      return sendError(res, 401, 'Access token required');
+      return sendError(res, 401, 'Please login to continue');
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -27,13 +27,16 @@ const authenticateToken = async (
     });
 
     if (!user) {
-      return sendError(res, 401, 'Invalid token');
+      return sendError(res, 401, 'Session expired. Please login again');
     }
 
     req.user = user;
     next();
   } catch (error) {
-    return sendError(res, 401, 'Invalid token');
+    if (error.name === 'TokenExpiredError') {
+      return sendError(res, 401, 'Session expired. Please login again');
+    }
+    return sendError(res, 401, 'Invalid session. Please login again');
   }
 };
 
