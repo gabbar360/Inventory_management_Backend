@@ -34,7 +34,7 @@ class AuthController {
         path: '/'
       });
       
-      return sendResponse(res, 200, true, { user: result.user }, 'Login successful');
+      return sendResponse(res, 200, true, { user: result.user }, 'Login successful.............');
     } catch (error) {
       return sendError(res, 401, error.message);
     }
