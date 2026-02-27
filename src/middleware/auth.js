@@ -1,5 +1,5 @@
-const jwt = require('jsonwebtoken');
 const { PrismaClient } = require('@prisma/client');
+const { verifyAccessToken } = require('../utils/tokenUtils');
 
 const sendError = (res, statusCode, error) => {
   return res.status(statusCode).json({ success: false, error });
@@ -7,19 +7,15 @@ const sendError = (res, statusCode, error) => {
 
 const prisma = new PrismaClient();
 
-const authenticateToken = async (
-  req,
-  res,
-  next
-) => {
+const authenticateToken = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const token = req.cookies.accessToken;
 
     if (!token) {
       return sendError(res, 401, 'Please login to continue');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = verifyAccessToken(token);
     
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
@@ -36,7 +32,10 @@ const authenticateToken = async (
     if (error.name === 'TokenExpiredError') {
       return sendError(res, 401, 'Session expired. Please login again');
     }
-    return sendError(res, 401, 'Invalid session. Please login again');
+    if (error.name === 'JsonWebTokenError') {
+      return sendError(res, 401, 'Invalid token. Please login again');
+    }
+    return sendError(res, 401, 'Authentication failed');
   }
 };
 
