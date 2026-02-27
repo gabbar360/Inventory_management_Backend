@@ -7,7 +7,10 @@ const router = Router();
 
 router.post('/register', validateRequest(registerSchema), AuthController.register);
 router.post('/login', validateRequest(loginSchema), AuthController.login);
+router.post('/refresh-token', AuthController.refreshToken);
 router.post('/logout', AuthController.logout);
+router.post('/logout-all', authenticateToken, AuthController.logoutAllDevices);
+router.get('/verify-token', AuthController.verifyToken);
 router.get('/me', authenticateToken, AuthController.getCurrentUser);
 router.put('/profile', authenticateToken, AuthController.updateProfile);
 router.post('/forgot-password', AuthController.forgotPassword);
