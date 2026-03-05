@@ -160,8 +160,18 @@ class OutwardService {
         } else if (item.saleUnit === 'pack') {
           updatedPacks -= item.quantity;
           updatedPcs -= item.quantity * stockBatch.packPerPiece;
+          // Calculate boxes reduction from packs
+          const packsReduced = item.quantity;
+          const boxesReduced = Math.floor(packsReduced / stockBatch.packPerBox);
+          updatedBoxes -= boxesReduced;
         } else {
           updatedPcs -= item.quantity;
+          // Calculate packs and boxes reduction from pieces
+          const pcsReduced = item.quantity;
+          const packsReduced = Math.floor(pcsReduced / stockBatch.packPerPiece);
+          const boxesReduced = Math.floor(packsReduced / stockBatch.packPerBox);
+          updatedPacks -= packsReduced;
+          updatedBoxes -= boxesReduced;
         }
 
         if (updatedBoxes < 0 || updatedPacks < 0 || updatedPcs < 0) {
@@ -240,8 +250,18 @@ class OutwardService {
           } else if (item.saleUnit === 'pack') {
             restoredPacks += item.quantity;
             restoredPcs += item.quantity * stockBatch.packPerPiece;
+            // Restore boxes from packs
+            const packsRestored = item.quantity;
+            const boxesRestored = Math.floor(packsRestored / stockBatch.packPerBox);
+            restoredBoxes += boxesRestored;
           } else {
             restoredPcs += item.quantity;
+            // Restore packs and boxes from pieces
+            const pcsRestored = item.quantity;
+            const packsRestored = Math.floor(pcsRestored / stockBatch.packPerPiece);
+            const boxesRestored = Math.floor(packsRestored / stockBatch.packPerBox);
+            restoredPacks += packsRestored;
+            restoredBoxes += boxesRestored;
           }
 
           await tx.stockBatch.update({
@@ -314,8 +334,18 @@ class OutwardService {
         } else if (item.saleUnit === 'pack') {
           updatedPacks -= item.quantity;
           updatedPcs -= item.quantity * stockBatch.packPerPiece;
+          // Calculate boxes reduction from packs
+          const packsReduced = item.quantity;
+          const boxesReduced = Math.floor(packsReduced / stockBatch.packPerBox);
+          updatedBoxes -= boxesReduced;
         } else {
           updatedPcs -= item.quantity;
+          // Calculate packs and boxes reduction from pieces
+          const pcsReduced = item.quantity;
+          const packsReduced = Math.floor(pcsReduced / stockBatch.packPerPiece);
+          const boxesReduced = Math.floor(packsReduced / stockBatch.packPerBox);
+          updatedPacks -= packsReduced;
+          updatedBoxes -= boxesReduced;
         }
 
         await tx.stockBatch.update({
@@ -391,8 +421,18 @@ class OutwardService {
           } else if (item.saleUnit === 'pack') {
             restoredPacks += item.quantity;
             restoredPcs += item.quantity * stockBatch.packPerPiece;
+            // Restore boxes from packs
+            const packsRestored = item.quantity;
+            const boxesRestored = Math.floor(packsRestored / stockBatch.packPerBox);
+            restoredBoxes += boxesRestored;
           } else {
             restoredPcs += item.quantity;
+            // Restore packs and boxes from pieces
+            const pcsRestored = item.quantity;
+            const packsRestored = Math.floor(pcsRestored / stockBatch.packPerPiece);
+            const boxesRestored = Math.floor(packsRestored / stockBatch.packPerBox);
+            restoredPacks += packsRestored;
+            restoredBoxes += boxesRestored;
           }
 
           await tx.stockBatch.update({
