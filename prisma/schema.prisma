@@ -135,6 +135,7 @@ model InwardItem {
   id              Int    @id @default(autoincrement())
   inwardInvoiceId Int    @map("inward_invoice_id")
   productId       Int    @map("product_id")
+  parentItemId    Int?   @map("parent_item_id")
   boxes           Int
   packPerBox      Int    @map("pack_per_box")
   packPerPiece    Int    @map("pack_per_piece")
@@ -149,6 +150,8 @@ model InwardItem {
 
   inwardInvoice InwardInvoice @relation(fields: [inwardInvoiceId], references: [id], onDelete: Cascade)
   product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  parentItem    InwardItem?   @relation("SubItems", fields: [parentItemId], references: [id], onDelete: Cascade)
+  subItems      InwardItem[]  @relation("SubItems")
 
   @@map("inward_items")
 }
