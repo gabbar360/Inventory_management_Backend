@@ -92,16 +92,36 @@ class InwardService {
 
           const totalPacks = item.boxes * item.packPerBox;
           const totalPcs = totalPacks * item.packPerPiece;
-          const ratePerPack = item.ratePerBox / item.packPerBox;
-          const ratePerPcs = ratePerPack / item.packPerPiece;
-          const baseAmount = item.boxes * item.ratePerBox;
+          
+          let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
+          const unit = item.unit || 'box';
+          
+          if (unit === 'box') {
+            ratePerBox = item.ratePerBox;
+            ratePerPack = ratePerBox / item.packPerBox;
+            ratePerPcs = ratePerPack / item.packPerPiece;
+            baseAmount = item.boxes * ratePerBox;
+          } else if (unit === 'pack') {
+            ratePerPack = item.ratePerBox;
+            ratePerBox = ratePerPack * item.packPerBox;
+            ratePerPcs = ratePerPack / item.packPerPiece;
+            baseAmount = totalPacks * ratePerPack;
+          } else {
+            ratePerPcs = item.ratePerBox;
+            ratePerPack = ratePerPcs * item.packPerPiece;
+            ratePerBox = ratePerPack * item.packPerBox;
+            baseAmount = totalPcs * ratePerPcs;
+          }
+          
           const gstAmount = (baseAmount * product.category.gstRate) / 100;
           const totalCost = baseAmount + gstAmount;
 
           return {
             ...item,
+            unit,
             totalPacks,
             totalPcs,
+            ratePerBox,
             ratePerPack,
             ratePerPcs,
             gstAmount,
@@ -134,6 +154,7 @@ class InwardService {
               packPerPiece: item.packPerPiece,
               totalPacks: item.totalPacks,
               totalPcs: item.totalPcs,
+              unit: item.unit,
               ratePerBox: item.ratePerBox,
               ratePerPack: item.ratePerPack,
               ratePerPcs: item.ratePerPcs,
@@ -229,13 +250,31 @@ class InwardService {
 
           const totalPacks = item.boxes * item.packPerBox;
           const totalPcs = totalPacks * item.packPerPiece;
-          const ratePerPack = item.ratePerBox / item.packPerBox;
-          const ratePerPcs = ratePerPack / item.packPerPiece;
-          const baseAmount = item.boxes * item.ratePerBox;
+          
+          let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
+          const unit = item.unit || 'box';
+          
+          if (unit === 'box') {
+            ratePerBox = item.ratePerBox;
+            ratePerPack = ratePerBox / item.packPerBox;
+            ratePerPcs = ratePerPack / item.packPerPiece;
+            baseAmount = item.boxes * ratePerBox;
+          } else if (unit === 'pack') {
+            ratePerPack = item.ratePerBox;
+            ratePerBox = ratePerPack * item.packPerBox;
+            ratePerPcs = ratePerPack / item.packPerPiece;
+            baseAmount = totalPacks * ratePerPack;
+          } else {
+            ratePerPcs = item.ratePerBox;
+            ratePerPack = ratePerPcs * item.packPerPiece;
+            ratePerBox = ratePerPack * item.packPerBox;
+            baseAmount = totalPcs * ratePerPcs;
+          }
+          
           const gstAmount = (baseAmount * product.category.gstRate) / 100;
           const totalCost = baseAmount + gstAmount;
 
-          return { ...item, totalPacks, totalPcs, ratePerPack, ratePerPcs, gstAmount, totalCost };
+          return { ...item, unit, totalPacks, totalPcs, ratePerBox, ratePerPack, ratePerPcs, gstAmount, totalCost };
         })
       );
 
@@ -264,6 +303,7 @@ class InwardService {
               packPerPiece: item.packPerPiece,
               totalPacks: item.totalPacks,
               totalPcs: item.totalPcs,
+              unit: item.unit,
               ratePerBox: item.ratePerBox,
               ratePerPack: item.ratePerPack,
               ratePerPcs: item.ratePerPcs,
@@ -310,7 +350,6 @@ class InwardService {
         throw new Error('Invoice not found');
       }
 
-      // Check if any stock from this invoice has been sold
       for (const item of invoice.items) {
         const stockBatches = await tx.stockBatch.findMany({
           where: {
@@ -330,7 +369,6 @@ class InwardService {
         }
       }
 
-      // Delete all stock batches related to this invoice
       await tx.stockBatch.deleteMany({
         where: {
           productId: { in: invoice.items.map(item => item.productId) },
@@ -340,7 +378,6 @@ class InwardService {
         },
       });
 
-      // Delete stock movements
       await tx.stockMovement.deleteMany({
         where: {
           referenceId: parseInt(id),
@@ -348,7 +385,6 @@ class InwardService {
         },
       });
 
-      // Delete the invoice (cascade will delete items)
       await tx.inwardInvoice.delete({
         where: { id: parseInt(id) },
       });
