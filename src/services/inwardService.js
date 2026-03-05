@@ -59,10 +59,20 @@ class InwardService {
         vendor: true,
         location: true,
         items: {
+          where: { parentItemId: null },
           include: {
             product: {
               include: {
                 category: true,
+              },
+            },
+            subItems: {
+              include: {
+                product: {
+                  include: {
+                    category: true,
+                  },
+                },
               },
             },
           },
@@ -165,6 +175,89 @@ class InwardService {
         )
       );
 
+      // Create sub-items and calculate their total
+      let subItemsTotalCost = 0;
+      
+      for (let i = 0; i < processedItems.length; i++) {
+        const item = processedItems[i];
+        const parentItem = items[i];
+        
+        if (item.subItems && item.subItems.length > 0) {
+          for (const subItem of item.subItems) {
+            const subTotalPacks = subItem.boxes * subItem.packPerBox;
+            const subTotalPcs = subTotalPacks * subItem.packPerPiece;
+            
+            let subRatePerBox, subRatePerPack, subRatePerPcs, subBaseAmount;
+            const subUnit = subItem.unit || 'box';
+            
+            if (subUnit === 'box') {
+              subRatePerBox = subItem.ratePerBox;
+              subRatePerPack = subRatePerBox / subItem.packPerBox;
+              subRatePerPcs = subRatePerPack / subItem.packPerPiece;
+              subBaseAmount = subItem.boxes * subRatePerBox;
+            } else if (subUnit === 'pack') {
+              subRatePerPack = subItem.ratePerBox;
+              subRatePerBox = subRatePerPack * subItem.packPerBox;
+              subRatePerPcs = subRatePerPack / subItem.packPerPiece;
+              subBaseAmount = subTotalPacks * subRatePerPack;
+            } else {
+              subRatePerPcs = subItem.ratePerBox;
+              subRatePerPack = subRatePerPcs * subItem.packPerPiece;
+              subRatePerBox = subRatePerPack * subItem.packPerBox;
+              subBaseAmount = subTotalPcs * subRatePerPcs;
+            }
+            
+            const subProduct = await tx.product.findUnique({
+              where: { id: parseInt(item.productId) },
+              include: { category: true },
+            });
+            
+            const subGstAmount = (subBaseAmount * subProduct.category.gstRate) / 100;
+            const subTotalCost = subBaseAmount + subGstAmount;
+            subItemsTotalCost += subTotalCost;
+
+            const createdSubItem = await tx.inwardItem.create({
+              data: {
+                inwardInvoiceId: invoice.id,
+                productId: parseInt(item.productId),
+                parentItemId: parentItem.id,
+                boxes: subItem.boxes,
+                packPerBox: subItem.packPerBox,
+                packPerPiece: subItem.packPerPiece,
+                totalPacks: subTotalPacks,
+                totalPcs: subTotalPcs,
+                unit: subUnit,
+                ratePerBox: subRatePerBox,
+                ratePerPack: subRatePerPack,
+                ratePerPcs: subRatePerPcs,
+                gstAmount: subGstAmount,
+                totalCost: subTotalCost,
+              },
+            });
+
+            await InventoryService.createStockBatch(createdSubItem, invoice);
+            await tx.stockMovement.create({
+              data: {
+                type: 'inward',
+                referenceId: invoice.id,
+                productId: parseInt(item.productId),
+                locationId: parseInt(data.locationId),
+                quantity: subTotalPcs,
+                movementDate: new Date(data.date),
+              },
+            });
+          }
+        }
+      }
+
+      // Update invoice total cost with sub-items
+      if (subItemsTotalCost > 0) {
+        await tx.inwardInvoice.update({
+          where: { id: invoice.id },
+          data: { totalCost: totalInvoiceCost + subItemsTotalCost },
+        });
+      }
+
       await Promise.all(
         items.map((item) => InventoryService.createStockBatch(item, invoice))
       );
@@ -190,10 +283,20 @@ class InwardService {
           vendor: true,
           location: true,
           items: {
+            where: { parentItemId: null },
             include: {
               product: {
                 include: {
                   category: true,
+                },
+              },
+              subItems: {
+                include: {
+                  product: {
+                    include: {
+                      category: true,
+                    },
+                  },
                 },
               },
             },
@@ -314,6 +417,89 @@ class InwardService {
         )
       );
 
+      // Create sub-items and calculate their total
+      let subItemsTotalCost = 0;
+      
+      for (let i = 0; i < processedItems.length; i++) {
+        const item = processedItems[i];
+        const parentItem = items[i];
+        
+        if (item.subItems && item.subItems.length > 0) {
+          for (const subItem of item.subItems) {
+            const subTotalPacks = subItem.boxes * subItem.packPerBox;
+            const subTotalPcs = subTotalPacks * subItem.packPerPiece;
+            
+            let subRatePerBox, subRatePerPack, subRatePerPcs, subBaseAmount;
+            const subUnit = subItem.unit || 'box';
+            
+            if (subUnit === 'box') {
+              subRatePerBox = subItem.ratePerBox;
+              subRatePerPack = subRatePerBox / subItem.packPerBox;
+              subRatePerPcs = subRatePerPack / subItem.packPerPiece;
+              subBaseAmount = subItem.boxes * subRatePerBox;
+            } else if (subUnit === 'pack') {
+              subRatePerPack = subItem.ratePerBox;
+              subRatePerBox = subRatePerPack * subItem.packPerBox;
+              subRatePerPcs = subRatePerPack / subItem.packPerPiece;
+              subBaseAmount = subTotalPacks * subRatePerPack;
+            } else {
+              subRatePerPcs = subItem.ratePerBox;
+              subRatePerPack = subRatePerPcs * subItem.packPerPiece;
+              subRatePerBox = subRatePerPack * subItem.packPerBox;
+              subBaseAmount = subTotalPcs * subRatePerPcs;
+            }
+            
+            const subProduct = await tx.product.findUnique({
+              where: { id: parseInt(item.productId) },
+              include: { category: true },
+            });
+            
+            const subGstAmount = (subBaseAmount * subProduct.category.gstRate) / 100;
+            const subTotalCost = subBaseAmount + subGstAmount;
+            subItemsTotalCost += subTotalCost;
+
+            const createdSubItem = await tx.inwardItem.create({
+              data: {
+                inwardInvoiceId: invoice.id,
+                productId: parseInt(item.productId),
+                parentItemId: parentItem.id,
+                boxes: subItem.boxes,
+                packPerBox: subItem.packPerBox,
+                packPerPiece: subItem.packPerPiece,
+                totalPacks: subTotalPacks,
+                totalPcs: subTotalPcs,
+                unit: subUnit,
+                ratePerBox: subRatePerBox,
+                ratePerPack: subRatePerPack,
+                ratePerPcs: subRatePerPcs,
+                gstAmount: subGstAmount,
+                totalCost: subTotalCost,
+              },
+            });
+
+            await InventoryService.createStockBatch(createdSubItem, invoice);
+            await tx.stockMovement.create({
+              data: {
+                type: 'inward',
+                referenceId: invoice.id,
+                productId: parseInt(item.productId),
+                locationId: parseInt(data.locationId),
+                quantity: subTotalPcs,
+                movementDate: new Date(data.date),
+              },
+            });
+          }
+        }
+      }
+
+      // Update invoice total cost with sub-items
+      if (subItemsTotalCost > 0) {
+        await tx.inwardInvoice.update({
+          where: { id: invoice.id },
+          data: { totalCost: totalInvoiceCost + subItemsTotalCost },
+        });
+      }
+
       for (const item of items) {
         await InventoryService.createStockBatch(item, invoice);
         await tx.stockMovement.create({
@@ -333,7 +519,17 @@ class InwardService {
         include: {
           vendor: true,
           location: true,
-          items: { include: { product: { include: { category: true } } } },
+          items: {
+            where: { parentItemId: null },
+            include: {
+              product: { include: { category: true } },
+              subItems: {
+                include: {
+                  product: { include: { category: true } },
+                },
+              },
+            },
+          },
         },
       });
     }, { timeout: 10000 });
