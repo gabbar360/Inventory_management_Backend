@@ -140,6 +140,7 @@ model InwardItem {
   packPerPiece    Int    @map("pack_per_piece")
   totalPacks      Int    @map("total_packs")
   totalPcs        Int    @map("total_pcs")
+  unit            String @default("box") // 'box', 'pack', or 'piece'
   ratePerBox      Float  @map("rate_per_box")
   ratePerPack     Float  @map("rate_per_pack")
   ratePerPcs      Float  @map("rate_per_pcs")
