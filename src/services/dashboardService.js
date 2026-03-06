@@ -40,12 +40,8 @@ class DashboardService {
       return sum + (batch.remainingPcs * batch.costPerPcs);
     }, 0);
 
-    // Calculate total revenue
-    const outwardInvoices = await prisma.outwardInvoice.findMany({
-      where: {
-        date: { gte: startDate },
-      },
-    });
+    // Calculate total revenue - removed date filter to include all invoices
+    const outwardInvoices = await prisma.outwardInvoice.findMany();
 
     const previousOutwardInvoices = await prisma.outwardInvoice.findMany({
       where: {
@@ -56,12 +52,8 @@ class DashboardService {
     const totalRevenue = outwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
     const previousRevenue = previousOutwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
 
-    // Calculate total purchase
-    const inwardInvoices = await prisma.inwardInvoice.findMany({
-      where: {
-        date: { gte: startDate },
-      },
-    });
+    // Calculate total purchase - removed date filter to include all invoices
+    const inwardInvoices = await prisma.inwardInvoice.findMany();
 
     const previousInwardInvoices = await prisma.inwardInvoice.findMany({
       where: {
@@ -81,13 +73,8 @@ class DashboardService {
     const previousInwardExpenses = previousInwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
     const previousExpenses = previousOutwardExpenses + previousInwardExpenses;
 
-    // Calculate gross profit (Revenue - Cost of Goods Sold)
+    // Calculate gross profit (Revenue - Cost of Goods Sold) - removed date filter
     const outwardItems = await prisma.outwardItem.findMany({
-      where: {
-        outwardInvoice: {
-          date: { gte: startDate },
-        },
-      },
       include: {
         stockBatch: true,
       },
