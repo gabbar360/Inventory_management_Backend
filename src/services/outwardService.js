@@ -48,6 +48,7 @@ class OutwardService {
                 category: {
                   select: {
                     name: true,
+                    gstRate: true,
                   },
                 },
               },
@@ -105,6 +106,15 @@ class OutwardService {
 
   static async create(data) {
     return await prisma.$transaction(async (tx) => {
+      // Check for duplicate invoice number
+      const existingInvoice = await tx.outwardInvoice.findFirst({
+        where: { invoiceNo: data.invoiceNo },
+      });
+
+      if (existingInvoice) {
+        throw new Error('Invoice number already exists');
+      }
+
       const processedItems = data.items.map((item) => ({
         ...item,
         totalCost: item.quantity * item.ratePerUnit,
@@ -232,6 +242,18 @@ class OutwardService {
 
       if (!existingInvoice) {
         throw new Error('Invoice not found');
+      }
+
+      // Check for duplicate invoice number (excluding current invoice)
+      const duplicateInvoice = await tx.outwardInvoice.findFirst({
+        where: {
+          invoiceNo: data.invoiceNo,
+          id: { not: parseInt(id) },
+        },
+      });
+
+      if (duplicateInvoice) {
+        throw new Error('Invoice number already exists');
       }
 
       for (const item of existingInvoice.items) {
