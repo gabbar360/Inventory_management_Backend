@@ -61,6 +61,11 @@ class OutwardService {
                   },
                 },
                 inwardDate: true,
+                costPerBox: true,
+                costPerPack: true,
+                costPerPcs: true,
+                packPerBox: true,
+                packPerPiece: true,
               },
             },
           },
@@ -68,8 +73,45 @@ class OutwardService {
       },
     });
 
+    // Calculate additional fields for each invoice
+    const enrichedInvoices = invoices.map(invoice => {
+      let totalQty = 0;
+      let totalBoxes = 0;
+      let totalCOGS = 0;
+
+      invoice.items?.forEach(item => {
+        totalQty += item.quantity;
+        
+        // Convert all quantities to boxes
+        if (item.saleUnit === 'box') {
+          totalBoxes += item.quantity;
+        } else if (item.saleUnit === 'pack') {
+          totalBoxes += item.quantity / (item.stockBatch?.packPerBox || 1);
+        } else {
+          totalBoxes += item.quantity / ((item.stockBatch?.packPerBox || 1) * (item.stockBatch?.packPerPiece || 1));
+        }
+
+        // Calculate COGS
+        const unitCost = item.saleUnit === 'box' ? item.stockBatch?.costPerBox : 
+                        item.saleUnit === 'pack' ? (item.stockBatch?.costPerPack || item.stockBatch?.costPerBox / (item.stockBatch?.packPerBox || 1)) : 
+                        item.stockBatch?.costPerPcs;
+        totalCOGS += (unitCost || 0) * item.quantity;
+      });
+
+      const grossProfit = invoice.totalCost - totalCOGS - invoice.expense;
+      const grossProfitMargin = invoice.totalCost > 0 ? (grossProfit / invoice.totalCost) * 100 : 0;
+
+      return {
+        ...invoice,
+        totalQty,
+        totalBoxes: Math.round(totalBoxes * 100) / 100,
+        grossProfit: Math.round(grossProfit * 100) / 100,
+        grossProfitMargin: Math.round(grossProfitMargin * 100) / 100,
+      };
+    });
+
     return {
-      invoices,
+      invoices: enrichedInvoices,
       pagination: calculatePagination(page, limit, total),
     };
   }

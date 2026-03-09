@@ -359,6 +359,10 @@ class BulkUploadController {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(worksheet);
 
+      if (!data || data.length === 0) {
+        return sendError(res, 400, 'Excel file is empty or invalid');
+      }
+
       const results = {
         success: 0,
         failed: 0,
@@ -370,31 +374,38 @@ class BulkUploadController {
           const row = data[i];
           
           const vendorName = row.vendorName || row.VendorName || row.vendor_name;
+          if (!vendorName) throw new Error('Vendor name is required');
+          
           const vendor = await prisma.vendor.findFirst({
-            where: { name: vendorName },
+            where: { name: { equals: vendorName.toString().trim(), mode: 'insensitive' } },
           });
           if (!vendor) throw new Error(`Vendor '${vendorName}' not found`);
 
           const locationName = row.locationName || row.LocationName || row.location_name;
+          if (!locationName) throw new Error('Location name is required');
+          
           const location = await prisma.location.findFirst({
-            where: { name: locationName },
+            where: { name: { equals: locationName.toString().trim(), mode: 'insensitive' } },
           });
           if (!location) throw new Error(`Location '${locationName}' not found`);
 
           const productName = row.productName || row.ProductName || row.product_name;
+          if (!productName) throw new Error('Product name is required');
+          
           const product = await prisma.product.findFirst({
-            where: { name: productName },
+            where: { name: { equals: productName.toString().trim(), mode: 'insensitive' } },
             include: { category: true },
           });
           if (!product) throw new Error(`Product '${productName}' not found`);
 
           const invoiceNo = row.invoiceNo || row.InvoiceNo || row.invoice_no;
-          const dateValue = row.date || row.Date || row.DATE;
-          let date;
+          if (!invoiceNo) throw new Error('Invoice number is required');
           
-          // Handle Excel date serial numbers and various date formats
+          const dateValue = row.date || row.Date || row.DATE;
+          if (!dateValue) throw new Error('Date is required');
+          
+          let date;
           if (typeof dateValue === 'number') {
-            // Excel serial date number
             date = new Date((dateValue - 25569) * 86400 * 1000);
           } else if (typeof dateValue === 'string') {
             date = new Date(dateValue);
@@ -402,7 +413,6 @@ class BulkUploadController {
             date = new Date(dateValue);
           }
           
-          // Validate date
           if (isNaN(date.getTime())) {
             throw new Error(`Invalid date format: ${dateValue}`);
           }
@@ -412,9 +422,10 @@ class BulkUploadController {
           const packPerPiece = parseInt(row.packPerPiece || row.PackPerPiece || row.pack_per_piece || 1);
           const ratePerBox = parseFloat(row.ratePerBox || row.RatePerBox || row.rate_per_box);
 
-          if (!invoiceNo || !boxes || !packPerBox || !ratePerBox) {
-            throw new Error('Missing required fields: invoiceNo, boxes, packPerBox, ratePerBox');
-          }
+          if (isNaN(boxes) || boxes <= 0) throw new Error('Boxes must be a positive number');
+          if (isNaN(packPerBox) || packPerBox <= 0) throw new Error('Pack per box must be a positive number');
+          if (isNaN(packPerPiece) || packPerPiece <= 0) throw new Error('Pack per piece must be a positive number');
+          if (isNaN(ratePerBox) || ratePerBox < 0) throw new Error('Rate per box must be a non-negative number');
 
           const totalPacks = boxes * packPerBox;
           const totalPcs = totalPacks * packPerPiece;
@@ -425,35 +436,20 @@ class BulkUploadController {
           const totalCost = baseAmount + gstAmount;
 
           let invoice = await prisma.inwardInvoice.findFirst({
-            where: { invoiceNo, vendorId: vendor.id },
+            where: { invoiceNo: invoiceNo.toString().trim(), vendorId: vendor.id },
           });
 
           if (!invoice) {
             invoice = await prisma.inwardInvoice.create({
               data: {
-                invoiceNo,
+                invoiceNo: invoiceNo.toString().trim(),
                 date,
                 vendorId: vendor.id,
                 locationId: location.id,
                 totalCost: 0,
+                expense: 0,
               },
             });
-          }
-
-          // Check for duplicate inward item
-          const existingItem = await prisma.inwardItem.findFirst({
-            where: {
-              inwardInvoiceId: invoice.id,
-              productId: product.id,
-              boxes,
-              packPerBox,
-              packPerPiece,
-              ratePerBox,
-            },
-          });
-
-          if (existingItem) {
-            throw new Error(`Duplicate item: Product '${productName}' with same specifications already exists in invoice '${invoiceNo}'`);
           }
 
           await prisma.inwardItem.create({
@@ -470,6 +466,7 @@ class BulkUploadController {
               ratePerPcs,
               gstAmount,
               totalCost,
+              unit: 'box',
             },
           });
 
@@ -507,7 +504,7 @@ class BulkUploadController {
         } catch (error) {
           results.failed++;
           results.errors.push({
-            row: i + 1,
+            row: i + 2,
             error: error.message,
             data: data[i],
           });
@@ -530,6 +527,10 @@ class BulkUploadController {
       const worksheet = workbook.Sheets[workbook.SheetNames[0]];
       const data = XLSX.utils.sheet_to_json(worksheet);
 
+      if (!data || data.length === 0) {
+        return sendError(res, 400, 'Excel file is empty or invalid');
+      }
+
       const results = {
         success: 0,
         failed: 0,
@@ -541,20 +542,27 @@ class BulkUploadController {
           const row = data[i];
           
           const customerName = row.customerName || row.CustomerName || row.customer_name;
+          if (!customerName) throw new Error('Customer name is required');
+          
           const customer = await prisma.customer.findFirst({
-            where: { name: customerName },
+            where: { name: { equals: customerName.toString().trim(), mode: 'insensitive' } },
           });
           if (!customer) throw new Error(`Customer '${customerName}' not found`);
 
           const locationName = row.locationName || row.LocationName || row.location_name;
+          if (!locationName) throw new Error('Location name is required');
+          
           const location = await prisma.location.findFirst({
-            where: { name: locationName },
+            where: { name: { equals: locationName.toString().trim(), mode: 'insensitive' } },
           });
           if (!location) throw new Error(`Location '${locationName}' not found`);
 
           const productName = row.productName || row.ProductName || row.product_name;
+          if (!productName) throw new Error('Product name is required');
+          
           const product = await prisma.product.findFirst({
-            where: { name: productName },
+            where: { name: { equals: productName.toString().trim(), mode: 'insensitive' } },
+            include: { category: true },
           });
           if (!product) throw new Error(`Product '${productName}' not found`);
 
@@ -572,12 +580,13 @@ class BulkUploadController {
           if (!stockBatch) throw new Error(`No stock available for product '${productName}' at location '${locationName}'`);
 
           const invoiceNo = row.invoiceNo || row.InvoiceNo || row.invoice_no;
-          const dateValue = row.date || row.Date || row.DATE;
-          let date;
+          if (!invoiceNo) throw new Error('Invoice number is required');
           
-          // Handle Excel date serial numbers and various date formats
+          const dateValue = row.date || row.Date || row.DATE;
+          if (!dateValue) throw new Error('Date is required');
+          
+          let date;
           if (typeof dateValue === 'number') {
-            // Excel serial date number
             date = new Date((dateValue - 25569) * 86400 * 1000);
           } else if (typeof dateValue === 'string') {
             date = new Date(dateValue);
@@ -585,35 +594,46 @@ class BulkUploadController {
             date = new Date(dateValue);
           }
           
-          // Validate date
           if (isNaN(date.getTime())) {
             throw new Error(`Invalid date format: ${dateValue}`);
           }
           
-          const saleUnit = (row.saleUnit || row.SaleUnit || row.sale_unit || 'box').toLowerCase();
+          const saleUnit = (row.saleUnit || row.SaleUnit || row.sale_unit || 'box').toString().toLowerCase().trim();
+          if (!['box', 'pack', 'piece'].includes(saleUnit)) {
+            throw new Error(`Invalid sale unit: ${saleUnit}. Must be box, pack, or piece`);
+          }
+          
           const quantity = parseInt(row.quantity || row.Quantity || row.QUANTITY);
+          if (isNaN(quantity) || quantity <= 0) throw new Error('Quantity must be a positive number');
+          
           const ratePerUnit = parseFloat(row.ratePerUnit || row.RatePerUnit || row.rate_per_unit);
-          const saleType = (row.saleType || row.SaleType || row.sale_type || 'domestic').toLowerCase();
-
-          if (!invoiceNo || !quantity || !ratePerUnit) {
-            throw new Error('Missing required fields: invoiceNo, quantity, ratePerUnit');
+          if (isNaN(ratePerUnit) || ratePerUnit < 0) throw new Error('Rate per unit must be a non-negative number');
+          
+          const saleType = (row.saleType || row.SaleType || row.sale_type || 'domestic').toString().toLowerCase().trim();
+          if (!['domestic', 'export'].includes(saleType)) {
+            throw new Error(`Invalid sale type: ${saleType}. Must be domestic or export`);
           }
 
-          const availableQuantity = saleUnit === 'box' ? stockBatch.remainingBoxes : stockBatch.remainingPcs;
+          const availableQuantity = saleUnit === 'box' ? stockBatch.remainingBoxes : 
+                                   saleUnit === 'pack' ? stockBatch.remainingPacks : 
+                                   stockBatch.remainingPcs;
           if (quantity > availableQuantity) {
-            throw new Error(`Insufficient stock. Available: ${availableQuantity}, Required: ${quantity}`);
+            throw new Error(`Insufficient stock. Available: ${availableQuantity} ${saleUnit}(s), Required: ${quantity}`);
           }
 
-          const totalCost = quantity * ratePerUnit;
+          const baseAmount = quantity * ratePerUnit;
+          const gstRate = product.category?.gstRate || 0;
+          const gstAmount = (baseAmount * gstRate) / 100;
+          const totalCost = baseAmount + gstAmount;
 
           let invoice = await prisma.outwardInvoice.findFirst({
-            where: { invoiceNo, customerId: customer.id },
+            where: { invoiceNo: invoiceNo.toString().trim(), customerId: customer.id },
           });
 
           if (!invoice) {
             invoice = await prisma.outwardInvoice.create({
               data: {
-                invoiceNo,
+                invoiceNo: invoiceNo.toString().trim(),
                 date,
                 customerId: customer.id,
                 locationId: location.id,
@@ -622,19 +642,6 @@ class BulkUploadController {
                 totalCost: 0,
               },
             });
-          }
-
-          // Check for duplicate outward item
-          const existingItem = await prisma.outwardItem.findFirst({
-            where: {
-              outwardInvoiceId: invoice.id,
-              productId: product.id,
-              saleUnit,
-            },
-          });
-
-          if (existingItem) {
-            throw new Error(`Duplicate item: Product '${productName}' with sale unit '${saleUnit}' already exists in invoice '${invoiceNo}'`);
           }
 
           await prisma.outwardItem.create({
@@ -650,13 +657,18 @@ class BulkUploadController {
           });
 
           let updatedRemainingBoxes = stockBatch.remainingBoxes;
-          let updatedRemainingPacks = stockBatch.remainingPacks;
+          let updatedRemainingPacks = stockBatch.remainingPacks || 0;
           let updatedRemainingPcs = stockBatch.remainingPcs;
 
           if (saleUnit === 'box') {
             updatedRemainingBoxes -= quantity;
             updatedRemainingPacks -= quantity * stockBatch.packPerBox;
             updatedRemainingPcs -= quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
+          } else if (saleUnit === 'pack') {
+            updatedRemainingPacks -= quantity;
+            updatedRemainingPcs -= quantity * stockBatch.packPerPiece;
+            const boxesToDeduct = Math.floor(quantity / stockBatch.packPerBox);
+            updatedRemainingBoxes -= boxesToDeduct;
           } else {
             updatedRemainingPcs -= quantity;
             const packsToDeduct = Math.floor(quantity / stockBatch.packPerPiece);
@@ -688,7 +700,7 @@ class BulkUploadController {
         } catch (error) {
           results.failed++;
           results.errors.push({
-            row: i + 1,
+            row: i + 2,
             error: error.message,
             data: data[i],
           });
@@ -751,7 +763,9 @@ class BulkUploadController {
         
         case 'inward':
           templateData = [
-            { invoiceNo: 'INW001', date: '2024-01-15', vendorName: 'Vendor 1', locationName: 'Main Warehouse', productName: 'Product 1', boxes: 10, packPerBox: 5, packPerPiece: 1, ratePerBox: 1000 },
+            { invoiceNo: 'INW001', date: '2024-01-15', vendorName: 'Vendor 1', locationName: 'Main Warehouse', productName: 'Product 1', boxes: 10, packPerBox: 5, packPerPiece: 10, ratePerBox: 1000 },
+            { invoiceNo: 'INW001', date: '2024-01-15', vendorName: 'Vendor 1', locationName: 'Main Warehouse', productName: 'Product 2', boxes: 5, packPerBox: 10, packPerPiece: 20, ratePerBox: 2000 },
+            { invoiceNo: 'INW002', date: '2024-01-16', vendorName: 'Vendor 2', locationName: 'Secondary Warehouse', productName: 'Product 1', boxes: 20, packPerBox: 8, packPerPiece: 12, ratePerBox: 1500 },
           ];
           filename = 'inward_template.xlsx';
           break;
@@ -759,7 +773,8 @@ class BulkUploadController {
         case 'outward':
           templateData = [
             { invoiceNo: 'OUT001', date: '2024-01-15', customerName: 'Customer 1', locationName: 'Main Warehouse', productName: 'Product 1', saleUnit: 'box', quantity: 2, ratePerUnit: 1200, saleType: 'domestic' },
-            { invoiceNo: 'OUT002', date: '2024-01-16', customerName: 'Customer 2', locationName: 'Main Warehouse', productName: 'Product 2', saleUnit: 'pcs', quantity: 50, ratePerUnit: 25, saleType: 'export' },
+            { invoiceNo: 'OUT001', date: '2024-01-15', customerName: 'Customer 1', locationName: 'Main Warehouse', productName: 'Product 2', saleUnit: 'pack', quantity: 50, ratePerUnit: 25, saleType: 'domestic' },
+            { invoiceNo: 'OUT002', date: '2024-01-16', customerName: 'Customer 2', locationName: 'Main Warehouse', productName: 'Product 1', saleUnit: 'piece', quantity: 100, ratePerUnit: 5, saleType: 'export' },
           ];
           filename = 'outward_template.xlsx';
           break;
@@ -860,19 +875,26 @@ class BulkUploadController {
             include: {
               inwardInvoice: {
                 include: {
-                  vendor: { select: { name: true } },
+                  vendor: { select: { name: true, code: true } },
                   location: { select: { name: true } },
                 },
               },
-              product: { select: { name: true } },
+              product: { select: { name: true, grade: true }, include: { category: { select: { gstRate: true } } } },
+            },
+            orderBy: {
+              inwardInvoice: {
+                date: 'desc',
+              },
             },
           });
           data = data.map(item => ({
             invoiceNo: item.inwardInvoice.invoiceNo,
-            date: item.inwardInvoice.date,
+            date: item.inwardInvoice.date.toISOString().split('T')[0],
             vendorName: item.inwardInvoice.vendor.name,
+            vendorCode: item.inwardInvoice.vendor.code,
             locationName: item.inwardInvoice.location.name,
             productName: item.product.name,
+            productGrade: item.product.grade || '',
             boxes: item.boxes,
             packPerBox: item.packPerBox,
             packPerPiece: item.packPerPiece,
@@ -881,6 +903,7 @@ class BulkUploadController {
             ratePerBox: item.ratePerBox,
             ratePerPack: item.ratePerPack,
             ratePerPcs: item.ratePerPcs,
+            gstRate: item.product?.category?.gstRate || 0,
             gstAmount: item.gstAmount,
             totalCost: item.totalCost,
           }));
@@ -892,25 +915,42 @@ class BulkUploadController {
             include: {
               outwardInvoice: {
                 include: {
-                  customer: { select: { name: true } },
+                  customer: { select: { name: true, code: true } },
                   location: { select: { name: true } },
                 },
               },
-              product: { select: { name: true } },
+              product: { select: { name: true, grade: true }, include: { category: { select: { gstRate: true } } } },
+            },
+            orderBy: {
+              outwardInvoice: {
+                date: 'desc',
+              },
             },
           });
-          data = data.map(item => ({
-            invoiceNo: item.outwardInvoice.invoiceNo,
-            date: item.outwardInvoice.date,
-            customerName: item.outwardInvoice.customer.name,
-            locationName: item.outwardInvoice.location.name,
-            productName: item.product.name,
-            saleUnit: item.saleUnit,
-            quantity: item.quantity,
-            ratePerUnit: item.ratePerUnit,
-            totalCost: item.totalCost,
-            saleType: item.outwardInvoice.saleType,
-          }));
+          data = data.map(item => {
+            const baseAmount = item.quantity * item.ratePerUnit;
+            const gstRate = item.product?.category?.gstRate || 0;
+            const gstAmount = (baseAmount * gstRate) / 100;
+            const totalWithGst = baseAmount + gstAmount;
+            
+            return {
+              invoiceNo: item.outwardInvoice.invoiceNo,
+              date: item.outwardInvoice.date.toISOString().split('T')[0],
+              customerName: item.outwardInvoice.customer.name,
+              customerCode: item.outwardInvoice.customer.code,
+              locationName: item.outwardInvoice.location.name,
+              productName: item.product.name,
+              productGrade: item.product.grade || '',
+              saleUnit: item.saleUnit,
+              quantity: item.quantity,
+              ratePerUnit: item.ratePerUnit,
+              baseAmount: baseAmount,
+              gstRate: gstRate,
+              gstAmount: gstAmount,
+              totalCost: totalWithGst,
+              saleType: item.outwardInvoice.saleType,
+            };
+          });
           filename = `outward_export_${new Date().toISOString().split('T')[0]}.xlsx`;
           break;
         
