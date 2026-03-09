@@ -138,7 +138,7 @@ class InventoryService {
     }
   }
 
-  static async getStockSummary(locationId) {
+  static async getStockSummary(locationId, search) {
     const where = {
       OR: [
         { remainingBoxes: { gt: 0 } },
@@ -148,6 +148,15 @@ class InventoryService {
 
     if (locationId) {
       where.locationId = parseInt(locationId);
+    }
+
+    if (search) {
+      where.product = {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { category: { name: { contains: search, mode: 'insensitive' } } },
+        ],
+      };
     }
 
     const stockBatches = await prisma.stockBatch.findMany({
