@@ -52,12 +52,13 @@ model Category {
 }
 
 model Product {
-  id         Int      @id @default(autoincrement())
-  name       String
-  grade      String?
-  categoryId Int      @map("category_id")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String
+  grade       String?
+  description String?
+  categoryId  Int      @map("category_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   category     Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   inwardItems  InwardItem[]
@@ -92,6 +93,7 @@ model Customer {
   email     String?
   phone     String?
   address   String?
+  gstNumber String?  @map("gst_number")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
