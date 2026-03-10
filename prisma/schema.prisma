@@ -234,6 +234,23 @@ model StockMovement {
   @@map("stock_movements")
 }
 
+model StockTransfer {
+  id                Int      @id @default(autoincrement())
+  transferNo        String   @unique @map("transfer_no")
+  stockBatchId      Int      @map("stock_batch_id")
+  fromLocationId    Int      @map("from_location_id")
+  toLocationId      Int      @map("to_location_id")
+  boxes             Int
+  packs             Int      @default(0)
+  pieces            Int      @default(0)
+  transferDate      DateTime @map("transfer_date")
+  remarks           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("stock_transfers")
+}
+
 model Sample {
   id              Int      @id @default(autoincrement())
   sampleNo        String   @unique @map("sample_no")
