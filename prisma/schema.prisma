@@ -63,6 +63,7 @@ model Product {
   inwardItems  InwardItem[]
   outwardItems OutwardItem[]
   stockBatches StockBatch[]
+  sampleItems  SampleItem[]
 
   @@unique([name, grade])
   @@map("products")
@@ -231,4 +232,57 @@ model StockMovement {
   createdAt     DateTime @default(now())
 
   @@map("stock_movements")
+}
+
+model StockTransfer {
+  id                Int      @id @default(autoincrement())
+  transferNo        String   @unique @map("transfer_no")
+  stockBatchId      Int      @map("stock_batch_id")
+  fromLocationId    Int      @map("from_location_id")
+  toLocationId      Int      @map("to_location_id")
+  boxes             Int
+  packs             Int      @default(0)
+  pieces            Int      @default(0)
+  transferDate      DateTime @map("transfer_date")
+  remarks           String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("stock_transfers")
+}
+
+model Sample {
+  id              Int      @id @default(autoincrement())
+  sampleNo        String   @unique @map("sample_no")
+  customerName    String   @map("customer_name")
+  customerEmail   String?  @map("customer_email")
+  customerPhone   String?  @map("customer_phone")
+  customerAddress String?  @map("customer_address")
+  sentBy          String   @map("sent_by") // Employee name who sent the sample
+  sampleType      String   @map("sample_type") // 'domestic' or 'export'
+  kitPrice        Float    @map("kit_price") @default(0)
+  trackingNumber  String?  @map("tracking_number")
+  dispatchMethod  String   @map("dispatch_method") // 'courier', 'hand_delivery', 'transport'
+  sentDate        DateTime @map("sent_date")
+  status          String   @default("pending") // 'pending', 'approved', 'rejected'
+  remarks         String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  items SampleItem[]
+
+  @@map("samples")
+}
+
+model SampleItem {
+  id        Int    @id @default(autoincrement())
+  sampleId  Int    @map("sample_id")
+  productId Int    @map("product_id")
+  quantity  Int
+  unit      String // 'box', 'pack', or 'piece'
+
+  sample  Sample  @relation(fields: [sampleId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("sample_items")
 }

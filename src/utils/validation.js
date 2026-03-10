@@ -48,6 +48,29 @@ const locationSchema = z.object({
   address: z.string().optional(),
 });
 
+// Sample schemas
+const sampleItemSchema = z.object({
+  productId: z.union([z.string(), z.number()]).transform(val => String(val)),
+  quantity: z.number().min(1, 'Quantity must be at least 1'),
+  unit: z.enum(['box', 'pack', 'piece'], { required_error: 'Unit is required' }),
+});
+
+const sampleSchema = z.object({
+  customerName: z.string().min(1, 'Customer name is required'),
+  customerEmail: z.string().email().optional().or(z.literal('')),
+  customerPhone: z.string().optional(),
+  customerAddress: z.string().optional(),
+  sentBy: z.string().min(1, 'Employee name is required'),
+  sampleType: z.enum(['domestic', 'export'], { required_error: 'Sample type is required' }),
+  kitPrice: z.number().min(0, 'Kit price must be positive'),
+  trackingNumber: z.string().optional(),
+  dispatchMethod: z.enum(['courier', 'hand_delivery', 'transport'], { required_error: 'Dispatch method is required' }),
+  sentDate: z.string().min(1, 'Sent date is required'),
+  status: z.enum(['pending', 'approved', 'rejected']).optional(),
+  remarks: z.string().optional(),
+  items: z.array(sampleItemSchema).min(1, 'At least one product is required'),
+});
+
 // Inward schemas
 const inwardItemSchema = z.object({
   productId: z.union([z.string(), z.number()]).transform(val => String(val)),
@@ -92,6 +115,7 @@ module.exports = {
   vendorSchema,
   customerSchema,
   locationSchema,
+  sampleSchema,
   inwardItemSchema,
   inwardInvoiceSchema,
   outwardItemSchema,
