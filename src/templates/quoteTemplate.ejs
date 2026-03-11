@@ -282,14 +282,21 @@
                             <% } %>
                         </div>
                         <div style="font-size: 9px; line-height: 1.3;">
-                            <div style="font-weight: bold; font-size: 11px; margin-bottom: 3px;">Vegnar Global LLP</div>
-                            <div>B-823, RK Iconic</div>
-                            <div>1st Floor Ring Road, Ayyodhya Chowk</div>
-                            <div>Lucknow - 226010</div>
-                            <div>India</div>
-                            <div>GSTIN: 24AABPV8814U2V</div>
-                            <div>Phone: +91-9336604042</div>
-                            <div>www.vegnar.com</div>
+                            <div style="font-weight: bold; font-size: 11px; margin-bottom: 3px;"><%= settings?.companyName || 'Company Name' %></div>
+                            <% if (settings?.companyAddress) { %>
+                                <% settings.companyAddress.split('\n').forEach(line => { %>
+                                    <div><%= line %></div>
+                                <% }) %>
+                            <% } %>
+                            <% if (settings?.companyGstin) { %>
+                                <div>GSTIN: <%= settings.companyGstin %></div>
+                            <% } %>
+                            <% if (settings?.companyPhone) { %>
+                                <div>Phone: <%= settings.companyPhone %></div>
+                            <% } %>
+                            <% if (settings?.companyWebsite) { %>
+                                <div><%= settings.companyWebsite %></div>
+                            <% } %>
                         </div>
                     </div>
                 </div>
@@ -456,12 +463,24 @@
         <!-- Footer Section -->
         <div class="footer-section">
             <div class="footer-left">
-                <div><strong>Beneficiary Name: Vegnar Global LLP</strong></div>
-                <div>Bank Name: Axis Bank</div>
-                <div>Account No: 920020133348</div>
-                <div>IFSC Code: UTIB0000123</div>
-                <div>Bank Address: Sitapur Circle, Raibor - 360007</div>
-                <div>Swift Code: AXISINBB</div>
+                <% if (settings?.companyName) { %>
+                    <div><strong>Beneficiary Name: <%= settings.companyName %></strong></div>
+                <% } %>
+                <% if (settings?.bankName) { %>
+                    <div>Bank Name: <%= settings.bankName %></div>
+                <% } %>
+                <% if (settings?.accountNumber) { %>
+                    <div>Account No: <%= settings.accountNumber %></div>
+                <% } %>
+                <% if (settings?.ifscCode) { %>
+                    <div>IFSC Code: <%= settings.ifscCode %></div>
+                <% } %>
+                <% if (settings?.bankAddress) { %>
+                    <div>Bank Address: <%= settings.bankAddress %></div>
+                <% } %>
+                <% if (settings?.swiftCode) { %>
+                    <div>Swift Code: <%= settings.swiftCode %></div>
+                <% } %>
             </div>
             <div class="footer-right">
                 <div style="margin-bottom: 30px;">Authorised Signature</div>

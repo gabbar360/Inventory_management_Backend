@@ -1,4 +1,5 @@
 const quoteService = require('../services/quoteService');
+const settingsService = require('../services/settingsService');
 const ejs = require('ejs');
 const puppeteer = require('puppeteer');
 const path = require('path');
@@ -145,6 +146,7 @@ const generateQuotePDF = async (req, res) => {
     console.log('PDF Generation started for quote ID:', req.params.id);
     
     const quote = await quoteService.getQuoteById(req.params.id);
+    const settings = await settingsService.getSettings();
     
     const finalTotal = quote.totalAmount + (quote.totalAmount * (quote.tax || 5) / 100) - (quote.discount || 0);
     quote.totalInWords = numberToWords(Math.floor(finalTotal));
@@ -158,7 +160,7 @@ const generateQuotePDF = async (req, res) => {
     }
     
     const templatePath = path.join(__dirname, '../templates/quoteTemplate.ejs');
-    const html = await ejs.renderFile(templatePath, { quote, logoBase64 });
+    const html = await ejs.renderFile(templatePath, { quote, logoBase64, settings });
     
     const browser = await puppeteer.launch({ 
       headless: 'new',
