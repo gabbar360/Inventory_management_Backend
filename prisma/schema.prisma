@@ -325,3 +325,22 @@ model QuoteItem {
 
   @@map("quote_items")
 }
+
+model Settings {
+  id                Int      @id @default(autoincrement())
+  companyName       String   @map("company_name")
+  companyAddress    String   @map("company_address")
+  companyPhone      String   @map("company_phone")
+  companyEmail      String   @map("company_email")
+  companyWebsite    String?  @map("company_website")
+  companyGstin      String   @map("company_gstin")
+  bankName          String   @map("bank_name")
+  accountNumber     String   @map("account_number")
+  ifscCode          String   @map("ifsc_code")
+  bankAddress       String   @map("bank_address")
+  swiftCode         String?  @map("swift_code")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("settings")
+}
