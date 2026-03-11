@@ -2,168 +2,490 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <title>Quote</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
-        .company-info { flex: 1; }
-        .quote-title { font-size: 48px; font-weight: bold; text-align: right; }
-        .quote-details { display: flex; margin: 20px 0; }
-        .quote-left, .quote-right { flex: 1; }
-        .quote-right { text-align: right; }
-        .addresses { display: flex; margin: 20px 0; }
-        .bill-to, .ship-to { flex: 1; border: 1px solid #000; padding: 10px; }
-        .ship-to { margin-left: 10px; }
-        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-        .items-table th, .items-table td { border: 1px solid #000; padding: 8px; text-align: left; }
-        .items-table th { background-color: #f0f0f0; }
-        .text-right { text-align: right; }
-        .text-center { text-align: center; }
-        .total-section { display: flex; margin-top: 20px; }
-        .total-left { flex: 1; }
-        .total-right { width: 300px; border: 1px solid #000; padding: 10px; }
-        .total-row { display: flex; justify-content: space-between; margin: 5px 0; }
-        .total-final { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; font-size: 18px; }
-        .footer { margin-top: 30px; }
-        .bank-details { margin: 20px 0; }
-        .terms { margin: 20px 0; }
-        .signature-box { border: 1px solid #000; height: 80px; text-align: center; padding: 10px; margin-top: 20px; }
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 11px;
+            color: #000;
+            background: white;
+        }
+
+        .page {
+            width: 210mm;
+            height: 297mm;
+            margin: 0;
+            padding: 12mm;
+            background: white;
+            box-sizing: border-box;
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
+            border: 1px solid #000;
+        }
+
+        .info-table td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+            font-size: 10px;
+        }
+
+        .info-label {
+            background: #f5f5f5;
+            font-weight: bold;
+            width: 15%;
+        }
+
+        .info-value {
+            background: white;
+            color: #0066cc;
+            font-weight: bold;
+            width: 35%;
+        }
+
+        .bill-to-header {
+            background: #f5f5f5;
+            border: 1px solid #000;
+            border-top: none;
+            padding: 8px 10px;
+            font-weight: bold;
+            font-size: 10px;
+        }
+
+        .bill-to-content {
+            border: 1px solid #000;
+            border-top: none;
+            padding: 12px;
+        }
+
+        .customer-row {
+            display: flex;
+            gap: 40px;
+        }
+
+        .customer-col {
+            flex: 1;
+        }
+
+        .customer-name {
+            font-weight: bold;
+            font-size: 10px;
+            margin-bottom: 4px;
+            color: #000;
+        }
+
+        .customer-details {
+            font-size: 9px;
+            line-height: 1.5;
+            color: #000;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            border: 1px solid #000;
+            font-size: 9px;
+        }
+
+        .items-table th {
+            background: #f5f5f5;
+            border: 1px solid #000;
+            padding: 6px 5px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 9px;
+        }
+
+        .items-table td {
+            border: 1px solid #000;
+            padding: 6px 5px;
+            font-size: 9px;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .item-description {
+            font-size: 8px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        .summary-section {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .summary-left {
+            flex: 1;
+        }
+
+        .summary-right {
+            width: 300px;
+        }
+
+        .amount-words {
+            border: 1px solid #000;
+            padding: 10px;
+            font-size: 9px;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+
+        .amount-words-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 9px;
+        }
+
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #000;
+        }
+
+        .summary-table td {
+            border: 1px solid #000;
+            padding: 8px 10px;
+            font-size: 9px;
+        }
+
+        .summary-label {
+            font-weight: bold;
+            width: 50%;
+        }
+
+        .summary-value {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        .notes-section {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 9px;
+            line-height: 1.5;
+        }
+
+        .notes-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 9px;
+        }
+
+        .footer-section {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+            font-size: 8px;
+        }
+
+        .footer-left {
+            flex: 1;
+            line-height: 1.6;
+        }
+
+        .footer-right {
+            width: 220px;
+            text-align: center;
+            font-size: 9px;
+        }
+
+        .signature-area {
+            height: 60px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            border-top: 1px solid #000;
+            margin-top: 25px;
+            padding-top: 5px;
+        }
+
+        .terms-section {
+            border: 1px solid #000;
+            padding: 10px;
+            margin-top: 15px;
+            font-size: 8px;
+            line-height: 1.5;
+        }
+
+        .terms-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 9px;
+        }
+
+        .terms-list {
+            margin-left: 15px;
+        }
+
+        .terms-list li {
+            margin: 2px 0;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        @media print {
+            html, body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+            }
+            .page {
+                margin: 0;
+                padding: 12mm;
+                box-shadow: none;
+                page-break-after: avoid;
+            }
+        }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <div class="header">
-        <div class="company-info">
-            <h1>Vegnar Global LLP</h1>
-            <p>B-623, RK Iconic<br>
-            150 Feet Ring Road, Ayodhya Chowk<br>
-            Rajkot Gujarat 360007<br>
-            India<br>
-            GSTIN 24ABAFV3901A1ZV<br>
-            sales@vegnar.com | +91 9998040482<br>
-            www.vegnar.com</p>
+    <div class="page">
+        <!-- Header Box -->
+        <div class="header-box" style="border: 2px solid #000; padding: 12px; margin-bottom: 15px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                <div style="flex: 1;">
+                    <div style="display: flex; gap: 12px;">
+                        <div style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <% if (logoBase64) { %>
+                                <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Vegnar Logo" style="max-width: 70px; max-height: 70px; object-fit: contain;">
+                            <% } else { %>
+                                <div style="font-size: 20px; font-weight: bold;">Vegnar</div>
+                            <% } %>
+                        </div>
+                        <div style="font-size: 9px; line-height: 1.3;">
+                            <div style="font-weight: bold; font-size: 11px; margin-bottom: 3px;">Vegnar Global LLP</div>
+                            <div>B-823, RK Iconic</div>
+                            <div>1st Floor Ring Road, Ayyodhya Chowk</div>
+                            <div>Lucknow - 226010</div>
+                            <div>India</div>
+                            <div>GSTIN: 24AABPV8814U2V</div>
+                            <div>Phone: +91-9336604042</div>
+                            <div>www.vegnar.com</div>
+                        </div>
+                    </div>
+                </div>
+                <div style="font-size: 36px; font-weight: bold; text-align: right; padding-right: 10px; line-height: 1;">Quote</div>
+            </div>
         </div>
-        <div class="quote-title">Quote</div>
-    </div>
 
-    <!-- Quote Details -->
-    <div class="quote-details">
-        <div class="quote-left">
-            <p><strong>#</strong> : <%= quote.quoteNo %></p>
-            <p><strong>Quote Date</strong> : <%= new Date(quote.quoteDate).toLocaleDateString('en-GB') %></p>
-            <p><strong>Expiry Date</strong> : <%= new Date(quote.expiryDate).toLocaleDateString('en-GB') %></p>
-        </div>
-        <div class="quote-right">
-            <p><strong>Place Of Supply</strong> : Karnataka (29)</p>
-        </div>
-    </div>
-
-    <!-- Addresses -->
-    <div class="addresses">
-        <div class="bill-to">
-            <h3>Bill To</h3>
-            <p><strong><%= quote.customer.name %></strong><br>
-            <% if (quote.customer.address) { %><%= quote.customer.address %><br><% } %>
-            <% if (quote.customer.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
-            <% if (quote.customer.email) { %>Email: <%= quote.customer.email %><br><% } %>
-            <% if (quote.customer.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %></p>
-        </div>
-        <div class="ship-to">
-            <h3>Ship To</h3>
-            <p><%= quote.customer.name %><br>
-            <% if (quote.customer.address) { %><%= quote.customer.address %><br><% } %>
-            <% if (quote.customer.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %></p>
-        </div>
-    </div>
-
-    <!-- Items Table -->
-    <table class="items-table">
-        <thead>
+        <!-- Info Table -->
+        <table class="info-table">
             <tr>
-                <th width="5%">#</th>
-                <th width="35%">Item & Description</th>
-                <th width="12%">HSN/SAC</th>
-                <th width="10%">Qty</th>
-                <th width="10%">Rate</th>
-                <th width="8%">IGST %</th>
-                <th width="10%">Amt</th>
-                <th width="10%">Amount</th>
+                <td class="info-label">Quote Date</td>
+                <td class="info-value"><%= new Date(quote.quoteDate).toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' }) %></td>
+                <td class="info-label">Place Of Supply</td>
+                <td class="info-value">Uttar Pradesh (09)</td>
             </tr>
-        </thead>
-        <tbody>
-            <% quote.items.forEach((item, index) => { %>
             <tr>
-                <td class="text-center"><%= index + 1 %></td>
-                <td>
-                    <strong><%= item.product.name %></strong><br>
-                    <small><%= item.description || item.product.description || '' %></small>
-                </td>
-                <td class="text-center"><%= item.product?.category?.hsnCode || '48237010' %></td>
-                <td class="text-right"><%= item.quantity.toLocaleString() %><br><%= item.unit %></td>
-                <td class="text-right"><%= item.rate.toFixed(2) %></td>
-                <td class="text-center"><%= quote.taxRate || 5 %>%</td>
-                <td class="text-right"><%= ((item.quantity * item.rate * (quote.taxRate || 5)) / 100).toFixed(2) %></td>
-                <td class="text-right"><%= (item.quantity * item.rate).toFixed(2) %></td>
+                <td class="info-label">Expiry Date</td>
+                <td class="info-value"><%= new Date(quote.expiryDate).toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' }) %></td>
+                <td class="info-label">Quote No</td>
+                <td class="info-value"><%= quote.quoteNo %></td>
             </tr>
-            <% }); %>
-        </tbody>
-    </table>
+        </table>
 
-    <!-- Total Section -->
-    <div class="total-section">
-        <div class="total-left">
-            <p><strong>Total In Words</strong><br>
-            <em><%= quote.totalInWords %></em></p>
-            
-            <div class="bank-details">
-                <p><strong>Notes</strong><br>
-                <%= quote.notes || 'Looking forward for your business.' %></p>
-                
-                <p><strong>Beneficiary Name :</strong> Vegnar Global LLP<br>
-                <strong>Bank Name :</strong> Axis Bank<br>
-                <strong>Account Number :</strong> 925020013383048<br>
-                <strong>IFSC Code :</strong> UTIB0005420<br>
-                <strong>Bank Address :</strong> Synergy Circle, Rajkot - 360007<br>
-                <strong>Swift Code :</strong> AXISINBB087</p>
+        <!-- Bill To / Ship To Section -->
+        <div style="border: 1px solid #000; border-top: none;">
+            <div style="display: flex; border-bottom: 1px solid #000;">
+                <div style="flex: 1; border-right: 1px solid #000; padding: 8px 10px;">
+                    <div style="font-weight: bold; font-size: 10px;">BILL TO</div>
+                </div>
+                <div style="flex: 1; padding: 8px 10px;">
+                    <div style="font-weight: bold; font-size: 10px;">SHIP TO</div>
+                </div>
             </div>
-
-            <div class="terms">
-                <p><strong>Terms & Conditions</strong><br>
-                Pricing is Ex-Works @ Rajkot<br>
-                Payment Terms - 50% Advance & all outstanding before dispatch<br>
-                Production Lead time will be 25 Days from the advance receipt of the payment<br>
-                Order cancellation or refund will not entertain after production started<br>
-                Any disputes to be resolved under Rajkot jurisdiction "E&OE"</p>
+            <div style="display: flex;">
+                <div style="flex: 1; border-right: 1px solid #000; padding: 8px 10px;">
+                    <div class="customer-name"><%= quote.customer?.name || 'MANISH KUMAR KUSHWAHA' %></div>
+                    <div class="customer-details">
+                        <%= quote.customer?.address || 'KH NO-40 ASTIYA NAGAR, GANESHIPUR, DEVA ROAD CHIWAT' %><br>
+                        Lucknow<br>
+                        Lucknow<br>
+                        226010 Uttar Pradesh<br>
+                        India<br>
+                        GSTIN <%= quote.customer?.gstNumber || 'GSTIN09PK8452DZ1' %>
+                    </div>
+                </div>
+                <div style="flex: 1; padding: 8px 10px;">
+                    <div class="customer-name"><%= quote.customer?.name || 'MANISH KUMAR KUSHWAHA' %></div>
+                    <div class="customer-details">
+                        <%= quote.customer?.address || 'KH NO-40 ASTIYA NAGAR, GANESHIPUR, DEVA ROAD CHIWAT' %><br>
+                        Lucknow<br>
+                        226010 Uttar Pradesh<br>
+                        India<br>
+                        GSTIN <%= quote.customer?.gstNumber || 'GSTIN09PK8452DZ1' %>
+                    </div>
+                </div>
             </div>
         </div>
-        
-        <div class="total-right">
-            <div class="total-row">
-                <span>Sub Total</span>
-                <span>₹<%= quote.totalAmount.toFixed(2) %></span>
+
+        <!-- Items Table -->
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 35%;">Item & Description</th>
+                    <th style="width: 10%;">HSN/SAC</th>
+                    <th style="width: 8%;">Qty</th>
+                    <th style="width: 10%;">Rate</th>
+                    <th style="width: 8%;">IGST</th>
+                    <th style="width: 8%;">Amt</th>
+                    <th style="width: 12%;">Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% 
+                    let totalAmount = 0;
+                    let totalTax = 0;
+                    function formatNumber(num) {
+                        if (!num || isNaN(num)) return '0.00';
+                        return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    }
+                %>
+                <% quote.items.forEach((item, index) => { %>
+                    <% 
+                        const lineAmount = item.quantity * item.rate;
+                        const taxAmount = lineAmount * (quote.tax / 100);
+                        const totalLineAmount = lineAmount + taxAmount;
+                        totalAmount += lineAmount;
+                        totalTax += taxAmount;
+                    %>
+                    <tr>
+                        <td class="text-center"><%= index + 1 %></td>
+                        <td>
+                            <strong><%= item.product?.name || 'Product' %></strong>
+                            <% if (item.description) { %>
+                                <div class="item-description"><%= item.description %></div>
+                            <% } %>
+                        </td>
+                        <td class="text-center"><%= item.product?.category?.hsnCode || 'N/A' %></td>
+                        <td class="text-right"><%= item.quantity %></td>
+                        <td class="text-right">₹ <%= formatNumber(item.rate) %></td>
+                        <td class="text-center"><%= quote.tax %>%</td>
+                        <td class="text-right">₹ <%= formatNumber(taxAmount) %></td>
+                        <td class="text-right">₹ <%= formatNumber(totalLineAmount) %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+        <!-- Summary Section -->
+        <div class="summary-section">
+            <div class="summary-left">
+                <div class="amount-words">
+                    <div class="amount-words-title">Total in Words:</div>
+                    <% 
+                        const finalTotal = totalAmount + totalTax - quote.discount;
+                        function numberToWords(num) {
+                            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+                            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+                            
+                            if (num === 0) return 'Zero';
+                            if (num < 20) return ones[num];
+                            if (num < 100) return tens[Math.floor(num/10)] + (num%10 ? ' ' + ones[num%10] : '');
+                            if (num < 1000) return ones[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' ' + numberToWords(num%100) : '');
+                            if (num < 1000000) return numberToWords(Math.floor(num/1000)) + ' Thousand' + (num%1000 ? ' ' + numberToWords(num%1000) : '');
+                            return numberToWords(Math.floor(num/1000000)) + ' Million' + (num%1000000 ? ' ' + numberToWords(num%1000000) : '');
+                        }
+                        const amountInWords = finalTotal ? numberToWords(Math.floor(finalTotal)) + ' Rupees Only' : '';
+                    %>
+                    Indian Rupees: <strong><%= amountInWords %></strong>
+                </div>
             </div>
-            <div class="total-row">
-                <span>IGST5 (<%= quote.taxRate || 5 %>%)</span>
-                <span>₹<%= ((quote.totalAmount * (quote.taxRate || 5)) / 100).toFixed(2) %></span>
+            <div class="summary-right">
+                <table class="summary-table">
+                    <tr>
+                        <td class="summary-label">Sub Total</td>
+                        <td class="summary-value">₹ <%= formatNumber(totalAmount) %></td>
+                    </tr>
+                    <% if (quote.discount && quote.discount > 0) { %>
+                    <tr>
+                        <td class="summary-label">Discount</td>
+                        <td class="summary-value">-₹ <%= formatNumber(quote.discount) %></td>
+                    </tr>
+                    <% } %>
+                    <tr>
+                        <td class="summary-label">IGST (<%= quote.tax %>%)</td>
+                        <td class="summary-value">₹ <%= formatNumber(totalTax) %></td>
+                    </tr>
+                    <tr style="background: #f0f0f0; font-weight: bold;">
+                        <td class="summary-label">Total</td>
+                        <td class="summary-value">₹ <%= formatNumber(finalTotal) %></td>
+                    </tr>
+                </table>
             </div>
-            <% if (quote.discount > 0) { %>
-            <div class="total-row">
-                <span>Discount</span>
-                <span>-₹<%= quote.discount.toFixed(2) %></span>
+        </div>
+
+        <!-- Notes Section -->
+        <% if (quote.notes) { %>
+        <div class="notes-section">
+            <div class="notes-title">Notes:</div>
+            <div>Looking forward for your business.</div>
+        </div>
+        <% } %>
+
+        <!-- Footer Section -->
+        <div class="footer-section">
+            <div class="footer-left">
+                <div><strong>Beneficiary Name: Vegnar Global LLP</strong></div>
+                <div>Bank Name: Axis Bank</div>
+                <div>Account No: 920020133348</div>
+                <div>IFSC Code: UTIB0000123</div>
+                <div>Bank Address: Sitapur Circle, Raibor - 360007</div>
+                <div>Swift Code: AXISINBB</div>
             </div>
+            <div class="footer-right">
+                <div style="margin-bottom: 30px;">Authorised Signature</div>
+                <div class="signature-area">
+                    _________________
+                </div>
+            </div>
+        </div>
+
+        <!-- Terms Section -->
+        <div class="terms-section">
+            <div class="terms-title">Terms & Conditions:</div>
+            <% if (quote.termsAndConditions) { %>
+                <div style="white-space: pre-wrap;"><%= quote.termsAndConditions %></div>
+            <% } else { %>
+                <ul class="terms-list">
+                    <li>1. Payment Terms: 100% Advance</li>
+                    <li>2. Delivery: As per agreement</li>
+                    <li>3. This quotation is valid for 30 days from the date mentioned above</li>
+                    <li>4. Order cancellation or refund shall not be entertained after the receipt of the payment</li>
+                    <li>5. Any disputes to be resolved under Lucknow jurisdiction only</li>
+                </ul>
             <% } %>
-            <div class="total-row">
-                <span>Rounding</span>
-                <span>₹0.00</span>
-            </div>
-            <div class="total-row total-final">
-                <span>Total</span>
-                <span>₹<%= (quote.totalAmount + (quote.totalAmount * (quote.taxRate || 5) / 100) - (quote.discount || 0)).toFixed(2) %></span>
-            </div>
         </div>
-    </div>
-
-    <div class="signature-box">
-        <strong>Authorized Signature</strong>
     </div>
 </body>
 </html>

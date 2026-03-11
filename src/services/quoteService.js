@@ -23,6 +23,7 @@ const createQuote = async (data) => {
       discount: data.discount || 0,
       tax: data.tax || 0,
       notes: data.notes,
+      termsAndConditions: data.termsAndConditions,
       items: {
         create: data.items.map(item => ({
           productId: item.productId,
@@ -36,7 +37,13 @@ const createQuote = async (data) => {
     include: {
       customer: true,
       items: {
-        include: { product: true },
+        include: { 
+          product: {
+            include: {
+              category: true
+            }
+          }
+        },
       },
     },
   });
@@ -54,7 +61,13 @@ const getQuotes = async (filters = {}) => {
     include: {
       customer: true,
       items: {
-        include: { product: true },
+        include: { 
+          product: {
+            include: {
+              category: true
+            }
+          }
+        },
       },
     },
     orderBy: { createdAt: 'desc' },
@@ -93,11 +106,18 @@ const updateQuote = async (id, data) => {
       tax: data.tax,
       totalAmount: data.totalAmount,
       notes: data.notes,
+      termsAndConditions: data.termsAndConditions,
     },
     include: {
       customer: true,
       items: {
-        include: { product: true },
+        include: { 
+          product: {
+            include: {
+              category: true
+            }
+          }
+        },
       },
     },
   });
@@ -126,7 +146,13 @@ const updateQuoteItems = async (quoteId, items) => {
     include: {
       customer: true,
       items: {
-        include: { product: true },
+        include: { 
+          product: {
+            include: {
+              category: true
+            }
+          }
+        },
       },
     },
   });

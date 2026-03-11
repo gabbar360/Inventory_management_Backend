@@ -2,6 +2,7 @@ const quoteService = require('../services/quoteService');
 const ejs = require('ejs');
 const puppeteer = require('puppeteer');
 const path = require('path');
+const fs = require('fs');
 
 const numberToWords = (num) => {
   const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
@@ -57,10 +58,10 @@ const numberToWords = (num) => {
 
 const createQuote = async (req, res) => {
   try {
-    const { customerId, quoteDate, expiryDate, items, discount, tax, notes } = req.body;
+    const { customerId, quoteDate, expiryDate, items, discount, tax, notes, termsAndConditions } = req.body;
 
     if (!customerId || !quoteDate || !expiryDate || !items || items.length === 0) {
-      return res.status(400).json({ error: 'Missing required fields' });
+      return res.status(400).json({ success: false, error: 'Missing required fields' });
     }
 
     const totalAmount = items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
@@ -74,11 +75,12 @@ const createQuote = async (req, res) => {
       discount: discount || 0,
       tax: tax || 0,
       notes,
+      termsAndConditions,
     });
 
-    res.status(201).json(quote);
+    res.status(201).json({ success: true, data: quote });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -86,34 +88,42 @@ const getQuotes = async (req, res) => {
   try {
     const { customerId, status } = req.query;
     const quotes = await quoteService.getQuotes({ customerId, status });
-    res.json(quotes);
+    res.json({ success: true, data: quotes });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
 const getQuoteById = async (req, res) => {
   try {
     const quote = await quoteService.getQuoteById(req.params.id);
-    res.json(quote);
+    res.status(200).json({ success: true, data: quote });
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    res.status(404).json({ success: false, error: error.message });
   }
 };
 
 const updateQuote = async (req, res) => {
   try {
-    const { status, discount, tax, totalAmount, notes } = req.body;
-    const quote = await quoteService.updateQuote(req.params.id, {
+    const { status, discount, tax, totalAmount, notes, termsAndConditions, items } = req.body;
+    
+    let quote;
+    if (items && items.length > 0) {
+      await quoteService.updateQuoteItems(req.params.id, items);
+    }
+    
+    quote = await quoteService.updateQuote(req.params.id, {
       status,
       discount,
       tax,
       totalAmount,
       notes,
+      termsAndConditions,
     });
-    res.json(quote);
+    
+    res.json({ success: true, data: quote });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -121,12 +131,12 @@ const updateQuoteItems = async (req, res) => {
   try {
     const { items } = req.body;
     if (!items || items.length === 0) {
-      return res.status(400).json({ error: 'Items are required' });
+      return res.status(400).json({ success: false, error: 'Items are required' });
     }
     const quote = await quoteService.updateQuoteItems(req.params.id, items);
-    res.json(quote);
+    res.json({ success: true, data: quote });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
@@ -134,18 +144,22 @@ const generateQuotePDF = async (req, res) => {
   try {
     console.log('PDF Generation started for quote ID:', req.params.id);
     
-    // Get quote data
     const quote = await quoteService.getQuoteById(req.params.id);
     
-    // Add total in words
-    const finalTotal = quote.totalAmount + (quote.totalAmount * (quote.taxRate || 5) / 100) - (quote.discount || 0);
+    const finalTotal = quote.totalAmount + (quote.totalAmount * (quote.tax || 5) / 100) - (quote.discount || 0);
     quote.totalInWords = numberToWords(Math.floor(finalTotal));
     
-    // Render EJS template
-    const templatePath = path.join(__dirname, '../templates/quoteTemplate.ejs');
-    const html = await ejs.renderFile(templatePath, { quote });
+    // Convert logo to base64
+    const logoPath = path.join(__dirname, '../public/images/vegnar.webp');
+    let logoBase64 = null;
+    if (fs.existsSync(logoPath)) {
+      const logoBuffer = fs.readFileSync(logoPath);
+      logoBase64 = logoBuffer.toString('base64');
+    }
     
-    // Generate PDF using Puppeteer
+    const templatePath = path.join(__dirname, '../templates/quoteTemplate.ejs');
+    const html = await ejs.renderFile(templatePath, { quote, logoBase64 });
+    
     const browser = await puppeteer.launch({ 
       headless: 'new',
       args: ['--no-sandbox', '--disable-setuid-sandbox']
@@ -171,7 +185,6 @@ const generateQuotePDF = async (req, res) => {
     
     await browser.close();
     
-    // Set response headers for PDF
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="Quote-${quote.quoteNo}.pdf"`);
     res.setHeader('Cache-Control', 'no-cache');
@@ -180,16 +193,16 @@ const generateQuotePDF = async (req, res) => {
     
   } catch (error) {
     console.error('PDF Generation Error:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
 const deleteQuote = async (req, res) => {
   try {
     await quoteService.deleteQuote(req.params.id);
-    res.json({ message: 'Quote deleted successfully' });
+    res.json({ success: true, message: 'Quote deleted successfully' });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 };
 
