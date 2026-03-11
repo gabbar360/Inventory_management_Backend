@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding-bottom: 10px; }
+        .company-info { flex: 1; }
+        .quote-title { font-size: 48px; font-weight: bold; text-align: right; }
+        .quote-details { display: flex; margin: 20px 0; }
+        .quote-left, .quote-right { flex: 1; }
+        .quote-right { text-align: right; }
+        .addresses { display: flex; margin: 20px 0; }
+        .bill-to, .ship-to { flex: 1; border: 1px solid #000; padding: 10px; }
+        .ship-to { margin-left: 10px; }
+        .items-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+        .items-table th, .items-table td { border: 1px solid #000; padding: 8px; text-align: left; }
+        .items-table th { background-color: #f0f0f0; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        .total-section { display: flex; margin-top: 20px; }
+        .total-left { flex: 1; }
+        .total-right { width: 300px; border: 1px solid #000; padding: 10px; }
+        .total-row { display: flex; justify-content: space-between; margin: 5px 0; }
+        .total-final { border-top: 1px solid #000; padding-top: 5px; font-weight: bold; font-size: 18px; }
+        .footer { margin-top: 30px; }
+        .bank-details { margin: 20px 0; }
+        .terms { margin: 20px 0; }
+        .signature-box { border: 1px solid #000; height: 80px; text-align: center; padding: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <div class="company-info">
+            <h1>Vegnar Global LLP</h1>
+            <p>B-623, RK Iconic<br>
+            150 Feet Ring Road, Ayodhya Chowk<br>
+            Rajkot Gujarat 360007<br>
+            India<br>
+            GSTIN 24ABAFV3901A1ZV<br>
+            sales@vegnar.com | +91 9998040482<br>
+            www.vegnar.com</p>
+        </div>
+        <div class="quote-title">Quote</div>
+    </div>
+
+    <!-- Quote Details -->
+    <div class="quote-details">
+        <div class="quote-left">
+            <p><strong>#</strong> : <%= quote.quoteNo %></p>
+            <p><strong>Quote Date</strong> : <%= new Date(quote.quoteDate).toLocaleDateString('en-GB') %></p>
+            <p><strong>Expiry Date</strong> : <%= new Date(quote.expiryDate).toLocaleDateString('en-GB') %></p>
+        </div>
+        <div class="quote-right">
+            <p><strong>Place Of Supply</strong> : Karnataka (29)</p>
+        </div>
+    </div>
+
+    <!-- Addresses -->
+    <div class="addresses">
+        <div class="bill-to">
+            <h3>Bill To</h3>
+            <p><strong><%= quote.customer.name %></strong><br>
+            <% if (quote.customer.address) { %><%= quote.customer.address %><br><% } %>
+            <% if (quote.customer.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
+            <% if (quote.customer.email) { %>Email: <%= quote.customer.email %><br><% } %>
+            <% if (quote.customer.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %></p>
+        </div>
+        <div class="ship-to">
+            <h3>Ship To</h3>
+            <p><%= quote.customer.name %><br>
+            <% if (quote.customer.address) { %><%= quote.customer.address %><br><% } %>
+            <% if (quote.customer.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %></p>
+        </div>
+    </div>
+
+    <!-- Items Table -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th width="5%">#</th>
+                <th width="35%">Item & Description</th>
+                <th width="12%">HSN/SAC</th>
+                <th width="10%">Qty</th>
+                <th width="10%">Rate</th>
+                <th width="8%">IGST %</th>
+                <th width="10%">Amt</th>
+                <th width="10%">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% quote.items.forEach((item, index) => { %>
+            <tr>
+                <td class="text-center"><%= index + 1 %></td>
+                <td>
+                    <strong><%= item.product.name %></strong><br>
+                    <small><%= item.description || item.product.description || '' %></small>
+                </td>
+                <td class="text-center"><%= item.product?.category?.hsnCode || '48237010' %></td>
+                <td class="text-right"><%= item.quantity.toLocaleString() %><br><%= item.unit %></td>
+                <td class="text-right"><%= item.rate.toFixed(2) %></td>
+                <td class="text-center"><%= quote.taxRate || 5 %>%</td>
+                <td class="text-right"><%= ((item.quantity * item.rate * (quote.taxRate || 5)) / 100).toFixed(2) %></td>
+                <td class="text-right"><%= (item.quantity * item.rate).toFixed(2) %></td>
+            </tr>
+            <% }); %>
+        </tbody>
+    </table>
+
+    <!-- Total Section -->
+    <div class="total-section">
+        <div class="total-left">
+            <p><strong>Total In Words</strong><br>
+            <em><%= quote.totalInWords %></em></p>
+            
+            <div class="bank-details">
+                <p><strong>Notes</strong><br>
+                <%= quote.notes || 'Looking forward for your business.' %></p>
+                
+                <p><strong>Beneficiary Name :</strong> Vegnar Global LLP<br>
+                <strong>Bank Name :</strong> Axis Bank<br>
+                <strong>Account Number :</strong> 925020013383048<br>
+                <strong>IFSC Code :</strong> UTIB0005420<br>
+                <strong>Bank Address :</strong> Synergy Circle, Rajkot - 360007<br>
+                <strong>Swift Code :</strong> AXISINBB087</p>
+            </div>
+
+            <div class="terms">
+                <p><strong>Terms & Conditions</strong><br>
+                Pricing is Ex-Works @ Rajkot<br>
+                Payment Terms - 50% Advance & all outstanding before dispatch<br>
+                Production Lead time will be 25 Days from the advance receipt of the payment<br>
+                Order cancellation or refund will not entertain after production started<br>
+                Any disputes to be resolved under Rajkot jurisdiction "E&OE"</p>
+            </div>
+        </div>
+        
+        <div class="total-right">
+            <div class="total-row">
+                <span>Sub Total</span>
+                <span>₹<%= quote.totalAmount.toFixed(2) %></span>
+            </div>
+            <div class="total-row">
+                <span>IGST5 (<%= quote.taxRate || 5 %>%)</span>
+                <span>₹<%= ((quote.totalAmount * (quote.taxRate || 5)) / 100).toFixed(2) %></span>
+            </div>
+            <% if (quote.discount > 0) { %>
+            <div class="total-row">
+                <span>Discount</span>
+                <span>-₹<%= quote.discount.toFixed(2) %></span>
+            </div>
+            <% } %>
+            <div class="total-row">
+                <span>Rounding</span>
+                <span>₹0.00</span>
+            </div>
+            <div class="total-row total-final">
+                <span>Total</span>
+                <span>₹<%= (quote.totalAmount + (quote.totalAmount * (quote.taxRate || 5) / 100) - (quote.discount || 0)).toFixed(2) %></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="signature-box">
+        <strong>Authorized Signature</strong>
+    </div>
+</body>
+</html>

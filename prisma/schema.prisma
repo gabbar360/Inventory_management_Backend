@@ -65,6 +65,7 @@ model Product {
   outwardItems OutwardItem[]
   stockBatches StockBatch[]
   sampleItems  SampleItem[]
+  quoteItems   QuoteItem[]
 
   @@unique([name, grade])
   @@map("products")
@@ -98,6 +99,7 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   outwardInvoices OutwardInvoice[]
+  quotes          Quote[]
 
   @@map("customers")
 }
@@ -287,4 +289,39 @@ model SampleItem {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("sample_items")
+}
+
+model Quote {
+  id          Int      @id @default(autoincrement())
+  quoteNo     String   @unique @map("quote_no")
+  customerId  Int      @map("customer_id")
+  quoteDate   DateTime @map("quote_date")
+  expiryDate  DateTime @map("expiry_date")
+  status      String   @default("draft") // 'draft', 'sent', 'accepted', 'rejected', 'expired'
+  totalAmount Float    @map("total_amount")
+  discount    Float    @default(0)
+  tax         Float    @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    QuoteItem[]
+
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id        Int    @id @default(autoincrement())
+  quoteId   Int    @map("quote_id")
+  productId Int    @map("product_id")
+  quantity  Int
+  unit      String // 'box', 'pack', or 'piece'
+  rate      Float
+  amount    Float
+
+  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("quote_items")
 }
