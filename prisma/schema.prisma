@@ -52,18 +52,20 @@ model Category {
 }
 
 model Product {
-  id         Int      @id @default(autoincrement())
-  name       String
-  grade      String?
-  categoryId Int      @map("category_id")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  name        String
+  grade       String?
+  description String?
+  categoryId  Int      @map("category_id")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   category     Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   inwardItems  InwardItem[]
   outwardItems OutwardItem[]
   stockBatches StockBatch[]
   sampleItems  SampleItem[]
+  quoteItems   QuoteItem[]
 
   @@unique([name, grade])
   @@map("products")
@@ -92,10 +94,12 @@ model Customer {
   email     String?
   phone     String?
   address   String?
+  gstNumber String?  @map("gst_number")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   outwardInvoices OutwardInvoice[]
+  quotes          Quote[]
 
   @@map("customers")
 }
@@ -285,4 +289,59 @@ model SampleItem {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("sample_items")
+}
+
+model Quote {
+  id                   Int      @id @default(autoincrement())
+  quoteNo              String   @unique @map("quote_no")
+  customerId           Int      @map("customer_id")
+  quoteDate            DateTime @map("quote_date")
+  expiryDate           DateTime @map("expiry_date")
+  status               String   @default("draft") // 'draft', 'sent', 'accepted', 'rejected', 'expired'
+  totalAmount          Float    @map("total_amount")
+  discount             Float    @default(0)
+  tax                  Float    @default(0)
+  notes                String?
+  termsAndConditions   String?  @map("terms_and_conditions")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  customer Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items    QuoteItem[]
+
+  @@map("quotes")
+}
+
+model QuoteItem {
+  id        Int    @id @default(autoincrement())
+  quoteId   Int    @map("quote_id")
+  productId Int    @map("product_id")
+  quantity  Int
+  unit      String // 'box', 'pack', or 'piece'
+  rate      Float
+  amount    Float
+
+  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("quote_items")
+}
+
+model Settings {
+  id                Int      @id @default(autoincrement())
+  companyName       String   @map("company_name")
+  companyAddress    String   @map("company_address")
+  companyPhone      String   @map("company_phone")
+  companyEmail      String   @map("company_email")
+  companyWebsite    String?  @map("company_website")
+  companyGstin      String   @map("company_gstin")
+  bankName          String   @map("bank_name")
+  accountNumber     String   @map("account_number")
+  ifscCode          String   @map("ifsc_code")
+  bankAddress       String   @map("bank_address")
+  swiftCode         String?  @map("swift_code")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("settings")
 }
