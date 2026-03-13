@@ -39,11 +39,16 @@
             padding: 8mm 10mm;
             background: white;
             box-sizing: border-box;
+            page-break-after: always;
+        }
+
+        .page:last-child {
+            page-break-after: avoid;
         }
 
         /* ===== OUTER BORDER ===== */
         .main-container {
-            border: 3px double #000;
+            border: 2px solid #000;
             width: 100%;
         }
 
@@ -307,7 +312,7 @@
         }
 
         .items-table .data-row td {
-            border-bottom: none;
+            border-bottom: 1px solid #000;
         }
 
         .items-table .last-data-row td {
@@ -708,24 +713,6 @@
                             <td class="col-total"><%= formatNumber(lineTotal) %></td>
                         </tr>
                     <% }) %>
-
-                    <!-- Empty rows to fill space (like the reference spreadsheet) -->
-                    <% const minRows = 15; %>
-                    <% for (let i = quote.items.length; i < minRows; i++) { %>
-                        <tr class="data-row<%= i === minRows - 1 ? ' last-data-row' : '' %>">
-                            <td class="col-sno">&nbsp;</td>
-                            <td class="col-desc">&nbsp;</td>
-                            <td class="col-hsn">&nbsp;</td>
-                            <td class="col-uom">&nbsp;</td>
-                            <td class="col-qty">&nbsp;</td>
-                            <td class="col-rate">&nbsp;</td>
-                            <td class="col-cgst-rate">&nbsp;</td>
-                            <td class="col-cgst-amt">&nbsp;</td>
-                            <td class="col-sgst-rate">&nbsp;</td>
-                            <td class="col-sgst-amt">&nbsp;</td>
-                            <td class="col-total">&nbsp;</td>
-                        </tr>
-                    <% } %>
 
                     <!-- TOTAL ROW -->
                     <tr class="total-row">
