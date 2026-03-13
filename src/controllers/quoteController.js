@@ -106,7 +106,7 @@ const getQuoteById = async (req, res) => {
 
 const updateQuote = async (req, res) => {
   try {
-    const { status, discount, tax, totalAmount, notes, termsAndConditions, items } = req.body;
+    const { customerId, quoteDate, expiryDate, status, discount, tax, totalAmount, notes, termsAndConditions, items } = req.body;
     
     let quote;
     if (items && items.length > 0) {
@@ -114,6 +114,9 @@ const updateQuote = async (req, res) => {
     }
     
     quote = await quoteService.updateQuote(req.params.id, {
+      customerId,
+      quoteDate,
+      expiryDate,
       status,
       discount,
       tax,
@@ -169,7 +172,7 @@ const generateQuotePDF = async (req, res) => {
     const page = await browser.newPage();
     
     await page.setContent(html, { 
-      waitUntil: 'domcontentloaded',
+      waitUntil: 'networkidle0',
       timeout: 30000
     });
     

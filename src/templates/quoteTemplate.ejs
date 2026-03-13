@@ -2,11 +2,17 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Quote</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Quote - <%= quote.quoteNo %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Aldrich&display=swap" rel="stylesheet">
     <style>
+
         * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         html, body {
@@ -17,235 +23,454 @@
         }
 
         body {
-            font-family: Arial, sans-serif;
-            font-size: 11px;
+            font-family: "Aldrich", sans-serif;
+            font-weight: 400;
+  font-style: normal;
+            font-size: 11pt;
             color: #000;
             background: white;
+
         }
 
         .page {
             width: 210mm;
-            height: 297mm;
-            margin: 0;
-            padding: 12mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 8mm 10mm;
             background: white;
             box-sizing: border-box;
         }
 
-        .info-table {
+        /* ===== OUTER BORDER ===== */
+        .main-container {
+            border: 3px double #000;
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 0;
-            border: 1px solid #000;
         }
 
-        .info-table td {
-            border: 1px solid #000;
+        /* ===== HEADER SECTION ===== */
+        .header-section {
+            display: flex;
+            align-items: stretch;
+            border-bottom: 1px solid #000;
+        }
+
+        .header-logo-area {
+            width: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+
+        .header-logo-area img {
+            max-width: 100px;
+            max-height: 80px;
+            object-fit: contain;
+        }
+
+        .header-company-area {
+            flex: 1;
             padding: 8px 10px;
-            font-size: 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .company-name {
+            font-family: 'Aldrich', sans-serif;
+            font-size: 16pt;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .company-subtitle {
+            font-family: "Aldrich", sans-serif;
+            font-size: 12pt;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .company-address {
+            font-family: "Aldrich", sans-serif;
+            font-size: 12pt;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .company-contact {
+            font-family: "Aldrich", sans-serif;
+            font-size: 12pt;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .header-info-area {
+            width: 200px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 11pt;
+            font-weight: bold;
+        }
+
+        /* ===== QUOTE TITLE ===== */
+        .quote-title-row {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding: 8px 0;
+        }
+
+        .quote-title-row h1 {
+            font-family: "Aldrich", sans-serif;
+            font-size: 24pt;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        /* ===== INFO ROWS ===== */
+        .info-row {
+            display: flex;
+            border-bottom: 1px solid #000;
+        }
+
+        .info-row .left-section {
+            flex: 1;
+            display: flex;
+            border-right: 1px solid #000;
+        }
+
+        .info-row .right-section {
+            flex: 1;
+            display: flex;
         }
 
         .info-label {
-            background: #f5f5f5;
             font-weight: bold;
-            width: 15%;
+            padding: 4px 6px;
+            font-size: 11pt;
+            white-space: nowrap;
         }
 
         .info-value {
-            background: white;
-            color: #0066cc;
-            font-weight: bold;
-            width: 35%;
+            padding: 4px 6px;
+            font-size: 11pt;
         }
 
-        .bill-to-header {
-            background: #f5f5f5;
-            border: 1px solid #000;
-            border-top: none;
-            padding: 8px 10px;
-            font-weight: bold;
-            font-size: 10px;
+        /* ===== SEPARATOR ===== */
+        .separator {
+            border-bottom: 1px solid #000;
+            height: 8px;
         }
 
-        .bill-to-content {
-            border: 1px solid #000;
-            border-top: none;
-            padding: 12px;
-        }
-
-        .customer-row {
+        /* ===== BILL TO / SHIP TO ===== */
+        .party-header {
             display: flex;
-            gap: 40px;
+            border-bottom: 1px solid #000;
         }
 
-        .customer-col {
+        .party-header-left {
             flex: 1;
-        }
-
-        .customer-name {
+            border-right: 1px solid #000;
+            padding: 4px 6px;
             font-weight: bold;
-            font-size: 10px;
-            margin-bottom: 4px;
-            color: #000;
+            text-align: center;
+            font-size: 11pt;
         }
 
-        .customer-details {
-            font-size: 9px;
-            line-height: 1.5;
-            color: #000;
+        .party-header-right {
+            flex: 1;
+            padding: 4px 6px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 11pt;
         }
 
+        .party-details {
+            display: flex;
+            border-bottom: 1px solid #000;
+        }
+
+        .party-left {
+            flex: 1;
+            border-right: 1px solid #000;
+            padding: 4px 6px;
+        }
+
+        .party-right {
+            flex: 1;
+            padding: 4px 6px;
+        }
+
+        .party-field {
+            font-weight: bold;
+            font-size: 11pt;
+            padding: 2px 0;
+        }
+
+        .party-value {
+            font-size: 11pt;
+            padding: 2px 0;
+        }
+
+        .state-row {
+            display: flex;
+            border-bottom: 1px solid #000;
+        }
+
+        .state-row .left-half {
+            flex: 1;
+            display: flex;
+            border-right: 1px solid #000;
+        }
+
+        .state-row .right-half {
+            flex: 1;
+            display: flex;
+        }
+
+        .state-label {
+            flex: 3;
+            font-weight: bold;
+            padding: 4px 6px;
+            font-size: 11pt;
+        }
+
+        .state-code-label {
+            flex: 1;
+            font-weight: bold;
+            padding: 4px 6px;
+            font-size: 11pt;
+            border-left: 1px solid #000;
+        }
+
+        .state-code-value {
+            flex: 1;
+            padding: 4px 6px;
+            font-size: 11pt;
+        }
+
+        /* ===== ITEMS TABLE ===== */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 15px;
-            border: 1px solid #000;
-            font-size: 9px;
+            font-size: 10pt;
         }
 
         .items-table th {
-            background: #f5f5f5;
             border: 1px solid #000;
-            padding: 6px 5px;
+            border-top: none;
+            padding: 4px 3px;
             text-align: center;
             font-weight: bold;
-            font-size: 9px;
+            font-size: 10pt;
+            vertical-align: middle;
+            word-wrap: break-word;
         }
 
         .items-table td {
-            border: 1px solid #000;
-            padding: 6px 5px;
-            font-size: 9px;
+            border-right: 1px solid #000;
+            padding: 3px 4px;
+            font-size: 10pt;
+            font-family: "Aldrich", sans-serif;
+            vertical-align: middle;
         }
 
-        .text-center {
+        .items-table .col-sno { width: 5%; text-align: right; }
+        .items-table .col-desc { width: 18%; text-align: left; }
+        .items-table .col-hsn { width: 10%; text-align: center; }
+        .items-table .col-uom { width: 7%; text-align: center; }
+        .items-table .col-qty { width: 7%; text-align: center; }
+        .items-table .col-rate { width: 12%; text-align: center; }
+        .items-table .col-cgst-rate { width: 6%; text-align: right; }
+        .items-table .col-cgst-amt { width: 8%; text-align: right; }
+        .items-table .col-sgst-rate { width: 6%; text-align: right; }
+        .items-table .col-sgst-amt { width: 6%; text-align: right; }
+        .items-table .col-total { width: 15%; text-align: right; }
+
+        .items-table .total-row td {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            font-weight: bold;
+            font-family: "Aldrich", sans-serif;
+            font-size: 11pt;
+        }
+
+        .items-table .total-row .total-label {
+            font-family: "Aldrich", sans-serif;
+            font-size: 20pt;
+            font-weight: bold;
             text-align: center;
         }
 
-        .text-right {
-            text-align: right;
+        .items-table .data-row td {
+            border-bottom: none;
         }
 
-        .item-description {
-            font-size: 8px;
-            color: #666;
-            margin-top: 2px;
+        .items-table .last-data-row td {
+            border-bottom: 1px solid #000;
         }
 
+        /* ===== SUMMARY SECTION ===== */
         .summary-section {
             display: flex;
-            gap: 20px;
-            margin-top: 15px;
+            border-bottom: 1px solid #000;
         }
 
         .summary-left {
             flex: 1;
+            border-right: 1px solid #000;
         }
 
         .summary-right {
-            width: 300px;
+            width: 45%;
         }
 
-        .amount-words {
-            border: 1px solid #000;
-            padding: 10px;
-            font-size: 9px;
-            line-height: 1.5;
-            margin-bottom: 10px;
+        .summary-row {
+            display: flex;
+            border-bottom: 1px solid #000;
         }
 
-        .amount-words-title {
-            font-weight: bold;
-            margin-bottom: 4px;
-            font-size: 9px;
-        }
-
-        .summary-table {
-            width: 100%;
-            border-collapse: collapse;
-            border: 1px solid #000;
-        }
-
-        .summary-table td {
-            border: 1px solid #000;
-            padding: 8px 10px;
-            font-size: 9px;
+        .summary-row:last-child {
+            border-bottom: none;
         }
 
         .summary-label {
+            flex: 1;
+            padding: 4px 6px;
             font-weight: bold;
-            width: 50%;
+            font-size: 11pt;
         }
 
         .summary-value {
+            width: 120px;
             text-align: right;
-            font-weight: bold;
+            padding: 4px 6px;
+            font-size: 11pt;
         }
 
-        .notes-section {
-            border: 1px solid #000;
-            padding: 10px;
-            margin-top: 15px;
-            font-size: 9px;
-            line-height: 1.5;
-        }
-
-        .notes-title {
-            font-weight: bold;
-            margin-bottom: 4px;
-            font-size: 9px;
-        }
-
-        .footer-section {
-            display: flex;
-            gap: 20px;
-            margin-top: 15px;
-            font-size: 8px;
-        }
-
-        .footer-left {
+        .grand-total-label {
             flex: 1;
-            line-height: 1.6;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 12pt;
         }
 
-        .footer-right {
-            width: 220px;
+        .grand-total-value {
+            width: 120px;
+            text-align: right;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .words-header {
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 11pt;
             text-align: center;
-            font-size: 9px;
+            border-bottom: 1px solid #000;
         }
 
-        .signature-area {
-            height: 60px;
+        .words-notes {
+            padding: 6px 6px;
+            font-size: 11pt;
+            min-height: 80px;
+        }
+
+        /* ===== BANK + SIGNATURE ===== */
+        .bank-sig-section {
             display: flex;
-            align-items: flex-end;
-            justify-content: center;
-            border-top: 1px solid #000;
-            margin-top: 25px;
-            padding-top: 5px;
         }
 
+        .bank-area {
+            flex: 1;
+            border-right: 1px solid #000;
+        }
+
+        .bank-title {
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 12pt;
+            border-bottom: 1px solid #000;
+        }
+
+        .bank-row {
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 11pt;
+            border-bottom: 1px solid #000;
+        }
+
+        .bank-row:last-of-type {
+            border-bottom: 1px solid #000;
+        }
+
+        .sig-area {
+            width: 45%;
+            text-align: center;
+        }
+
+        .sig-certified {
+            font-family: "Aldrich", sans-serif;
+            font-size: 8pt;
+            text-align: center;
+            padding: 4px 6px;
+        }
+
+        .sig-company {
+            font-weight: bold;
+            font-size: 11pt;
+            text-align: center;
+            padding: 4px 6px;
+        }
+
+        .sig-space {
+            min-height: 60px;
+        }
+
+        /* ===== TERMS ===== */
         .terms-section {
-            border: 1px solid #000;
-            padding: 10px;
-            margin-top: 15px;
-            font-size: 8px;
-            line-height: 1.5;
+            border-top: 1px solid #000;
+        }
+
+        .terms-content {
+            padding: 4px 6px;
+            font-size: 11pt;
+            min-height: 60px;
         }
 
         .terms-title {
             font-weight: bold;
-            margin-bottom: 4px;
-            font-size: 9px;
         }
 
-        .terms-list {
-            margin-left: 15px;
+        .auth-signatory {
+            border-top: 1px solid #000;
+            text-align: center;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 11pt;
         }
 
-        .terms-list li {
-            margin: 2px 0;
+        /* ===== FOOTER ===== */
+        .footer-address {
+            text-align: center;
+            padding: 4px 6px;
+            font-size: 11pt;
+            border-top: 3px double #000;
         }
 
+        .footer-gst {
+            text-align: center;
+            padding: 4px 6px;
+            font-size: 11pt;
+            border-top: 3px double #000;
+        }
+
+        /* ===== PRINT ===== */
         @page {
             size: A4;
             margin: 0;
@@ -260,7 +485,7 @@
             }
             .page {
                 margin: 0;
-                padding: 12mm;
+                padding: 8mm 10mm;
                 box-shadow: none;
                 page-break-after: avoid;
             }
@@ -269,241 +494,373 @@
 </head>
 <body>
     <div class="page">
-        <!-- Header Box -->
-        <div class="header-box" style="border: 2px solid #000; padding: 12px; margin-bottom: 15px;">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                <div style="flex: 1;">
-                    <div style="display: flex; gap: 12px;">
-                        <div style="width: 70px; height: 70px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-                            <% if (logoBase64) { %>
-                                <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Vegnar Logo" style="max-width: 70px; max-height: 70px; object-fit: contain;">
-                            <% } else { %>
-                                <div style="font-size: 20px; font-weight: bold;">Vegnar</div>
-                            <% } %>
-                        </div>
-                        <div style="font-size: 9px; line-height: 1.3;">
-                            <div style="font-weight: bold; font-size: 11px; margin-bottom: 3px;"><%= settings?.companyName || 'Company Name' %></div>
-                            <% if (settings?.companyAddress) { %>
-                                <% settings.companyAddress.split('\n').forEach(line => { %>
-                                    <div><%= line %></div>
-                                <% }) %>
-                            <% } %>
-                            <% if (settings?.companyGstin) { %>
-                                <div>GSTIN: <%= settings.companyGstin %></div>
-                            <% } %>
-                            <% if (settings?.companyPhone) { %>
-                                <div>Phone: <%= settings.companyPhone %></div>
-                            <% } %>
-                            <% if (settings?.companyWebsite) { %>
-                                <div><%= settings.companyWebsite %></div>
-                            <% } %>
-                        </div>
-                    </div>
-                </div>
-                <div style="font-size: 36px; font-weight: bold; text-align: right; padding-right: 10px; line-height: 1;">Quote</div>
-            </div>
-        </div>
+        <div class="main-container">
+            <%
+                // === Helper functions ===
+                function formatNumber(num) {
+                    if (!num || isNaN(num)) return '0.00';
+                    return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
 
-        <!-- Info Table -->
-        <table class="info-table">
-            <tr>
-                <td class="info-label">Quote Date</td>
-                <td class="info-value"><%= new Date(quote.quoteDate).toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' }) %></td>
-                <td class="info-label">Place Of Supply</td>
-                <td class="info-value">Uttar Pradesh (09)</td>
-            </tr>
-            <tr>
-                <td class="info-label">Expiry Date</td>
-                <td class="info-value"><%= new Date(quote.expiryDate).toLocaleDateString('en-GB', { day:'2-digit', month:'2-digit', year:'numeric' }) %></td>
-                <td class="info-label">Quote No</td>
-                <td class="info-value"><%= quote.quoteNo %></td>
-            </tr>
-        </table>
+                function formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    const d = new Date(dateStr);
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                }
 
-        <!-- Bill To / Ship To Section -->
-        <div style="border: 1px solid #000; border-top: none;">
-            <div style="display: flex; border-bottom: 1px solid #000;">
-                <div style="flex: 1; border-right: 1px solid #000; padding: 8px 10px;">
-                    <div style="font-weight: bold; font-size: 10px;">BILL TO</div>
-                </div>
-                <div style="flex: 1; padding: 8px 10px;">
-                    <div style="font-weight: bold; font-size: 10px;">SHIP TO</div>
-                </div>
-            </div>
-            <div style="display: flex;">
-                <div style="flex: 1; border-right: 1px solid #000; padding: 8px 10px;">
-                    <div class="customer-name"><%= quote.customer?.name || 'MANISH KUMAR KUSHWAHA' %></div>
-                    <div class="customer-details">
-                        <%= quote.customer?.address || 'KH NO-40 ASTIYA NAGAR, GANESHIPUR, DEVA ROAD CHIWAT' %><br>
-                        Lucknow<br>
-                        Lucknow<br>
-                        226010 Uttar Pradesh<br>
-                        India<br>
-                        GSTIN <%= quote.customer?.gstNumber || 'GSTIN09PK8452DZ1' %>
-                    </div>
-                </div>
-                <div style="flex: 1; padding: 8px 10px;">
-                    <div class="customer-name"><%= quote.customer?.name || 'MANISH KUMAR KUSHWAHA' %></div>
-                    <div class="customer-details">
-                        <%= quote.customer?.address || 'KH NO-40 ASTIYA NAGAR, GANESHIPUR, DEVA ROAD CHIWAT' %><br>
-                        Lucknow<br>
-                        226010 Uttar Pradesh<br>
-                        India<br>
-                        GSTIN <%= quote.customer?.gstNumber || 'GSTIN09PK8452DZ1' %>
-                    </div>
-                </div>
-            </div>
-        </div>
+                // Tax split: CGST and SGST are each half of total tax rate
+                const totalTaxRate = quote.tax || 0;
+                const cgstRate = totalTaxRate / 2;
+                const sgstRate = totalTaxRate / 2;
+            %>
 
-        <!-- Items Table -->
-        <table class="items-table">
-            <thead>
-                <tr>
-                    <th style="width: 5%;">#</th>
-                    <th style="width: 35%;">Item & Description</th>
-                    <th style="width: 10%;">HSN/SAC</th>
-                    <th style="width: 8%;">Qty</th>
-                    <th style="width: 10%;">Rate</th>
-                    <th style="width: 8%;">IGST</th>
-                    <th style="width: 8%;">Amt</th>
-                    <th style="width: 12%;">Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% 
-                    let totalAmount = 0;
-                    let totalTax = 0;
-                    function formatNumber(num) {
-                        if (!num || isNaN(num)) return '0.00';
-                        return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                    }
-                %>
-                <% quote.items.forEach((item, index) => { %>
-                    <% 
-                        const lineAmount = item.quantity * item.rate;
-                        const taxAmount = lineAmount * (quote.tax / 100);
-                        const totalLineAmount = lineAmount + taxAmount;
-                        totalAmount += lineAmount;
-                        totalTax += taxAmount;
-                    %>
-                    <tr>
-                        <td class="text-center"><%= index + 1 %></td>
-                        <td>
-                            <strong><%= item.product?.name || 'Product' %></strong>
-                            <% if (item.description) { %>
-                                <div class="item-description"><%= item.description %></div>
-                            <% } %>
-                        </td>
-                        <td class="text-center"><%= item.product?.category?.hsnCode || 'N/A' %></td>
-                        <td class="text-right"><%= item.quantity %></td>
-                        <td class="text-right">₹ <%= formatNumber(item.rate) %></td>
-                        <td class="text-center"><%= quote.tax %>%</td>
-                        <td class="text-right">₹ <%= formatNumber(taxAmount) %></td>
-                        <td class="text-right">₹ <%= formatNumber(totalLineAmount) %></td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>
-
-        <!-- Summary Section -->
-        <div class="summary-section">
-            <div class="summary-left">
-                <div class="amount-words">
-                    <div class="amount-words-title">Total in Words:</div>
-                    <% 
-                        const finalTotal = totalAmount + totalTax - quote.discount;
-                        function numberToWords(num) {
-                            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-                            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-                            
-                            if (num === 0) return 'Zero';
-                            if (num < 20) return ones[num];
-                            if (num < 100) return tens[Math.floor(num/10)] + (num%10 ? ' ' + ones[num%10] : '');
-                            if (num < 1000) return ones[Math.floor(num/100)] + ' Hundred' + (num%100 ? ' ' + numberToWords(num%100) : '');
-                            if (num < 1000000) return numberToWords(Math.floor(num/1000)) + ' Thousand' + (num%1000 ? ' ' + numberToWords(num%1000) : '');
-                            return numberToWords(Math.floor(num/1000000)) + ' Million' + (num%1000000 ? ' ' + numberToWords(num%1000000) : '');
-                        }
-                        const amountInWords = finalTotal ? numberToWords(Math.floor(finalTotal)) + ' Rupees Only' : '';
-                    %>
-                    Indian Rupees: <strong><%= amountInWords %></strong>
-                </div>
-            </div>
-            <div class="summary-right">
-                <table class="summary-table">
-                    <tr>
-                        <td class="summary-label">Sub Total</td>
-                        <td class="summary-value">₹ <%= formatNumber(totalAmount) %></td>
-                    </tr>
-                    <% if (quote.discount && quote.discount > 0) { %>
-                    <tr>
-                        <td class="summary-label">Discount</td>
-                        <td class="summary-value">-₹ <%= formatNumber(quote.discount) %></td>
-                    </tr>
+            <!-- ===== HEADER ===== -->
+            <div class="header-section">
+                <div class="header-logo-area">
+                    <% if (logoBase64) { %>
+                        <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+                    <% } else { %>
+                        <div style="font-size: 18pt; font-weight: bold;">Logo</div>
                     <% } %>
-                    <tr>
-                        <td class="summary-label">IGST (<%= quote.tax %>%)</td>
-                        <td class="summary-value">₹ <%= formatNumber(totalTax) %></td>
-                    </tr>
-                    <tr style="background: #f0f0f0; font-weight: bold;">
-                        <td class="summary-label">Total</td>
-                        <td class="summary-value">₹ <%= formatNumber(finalTotal) %></td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-
-        <!-- Notes Section -->
-        <% if (quote.notes) { %>
-        <div class="notes-section">
-            <div class="notes-title">Notes:</div>
-            <div>Looking forward for your business.</div>
-        </div>
-        <% } %>
-
-        <!-- Footer Section -->
-        <div class="footer-section">
-            <div class="footer-left">
-                <% if (settings?.companyName) { %>
-                    <div><strong>Beneficiary Name: <%= settings.companyName %></strong></div>
-                <% } %>
-                <% if (settings?.bankName) { %>
-                    <div>Bank Name: <%= settings.bankName %></div>
-                <% } %>
-                <% if (settings?.accountNumber) { %>
-                    <div>Account No: <%= settings.accountNumber %></div>
-                <% } %>
-                <% if (settings?.ifscCode) { %>
-                    <div>IFSC Code: <%= settings.ifscCode %></div>
-                <% } %>
-                <% if (settings?.bankAddress) { %>
-                    <div>Bank Address: <%= settings.bankAddress %></div>
-                <% } %>
-                <% if (settings?.swiftCode) { %>
-                    <div>Swift Code: <%= settings.swiftCode %></div>
-                <% } %>
-            </div>
-            <div class="footer-right">
-                <div style="margin-bottom: 30px;">Authorised Signature</div>
-                <div class="signature-area">
-                    _________________
+                </div>
+                <div class="header-company-area">
+                    <div class="company-name"><%= settings?.companyName || 'Company Name' %></div>
+                    <% if (settings?.companyDescription) { %>
+                        <div class="company-subtitle"><%= settings.companyDescription %></div>
+                    <% } %>
+                    <% if (settings?.companyAddress) { %>
+                        <div class="company-address">
+                            <% settings.companyAddress.split('\n').forEach(line => { %>
+                                <div><%= line %></div>
+                            <% }) %>
+                        </div>
+                    <% } %>
+                    <% if (settings?.companyPhone || settings?.companyWebsite) { %>
+                        <div class="company-contact">
+                            <% if (settings?.companyPhone) { %>Phone: <%= settings.companyPhone %><% } %>
+                            <% if (settings?.companyPhone && settings?.companyWebsite) { %> | <% } %>
+                            <% if (settings?.companyWebsite) { %><%= settings.companyWebsite %><% } %>
+                        </div>
+                    <% } %>
+                </div>
+                <div class="header-info-area">
+                    <% if (settings?.companyGstin) { %>
+                        <div>GSTIN: <%= settings.companyGstin %></div>
+                    <% } %>
                 </div>
             </div>
-        </div>
 
-        <!-- Terms Section -->
-        <div class="terms-section">
-            <div class="terms-title">Terms & Conditions:</div>
-            <% if (quote.termsAndConditions) { %>
-                <div style="white-space: pre-wrap;"><%= quote.termsAndConditions %></div>
-            <% } else { %>
-                <ul class="terms-list">
-                    <li>1. Payment Terms: 100% Advance</li>
-                    <li>2. Delivery: As per agreement</li>
-                    <li>3. This quotation is valid for 30 days from the date mentioned above</li>
-                    <li>4. Order cancellation or refund shall not be entertained after the receipt of the payment</li>
-                    <li>5. Any disputes to be resolved under Lucknow jurisdiction only</li>
-                </ul>
-            <% } %>
+            <!-- ===== QUOTE TITLE ===== -->
+            <div class="quote-title-row">
+                <h1>Quote</h1>
+            </div>
+
+            <!-- ===== QUOTE INFO ROWS ===== -->
+            <div class="info-row">
+                <div class="left-section">
+                    <span class="info-label">Quote No:</span>
+                    <span class="info-value"><%= quote.quoteNo %></span>
+                </div>
+                <div class="right-section">
+                    <span class="info-label">Terms of Delivery:</span>
+                    <span class="info-value"><%= quote.termsOfDelivery || '' %></span>
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="left-section">
+                    <span class="info-label">Quote Date:</span>
+                    <span class="info-value"><%= formatDate(quote.quoteDate) %></span>
+                </div>
+                <div class="right-section">
+                    <span class="info-label">Payment Terms:</span>
+                    <span class="info-value"><%= quote.paymentTerms || '' %></span>
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="left-section">
+                    <span class="info-label">Expiry Date:</span>
+                    <span class="info-value"><%= formatDate(quote.expiryDate) %></span>
+                </div>
+                <div class="right-section">
+                    <span class="info-label">Reference:</span>
+                    <span class="info-value"><%= quote.reference || '' %></span>
+                </div>
+            </div>
+
+            <!-- ===== SEPARATOR ===== -->
+            <div class="separator"></div>
+
+            <!-- ===== BILLED TO / SHIPPED TO HEADER ===== -->
+            <div class="party-header">
+                <div class="party-header-left">Detail of Receiver (Billed to)</div>
+                <div class="party-header-right">Detail of Consignee (Shipped to)</div>
+            </div>
+
+            <!-- Name -->
+            <div class="party-details">
+                <div class="party-left">
+                    <span class="party-field">Name: </span>
+                    <span class="party-value"><%= quote.customer?.name || '' %></span>
+                </div>
+                <div class="party-right">
+                    <span class="party-field">Name: </span>
+                    <span class="party-value"><%= quote.customer?.name || '' %></span>
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div class="party-details">
+                <div class="party-left">
+                    <span class="party-field">Address: </span>
+                    <span class="party-value"><%= quote.customer?.address || '' %></span>
+                </div>
+                <div class="party-right">
+                    <span class="party-field">Address: </span>
+                    <span class="party-value"><%= quote.customer?.address || '' %></span>
+                </div>
+            </div>
+
+            <!-- GSTIN -->
+            <div class="party-details">
+                <div class="party-left">
+                    <span class="party-field">GSTIN: </span>
+                    <span class="party-value"><%= quote.customer?.gstNumber || '' %></span>
+                </div>
+                <div class="party-right">
+                    <span class="party-field">GSTIN: </span>
+                    <span class="party-value"><%= quote.customer?.gstNumber || '' %></span>
+                </div>
+            </div>
+
+            <!-- State + Code -->
+            <div class="state-row">
+                <div class="left-half">
+                    <div class="state-label">State: <%= quote.customer?.state || '' %></div>
+                    <div class="state-code-label">Code</div>
+                    <div class="state-code-value"><%= quote.customer?.stateCode || '' %></div>
+                </div>
+                <div class="right-half">
+                    <div class="state-label">State: <%= quote.customer?.state || '' %></div>
+                    <div class="state-code-label">Code</div>
+                    <div class="state-code-value"><%= quote.customer?.stateCode || '' %></div>
+                </div>
+            </div>
+
+            <!-- ===== SEPARATOR ===== -->
+            <div class="separator"></div>
+
+            <!-- ===== ITEMS TABLE ===== -->
+            <%
+                let totalAmount = 0;
+                let totalQty = 0;
+                let totalCgstAmt = 0;
+                let totalSgstAmt = 0;
+                let totalLineTotal = 0;
+            %>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th class="col-sno" rowspan="2">S. No.</th>
+                        <th class="col-desc" rowspan="2">Product Description</th>
+                        <th class="col-hsn" rowspan="2">HSN Code</th>
+                        <th class="col-uom" rowspan="2">UOM</th>
+                        <th class="col-qty" rowspan="2">Qty</th>
+                        <th class="col-rate" rowspan="2">Rate</th>
+                        <th colspan="2" style="text-align:center;">CGST</th>
+                        <th colspan="2" style="text-align:center;">SGST</th>
+                        <th class="col-total" rowspan="2">Total</th>
+                    </tr>
+                    <tr>
+                        <th class="col-cgst-rate" style="font-size:9pt;">Rate</th>
+                        <th class="col-cgst-amt" style="font-size:9pt;">Amount</th>
+                        <th class="col-sgst-rate" style="font-size:9pt;">Rate</th>
+                        <th class="col-sgst-amt" style="font-size:9pt;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% quote.items.forEach((item, index) => { %>
+                        <%
+                            const lineAmount = item.quantity * item.rate;
+                            const cgstAmt = lineAmount * (cgstRate / 100);
+                            const sgstAmt = lineAmount * (sgstRate / 100);
+                            const lineTotal = lineAmount + cgstAmt + sgstAmt;
+                            
+                            totalAmount += lineAmount;
+                            totalQty += item.quantity;
+                            totalCgstAmt += cgstAmt;
+                            totalSgstAmt += sgstAmt;
+                            totalLineTotal += lineTotal;
+                        %>
+                        <tr class="data-row<%= index === quote.items.length - 1 ? ' last-data-row' : '' %>">
+                            <td class="col-sno"><%= index + 1 %></td>
+                            <td class="col-desc" style="font-family:'Aldrich',sans-serif;"><%= item.product?.name || 'Product' %></td>
+                            <td class="col-hsn"><%= item.product?.category?.hsnCode || '' %></td>
+                            <td class="col-uom"><%= item.uom || item.product?.uom || 'Nos' %></td>
+                            <td class="col-qty"><%= item.quantity %></td>
+                            <td class="col-rate"><%= formatNumber(item.rate) %></td>
+                            <td class="col-cgst-rate"><%= cgstRate %></td>
+                            <td class="col-cgst-amt"><%= formatNumber(cgstAmt) %></td>
+                            <td class="col-sgst-rate"><%= sgstRate %></td>
+                            <td class="col-sgst-amt"><%= formatNumber(sgstAmt) %></td>
+                            <td class="col-total"><%= formatNumber(lineTotal) %></td>
+                        </tr>
+                    <% }) %>
+
+                    <!-- Empty rows to fill space (like the reference spreadsheet) -->
+                    <% const minRows = 15; %>
+                    <% for (let i = quote.items.length; i < minRows; i++) { %>
+                        <tr class="data-row<%= i === minRows - 1 ? ' last-data-row' : '' %>">
+                            <td class="col-sno">&nbsp;</td>
+                            <td class="col-desc">&nbsp;</td>
+                            <td class="col-hsn">&nbsp;</td>
+                            <td class="col-uom">&nbsp;</td>
+                            <td class="col-qty">&nbsp;</td>
+                            <td class="col-rate">&nbsp;</td>
+                            <td class="col-cgst-rate">&nbsp;</td>
+                            <td class="col-cgst-amt">&nbsp;</td>
+                            <td class="col-sgst-rate">&nbsp;</td>
+                            <td class="col-sgst-amt">&nbsp;</td>
+                            <td class="col-total">&nbsp;</td>
+                        </tr>
+                    <% } %>
+
+                    <!-- TOTAL ROW -->
+                    <tr class="total-row">
+                        <td class="total-label" colspan="4">Total</td>
+                        <td style="text-align:center;"><%= totalQty %></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:right;"><%= formatNumber(totalCgstAmt) %></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:right;"><%= formatNumber(totalSgstAmt) %></td>
+                        <td style="text-align:right;"><%= formatNumber(totalLineTotal) %></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ===== SUMMARY SECTION ===== -->
+            <%
+                const freight = quote.freight || 0;
+                const totalTaxAmt = totalCgstAmt + totalSgstAmt;
+                const grandTotal = totalAmount + totalTaxAmt + freight - (quote.discount || 0);
+
+                // Amount in words
+                function numberToWords(num) {
+                    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+                    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+                    const tensArr = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+                    if (num === 0) return 'Zero';
+
+                    const convertHundreds = (n) => {
+                        let result = '';
+                        if (n >= 100) {
+                            result += ones[Math.floor(n / 100)] + ' Hundred ';
+                            n %= 100;
+                        }
+                        if (n >= 20) {
+                            result += tensArr[Math.floor(n / 10)] + ' ';
+                            n %= 10;
+                        } else if (n >= 10) {
+                            result += teens[n - 10] + ' ';
+                            n = 0;
+                        }
+                        if (n > 0) {
+                            result += ones[n] + ' ';
+                        }
+                        return result;
+                    };
+
+                    let result = '';
+                    let crores = Math.floor(num / 10000000);
+                    if (crores > 0) { result += convertHundreds(crores) + 'Crore '; num %= 10000000; }
+                    let lakhs = Math.floor(num / 100000);
+                    if (lakhs > 0) { result += convertHundreds(lakhs) + 'Lakh '; num %= 100000; }
+                    let thousands = Math.floor(num / 1000);
+                    if (thousands > 0) { result += convertHundreds(thousands) + 'Thousand '; num %= 1000; }
+                    if (num > 0) { result += convertHundreds(num); }
+                    return result.trim() + ' Only';
+                }
+
+                const amountInWords = grandTotal ? numberToWords(Math.floor(grandTotal)) : '';
+            %>
+
+            <div class="summary-section">
+                <div class="summary-left">
+                    <div class="words-header">Total Invoice amount in words</div>
+                    <div class="words-notes">
+                        <div style="margin-bottom: 8px;"><strong>Indian Rupees: </strong><%= amountInWords %></div>
+                        <% if (quote.notes) { %>
+                            <div><strong>Note:</strong> <%= quote.notes %></div>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="summary-right">
+                    <div class="summary-row">
+                        <div class="summary-label">Total Amount before Tax</div>
+                        <div class="summary-value"><%= formatNumber(totalAmount) %></div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">CGST</div>
+                        <div class="summary-value"><%= formatNumber(totalCgstAmt) %></div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">SGST</div>
+                        <div class="summary-value"><%= formatNumber(totalSgstAmt) %></div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">Freight</div>
+                        <div class="summary-value"><%= formatNumber(freight) %></div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">Total Tax Amount</div>
+                        <div class="summary-value"><%= formatNumber(totalTaxAmt) %></div>
+                    </div>
+                    <div class="summary-row" style="border-bottom: none;">
+                        <div class="grand-total-label">Grand Total</div>
+                        <div class="grand-total-value"><%= formatNumber(grandTotal) %></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== BANK DETAILS + SIGNATURE ===== -->
+            <div class="bank-sig-section">
+                <div class="bank-area">
+                    <div class="bank-title">Bank Details</div>
+                    <div class="bank-row">Bank Name: <%= settings?.bankName || '' %></div>
+                    <div class="bank-row">Bank A/C: <%= settings?.accountNumber || '' %></div>
+                    <div class="bank-row" style="border-bottom: none;">Bank IFSC: <%= settings?.ifscCode || '' %></div>
+                </div>
+                <div class="sig-area">
+                    <div class="sig-certified">Certified that the particulars given above are true and correct</div>
+                    <div class="sig-company">For <%= settings?.companyName || 'Company Name' %></div>
+                    <div class="sig-space"></div>
+                </div>
+            </div>
+
+            <!-- ===== TERMS & CONDITIONS ===== -->
+            <div class="terms-section">
+                <div class="terms-content">
+                    <div class="terms-title">Terms & conditions:-</div>
+                    <% if (quote.termsAndConditions) { %>
+                        <div style="white-space: pre-wrap; font-size: 10pt;"><%= quote.termsAndConditions %></div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- ===== AUTHORISED SIGNATORY ===== -->
+            <div class="auth-signatory">Authorised signatory</div>
+
+            <!-- ===== FOOTER ===== -->
+            <div class="footer-address">
+                Head Office : <%= settings?.companyAddress ? settings.companyAddress.split('\n')[0] : '' %>
+            </div>
+            <div class="footer-gst">
+                GST: <%= settings?.companyGstin || '' %>
+            </div>
         </div>
     </div>
 </body>

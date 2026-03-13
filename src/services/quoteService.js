@@ -98,16 +98,23 @@ const getQuoteById = async (id) => {
 };
 
 const updateQuote = async (id, data) => {
+  const updateData = {
+    status: data.status,
+    discount: data.discount,
+    tax: data.tax,
+    totalAmount: data.totalAmount,
+    notes: data.notes,
+    termsAndConditions: data.termsAndConditions,
+  };
+
+  // Add optional fields if provided
+  if (data.customerId) updateData.customerId = data.customerId;
+  if (data.quoteDate) updateData.quoteDate = new Date(data.quoteDate);
+  if (data.expiryDate) updateData.expiryDate = new Date(data.expiryDate);
+
   const quote = await prisma.quote.update({
     where: { id: parseInt(id) },
-    data: {
-      status: data.status,
-      discount: data.discount,
-      tax: data.tax,
-      totalAmount: data.totalAmount,
-      notes: data.notes,
-      termsAndConditions: data.termsAndConditions,
-    },
+    data: updateData,
     include: {
       customer: true,
       items: {
@@ -126,23 +133,59 @@ const updateQuote = async (id, data) => {
 };
 
 const updateQuoteItems = async (quoteId, items) => {
-  await prisma.quoteItem.deleteMany({
-    where: { quoteId: parseInt(quoteId) },
+  const quoteIdInt = parseInt(quoteId);
+  
+  // Get existing items
+  const existingItems = await prisma.quoteItem.findMany({
+    where: { quoteId: quoteIdInt },
   });
 
-  const quote = await prisma.quote.update({
-    where: { id: parseInt(quoteId) },
-    data: {
-      items: {
-        create: items.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          unit: item.unit,
-          rate: item.rate,
-          amount: item.quantity * item.rate,
-        })),
+  // Separate new items from existing items
+  const itemsToUpdate = items.filter(item => item.id);
+  const itemsToCreate = items.filter(item => !item.id);
+  const existingItemIds = itemsToUpdate.map(item => item.id);
+  
+  // Delete items that are no longer in the list
+  const itemsToDelete = existingItems.filter(item => !existingItemIds.includes(item.id));
+  if (itemsToDelete.length > 0) {
+    await prisma.quoteItem.deleteMany({
+      where: {
+        id: { in: itemsToDelete.map(item => item.id) },
       },
-    },
+    });
+  }
+
+  // Update existing items
+  for (const item of itemsToUpdate) {
+    await prisma.quoteItem.update({
+      where: { id: item.id },
+      data: {
+        productId: item.productId,
+        quantity: item.quantity,
+        unit: item.unit,
+        rate: item.rate,
+        amount: item.quantity * item.rate,
+      },
+    });
+  }
+
+  // Create new items
+  if (itemsToCreate.length > 0) {
+    await prisma.quoteItem.createMany({
+      data: itemsToCreate.map(item => ({
+        quoteId: quoteIdInt,
+        productId: item.productId,
+        quantity: item.quantity,
+        unit: item.unit,
+        rate: item.rate,
+        amount: item.quantity * item.rate,
+      })),
+    });
+  }
+
+  // Return updated quote
+  const quote = await prisma.quote.findUnique({
+    where: { id: quoteIdInt },
     include: {
       customer: true,
       items: {
