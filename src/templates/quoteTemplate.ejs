@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>Quote - <%= quote.quoteNo %></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Aldrich&display=swap" rel="stylesheet">
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: "Aldrich", sans-serif;
+            font-weight: 400;
+  font-style: normal;
+            font-size: 11pt;
+            color: #000;
+            background: white;
+
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 8mm 10mm;
+            background: white;
+            box-sizing: border-box;
+            page-break-after: always;
+        }
+
+        .page:last-child {
+            page-break-after: avoid;
+        }
+
+        /* ===== OUTER BORDER ===== */
+        .main-container {
+            border: 2px solid #000;
+            width: 100%;
+        }
+
+        /* ===== HEADER SECTION ===== */
+        .header-section {
+            display: flex;
+            align-items: stretch;
+            border-bottom: 1px solid #000;
+        }
+
+        .header-logo-area {
+            width: 140px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+        }
+
+        .header-logo-area img {
+            max-width: 100px;
+            max-height: 80px;
+            object-fit: contain;
+        }
+
+        .header-company-area {
+            flex: 1;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .company-name {
+            font-family: 'Aldrich', sans-serif;
+            font-size: 16pt;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .company-subtitle {
+            font-family: "Aldrich", sans-serif;
+            font-size: 12pt;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .company-address {
+            font-family: "Aldrich", sans-serif;
+            font-size: 12pt;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .company-contact {
+            font-family: "Aldrich", sans-serif;
+            font-size: 12pt;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .header-info-area {
+            width: 200px;
+            padding: 8px 10px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            font-size: 11pt;
+            font-weight: bold;
+        }
+
+        /* ===== QUOTE TITLE ===== */
+        .quote-title-row {
+            text-align: center;
+            border-bottom: 1px solid #000;
+            padding: 8px 0;
+        }
+
+        .quote-title-row h1 {
+            font-family: "Aldrich", sans-serif;
+            font-size: 24pt;
+            font-weight: bold;
+            margin: 0;
+        }
+
+        /* ===== INFO ROWS ===== */
+        .info-row {
+            display: flex;
+        }
+
+        .info-row .left-section {
+            flex: 1;
+            display: flex;
+            border-right: 1px solid #000;
+        }
+
+        .info-row .right-section {
+            flex: 1;
+            display: flex;
+        }
+
+        .info-label {
+            font-weight: bold;
+            padding: 4px 6px;
+            font-size: 11pt;
+            white-space: nowrap;
+        }
+
+        .info-value {
+            padding: 4px 6px;
+            font-size: 11pt;
+        }
+
+        /* ===== SEPARATOR ===== */
+        .separator {
+            border-bottom: 1px solid #000;
+            height: 8px;
+        }
+
+        /* ===== BILL TO / SHIP TO ===== */
+        .party-header {
+            display: flex;
+            border-bottom: 1px solid #000;
+        }
+
+        .party-header-left {
+            flex: 1;
+            border-right: 1px solid #000;
+            padding: 4px 6px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 11pt;
+        }
+
+        .party-header-right {
+            flex: 1;
+            padding: 4px 6px;
+            font-weight: bold;
+            text-align: center;
+            font-size: 11pt;
+        }
+
+        .party-details {
+            display: flex;
+        }
+
+        .party-left {
+            flex: 1;
+            border-right: 1px solid #000;
+            padding: 4px 6px;
+        }
+
+        .party-right {
+            flex: 1;
+            padding: 4px 6px;
+        }
+
+        .party-field {
+            font-weight: bold;
+            font-size: 11pt;
+            padding: 2px 0;
+        }
+
+        .party-value {
+            font-size: 11pt;
+            padding: 2px 0;
+        }
+
+        .state-row {
+            display: flex;
+            border-bottom: 1px solid #000;
+        }
+
+        .state-row .left-half {
+            flex: 1;
+            display: flex;
+            border-right: 1px solid #000;
+        }
+
+        .state-row .right-half {
+            flex: 1;
+            display: flex;
+        }
+
+        .state-label {
+            flex: 3;
+            font-weight: bold;
+            padding: 4px 6px;
+            font-size: 11pt;
+        }
+
+        .state-code-label {
+            flex: 1;
+            font-weight: bold;
+            padding: 4px 6px;
+            font-size: 11pt;
+            border-left: 1px solid #000;
+        }
+
+        .state-code-value {
+            flex: 1;
+            padding: 4px 6px;
+            font-size: 11pt;
+        }
+
+        /* ===== ITEMS TABLE ===== */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10pt;
+        }
+
+        .items-table th {
+            border: 1px solid #000;
+            border-top: none;
+            padding: 4px 3px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 10pt;
+            vertical-align: middle;
+            word-wrap: break-word;
+        }
+
+        .items-table td {
+            border-right: 1px solid #000;
+            padding: 3px 4px;
+            font-size: 10pt;
+            font-family: "Aldrich", sans-serif;
+            vertical-align: middle;
+        }
+
+        .items-table .col-sno { width: 5%; text-align: right; }
+        .items-table .col-desc { width: 18%; text-align: left; }
+        .items-table .col-hsn { width: 10%; text-align: center; }
+        .items-table .col-uom { width: 7%; text-align: center; }
+        .items-table .col-qty { width: 7%; text-align: center; }
+        .items-table .col-rate { width: 12%; text-align: center; }
+        .items-table .col-cgst-rate { width: 6%; text-align: right; }
+        .items-table .col-cgst-amt { width: 8%; text-align: right; }
+        .items-table .col-sgst-rate { width: 6%; text-align: right; }
+        .items-table .col-sgst-amt { width: 6%; text-align: right; }
+        .items-table .col-total { width: 15%; text-align: right; }
+
+        .items-table .total-row td {
+            border-top: 1px solid #000;
+            border-bottom: 1px solid #000;
+            font-weight: bold;
+            font-family: "Aldrich", sans-serif;
+            font-size: 11pt;
+        }
+
+        .items-table .total-row .total-label {
+            font-family: "Aldrich", sans-serif;
+            font-size: 20pt;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .items-table .data-row td {
+            border-bottom: 1px solid #000;
+        }
+
+        .items-table .last-data-row td {
+            border-bottom: 1px solid #000;
+        }
+
+        /* ===== SUMMARY SECTION ===== */
+        .summary-section {
+            display: flex;
+            border-bottom: 1px solid #000;
+        }
+
+        .summary-left {
+            flex: 1;
+            border-right: 1px solid #000;
+        }
+
+        .summary-right {
+            width: 45%;
+        }
+
+        .summary-row {
+            display: flex;
+            border-bottom: 1px solid #000;
+        }
+
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+
+        .summary-label {
+            flex: 1;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 11pt;
+        }
+
+        .summary-value {
+            width: 120px;
+            text-align: right;
+            padding: 4px 6px;
+            font-size: 11pt;
+        }
+
+        .grand-total-label {
+            flex: 1;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .grand-total-value {
+            width: 120px;
+            text-align: right;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .words-header {
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 11pt;
+            text-align: center;
+            border-bottom: 1px solid #000;
+        }
+
+        .words-notes {
+            padding: 6px 6px;
+            font-size: 11pt;
+            min-height: 80px;
+        }
+
+        /* ===== BANK + SIGNATURE ===== */
+        .bank-sig-section {
+            display: flex;
+        }
+
+        .bank-area {
+            flex: 1;
+            border-right: 1px solid #000;
+        }
+
+        .bank-title {
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 12pt;
+            border-bottom: 1px solid #000;
+        }
+
+        .bank-row {
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 11pt;
+        }
+
+        .sig-area {
+            width: 45%;
+            text-align: center;
+        }
+
+        .sig-certified {
+            font-family: "Aldrich", sans-serif;
+            font-size: 8pt;
+            text-align: center;
+            padding: 4px 6px;
+        }
+
+        .sig-company {
+            font-weight: bold;
+            font-size: 11pt;
+            text-align: center;
+            padding: 4px 6px;
+        }
+
+        .sig-space {
+            min-height: 60px;
+        }
+
+        /* ===== TERMS ===== */
+        .terms-section {
+            border-top: 1px solid #000;
+        }
+
+        .terms-content {
+            padding: 4px 6px;
+            font-size: 11pt;
+            min-height: 60px;
+        }
+
+        .terms-title {
+            font-weight: bold;
+        }
+
+        .auth-signatory {
+            border-top: 1px solid #000;
+            text-align: center;
+            padding: 4px 6px;
+            font-weight: bold;
+            font-size: 11pt;
+        }
+
+        /* ===== FOOTER ===== */
+        .footer-address {
+            text-align: center;
+            padding: 4px 6px;
+            font-size: 11pt;
+            border-top: 3px double #000;
+        }
+
+        .footer-gst {
+            text-align: center;
+            padding: 4px 6px;
+            font-size: 11pt;
+            border-top: 3px double #000;
+        }
+
+        /* ===== PRINT ===== */
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        @media print {
+            html, body {
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
+            }
+            .page {
+                margin: 0;
+                padding: 8mm 10mm;
+                box-shadow: none;
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <div class="main-container">
+            <%
+                // === Helper functions ===
+                function formatNumber(num) {
+                    if (!num || isNaN(num)) return '0.00';
+                    return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                }
+
+                function formatDate(dateStr) {
+                    if (!dateStr) return '';
+                    const d = new Date(dateStr);
+                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                }
+
+
+            %>
+
+            <!-- ===== HEADER ===== -->
+            <div class="header-section">
+                <div class="header-logo-area">
+                    <% if (logoBase64) { %>
+                        <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+                    <% } else { %>
+                        <div style="font-size: 18pt; font-weight: bold;">Logo</div>
+                    <% } %>
+                </div>
+                <div class="header-company-area">
+                    <div class="company-name"><%= settings?.companyName || 'Company Name' %></div>
+                    <% if (settings?.companyDescription) { %>
+                        <div class="company-subtitle"><%= settings.companyDescription %></div>
+                    <% } %>
+                    <% if (settings?.companyAddress) { %>
+                        <div class="company-address">
+                            <% settings.companyAddress.split('\n').forEach(line => { %>
+                                <div><%= line %></div>
+                            <% }) %>
+                        </div>
+                    <% } %>
+                    <% if (settings?.companyPhone || settings?.companyWebsite) { %>
+                        <div class="company-contact">
+                            <% if (settings?.companyPhone) { %>Phone: <%= settings.companyPhone %><% } %>
+                            <% if (settings?.companyPhone && settings?.companyWebsite) { %> | <% } %>
+                            <% if (settings?.companyWebsite) { %><%= settings.companyWebsite %><% } %>
+                        </div>
+                    <% } %>
+                </div>
+                <div class="header-info-area">
+                    <% if (settings?.companyGstin) { %>
+                        <div>GSTIN: <%= settings.companyGstin %></div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- ===== QUOTE TITLE ===== -->
+            <div class="quote-title-row">
+                <h1>Quote</h1>
+            </div>
+
+            <!-- ===== QUOTE INFO ROWS ===== -->
+            <div class="info-row">
+                <div class="left-section">
+                    <span class="info-label">Quote No:</span>
+                    <span class="info-value"><%= quote.quoteNo %></span>
+                </div>
+                <div class="right-section">
+                    <span class="info-label">Terms of Delivery:</span>
+                    <span class="info-value"><%= quote.termsOfDelivery || '' %></span>
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="left-section">
+                    <span class="info-label">Quote Date:</span>
+                    <span class="info-value"><%= formatDate(quote.quoteDate) %></span>
+                </div>
+                <div class="right-section">
+                    <span class="info-label">Payment Terms:</span>
+                    <span class="info-value"><%= quote.paymentTerms || '' %></span>
+                </div>
+            </div>
+
+            <div class="info-row">
+                <div class="left-section">
+                    <span class="info-label">Expiry Date:</span>
+                    <span class="info-value"><%= formatDate(quote.expiryDate) %></span>
+                </div>
+                <div class="right-section">
+                    <span class="info-label">Reference:</span>
+                    <span class="info-value"><%= quote.reference || '' %></span>
+                </div>
+            </div>
+
+            <!-- ===== SEPARATOR ===== -->
+            <div class="separator"></div>
+
+            <!-- ===== BILLED TO / SHIPPED TO HEADER ===== -->
+            <div class="party-header">
+                <div class="party-header-left">Detail of Receiver (Billed to)</div>
+                <div class="party-header-right">Detail of Consignee (Shipped to)</div>
+            </div>
+
+            <!-- Name -->
+            <div class="party-details">
+                <div class="party-left">
+                    <span class="party-field">Name: </span>
+                    <span class="party-value"><%= quote.customer?.name || '' %></span>
+                </div>
+                <div class="party-right">
+                    <span class="party-field">Name: </span>
+                    <span class="party-value"><%= quote.customer?.name || '' %></span>
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div class="party-details">
+                <div class="party-left">
+                    <span class="party-field">Address: </span>
+                    <span class="party-value"><%= quote.customer?.address || '' %></span>
+                </div>
+                <div class="party-right">
+                    <span class="party-field">Address: </span>
+                    <span class="party-value"><%= quote.customer?.address || '' %></span>
+                </div>
+            </div>
+
+            <!-- GSTIN -->
+            <div class="party-details">
+                <div class="party-left">
+                    <span class="party-field">GSTIN: </span>
+                    <span class="party-value"><%= quote.customer?.gstNumber || '' %></span>
+                </div>
+                <div class="party-right">
+                    <span class="party-field">GSTIN: </span>
+                    <span class="party-value"><%= quote.customer?.gstNumber || '' %></span>
+                </div>
+            </div>
+
+            <!-- State + Code -->
+            <div class="state-row">
+                <div class="left-half">
+                    <div class="state-label">State: <%= quote.customer?.state || '' %></div>
+                    <div class="state-code-label">Code</div>
+                    <div class="state-code-value"><%= quote.customer?.stateCode || '' %></div>
+                </div>
+                <div class="right-half">
+                    <div class="state-label">State: <%= quote.customer?.state || '' %></div>
+                    <div class="state-code-label">Code</div>
+                    <div class="state-code-value"><%= quote.customer?.stateCode || '' %></div>
+                </div>
+            </div>
+
+            <!-- ===== SEPARATOR ===== -->
+            <div class="separator"></div>
+
+            <!-- ===== ITEMS TABLE ===== -->
+            <%
+                let totalAmount = 0;
+                let totalQty = 0;
+                let totalCgstAmt = 0;
+                let totalSgstAmt = 0;
+                let totalLineTotal = 0;
+            %>
+
+            <table class="items-table">
+                <thead>
+                    <tr>
+                        <th class="col-sno" rowspan="2">S. No.</th>
+                        <th class="col-desc" rowspan="2">Product Description</th>
+                        <th class="col-hsn" rowspan="2">HSN Code</th>
+                        <th class="col-uom" rowspan="2">UOM</th>
+                        <th class="col-qty" rowspan="2">Qty</th>
+                        <th class="col-rate" rowspan="2">Rate</th>
+                        <th colspan="2" style="text-align:center;">CGST</th>
+                        <th colspan="2" style="text-align:center;">SGST</th>
+                        <th class="col-total" rowspan="2">Total</th>
+                    </tr>
+                    <tr>
+                        <th class="col-cgst-rate" style="font-size:9pt;">Rate</th>
+                        <th class="col-cgst-amt" style="font-size:9pt;">Amount</th>
+                        <th class="col-sgst-rate" style="font-size:9pt;">Rate</th>
+                        <th class="col-sgst-amt" style="font-size:9pt;">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% quote.items.forEach((item, index) => { %>
+                        <%
+                            const itemTaxRate = item.taxRate || item.product?.category?.gstRate || 0;
+                            const itemCgstRate = itemTaxRate / 2;
+                            const itemSgstRate = itemTaxRate / 2;
+                            const lineAmount = item.quantity * item.rate;
+                            const cgstAmt = lineAmount * (itemCgstRate / 100);
+                            const sgstAmt = lineAmount * (itemSgstRate / 100);
+                            const lineTotal = lineAmount + cgstAmt + sgstAmt;
+                            
+                            totalAmount += lineAmount;
+                            totalQty += item.quantity;
+                            totalCgstAmt += cgstAmt;
+                            totalSgstAmt += sgstAmt;
+                            totalLineTotal += lineTotal;
+                        %>
+                        <tr class="data-row<%= index === quote.items.length - 1 ? ' last-data-row' : '' %>">
+                            <td class="col-sno"><%= index + 1 %></td>
+                            <td class="col-desc" style="font-family:'Aldrich',sans-serif;">
+                                <div><%= item.product?.name || 'Product' %></div>
+                                <% if (item.description) { %>
+                                    <div style="font-size:8pt; color:#444;"><%= item.description %></div>
+                                <% } %>
+                            </td>
+                            <td class="col-hsn"><%= item.product?.category?.hsnCode || '' %></td>
+                            <td class="col-uom"><%= item.unit || 'Nos' %></td>
+                            <td class="col-qty"><%= item.quantity %></td>
+                            <td class="col-rate"><%= formatNumber(item.rate) %></td>
+                            <td class="col-cgst-rate"><%= itemCgstRate %></td>
+                            <td class="col-cgst-amt"><%= formatNumber(cgstAmt) %></td>
+                            <td class="col-sgst-rate"><%= itemSgstRate %></td>
+                            <td class="col-sgst-amt"><%= formatNumber(sgstAmt) %></td>
+                            <td class="col-total"><%= formatNumber(lineTotal) %></td>
+                        </tr>
+                    <% }) %>
+
+                    <!-- TOTAL ROW -->
+                    <tr class="total-row">
+                        <td class="total-label" colspan="4">Total</td>
+                        <td style="text-align:center;"><%= totalQty %></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:right;"><%= formatNumber(totalCgstAmt) %></td>
+                        <td style="text-align:center;">-</td>
+                        <td style="text-align:right;"><%= formatNumber(totalSgstAmt) %></td>
+                        <td style="text-align:right;"><%= formatNumber(totalLineTotal) %></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ===== SUMMARY SECTION ===== -->
+            <%
+                const freight = quote.freight || 0;
+                const totalTaxAmt = totalCgstAmt + totalSgstAmt;
+                const grandTotal = totalAmount + totalTaxAmt + freight - (quote.discount || 0);
+
+                // Amount in words
+                function numberToWords(num) {
+                    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+                    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+                    const tensArr = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+
+                    if (num === 0) return 'Zero';
+
+                    const convertHundreds = (n) => {
+                        let result = '';
+                        if (n >= 100) {
+                            result += ones[Math.floor(n / 100)] + ' Hundred ';
+                            n %= 100;
+                        }
+                        if (n >= 20) {
+                            result += tensArr[Math.floor(n / 10)] + ' ';
+                            n %= 10;
+                        } else if (n >= 10) {
+                            result += teens[n - 10] + ' ';
+                            n = 0;
+                        }
+                        if (n > 0) {
+                            result += ones[n] + ' ';
+                        }
+                        return result;
+                    };
+
+                    let result = '';
+                    let crores = Math.floor(num / 10000000);
+                    if (crores > 0) { result += convertHundreds(crores) + 'Crore '; num %= 10000000; }
+                    let lakhs = Math.floor(num / 100000);
+                    if (lakhs > 0) { result += convertHundreds(lakhs) + 'Lakh '; num %= 100000; }
+                    let thousands = Math.floor(num / 1000);
+                    if (thousands > 0) { result += convertHundreds(thousands) + 'Thousand '; num %= 1000; }
+                    if (num > 0) { result += convertHundreds(num); }
+                    return result.trim() + ' Only';
+                }
+
+                const amountInWords = grandTotal ? numberToWords(Math.floor(grandTotal)) : '';
+            %>
+
+            <div class="summary-section">
+                <div class="summary-left">
+                    <div class="words-header">Total Invoice amount in words</div>
+                    <div class="words-notes">
+                        <div style="margin-bottom: 8px;"><strong>Indian Rupees: </strong><%= amountInWords %></div>
+                        <% if (quote.notes) { %>
+                            <div><strong>Note:</strong> <%= quote.notes %></div>
+                        <% } %>
+                    </div>
+                </div>
+                <div class="summary-right">
+                    <div class="summary-row">
+                        <div class="summary-label">Total Amount before Tax</div>
+                        <div class="summary-value"><%= formatNumber(totalAmount) %></div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">CGST</div>
+                        <div class="summary-value"><%= formatNumber(totalCgstAmt) %></div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">SGST</div>
+                        <div class="summary-value"><%= formatNumber(totalSgstAmt) %></div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">Freight</div>
+                        <div class="summary-value"><%= formatNumber(freight) %></div>
+                    </div>
+                    <div class="summary-row">
+                        <div class="summary-label">Total Tax Amount</div>
+                        <div class="summary-value"><%= formatNumber(totalTaxAmt) %></div>
+                    </div>
+                    <div class="summary-row" style="border-bottom: none;">
+                        <div class="grand-total-label">Grand Total</div>
+                        <div class="grand-total-value"><%= formatNumber(grandTotal) %></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== BANK DETAILS + SIGNATURE ===== -->
+            <div class="bank-sig-section">
+                <div class="bank-area">
+                    <div class="bank-title">Bank Details</div>
+                    <div class="bank-row">Bank Name: <%= settings?.bankName || '' %></div>
+                    <div class="bank-row">Bank A/C: <%= settings?.accountNumber || '' %></div>
+                    <div class="bank-row" style="border-bottom: none;">Bank IFSC: <%= settings?.ifscCode || '' %></div>
+                </div>
+                <div class="sig-area">
+                    <div class="sig-certified">Certified that the particulars given above are true and correct</div>
+                    <div class="sig-company">For <%= settings?.companyName || 'Company Name' %></div>
+                    <div class="sig-space"></div>
+                </div>
+            </div>
+
+            <!-- ===== TERMS & CONDITIONS ===== -->
+            <div class="terms-section">
+                <div class="terms-content">
+                    <div class="terms-title">Terms & conditions:-</div>
+                    <% if (quote.termsAndConditions) { %>
+                        <div style="white-space: pre-wrap; font-size: 10pt;"><%= quote.termsAndConditions %></div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- ===== AUTHORISED SIGNATORY ===== -->
+            <div class="auth-signatory">Authorised signatory</div>
+
+            <!-- ===== FOOTER ===== -->
+            <div class="footer-address">
+                Head Office : <%= settings?.companyAddress ? settings.companyAddress.split('\n')[0] : '' %>
+            </div>
+            <div class="footer-gst">
+                GST: <%= settings?.companyGstin || '' %>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
