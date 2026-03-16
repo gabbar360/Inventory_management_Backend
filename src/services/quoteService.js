@@ -30,7 +30,9 @@ const createQuote = async (data) => {
           quantity: item.quantity,
           unit: item.unit,
           rate: item.rate,
+          taxRate: item.taxRate || 0,
           amount: item.quantity * item.rate,
+          description: item.description || null,
         })),
       },
     },
@@ -164,7 +166,9 @@ const updateQuoteItems = async (quoteId, items) => {
         quantity: item.quantity,
         unit: item.unit,
         rate: item.rate,
+        taxRate: item.taxRate || 0,
         amount: item.quantity * item.rate,
+        description: item.description || null,
       },
     });
   }
@@ -178,7 +182,9 @@ const updateQuoteItems = async (quoteId, items) => {
         quantity: item.quantity,
         unit: item.unit,
         rate: item.rate,
+        taxRate: item.taxRate || 0,
         amount: item.quantity * item.rate,
+        description: item.description || null,
       })),
     });
   }

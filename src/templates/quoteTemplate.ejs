@@ -139,7 +139,6 @@
         /* ===== INFO ROWS ===== */
         .info-row {
             display: flex;
-            border-bottom: 1px solid #000;
         }
 
         .info-row .left-section {
@@ -196,7 +195,6 @@
 
         .party-details {
             display: flex;
-            border-bottom: 1px solid #000;
         }
 
         .party-left {
@@ -407,11 +405,6 @@
             padding: 4px 6px;
             font-weight: bold;
             font-size: 11pt;
-            border-bottom: 1px solid #000;
-        }
-
-        .bank-row:last-of-type {
-            border-bottom: 1px solid #000;
         }
 
         .sig-area {
@@ -513,10 +506,7 @@
                     return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 }
 
-                // Tax split: CGST and SGST are each half of total tax rate
-                const totalTaxRate = quote.tax || 0;
-                const cgstRate = totalTaxRate / 2;
-                const sgstRate = totalTaxRate / 2;
+
             %>
 
             <!-- ===== HEADER ===== -->
@@ -688,9 +678,12 @@
                 <tbody>
                     <% quote.items.forEach((item, index) => { %>
                         <%
+                            const itemTaxRate = item.taxRate || item.product?.category?.gstRate || 0;
+                            const itemCgstRate = itemTaxRate / 2;
+                            const itemSgstRate = itemTaxRate / 2;
                             const lineAmount = item.quantity * item.rate;
-                            const cgstAmt = lineAmount * (cgstRate / 100);
-                            const sgstAmt = lineAmount * (sgstRate / 100);
+                            const cgstAmt = lineAmount * (itemCgstRate / 100);
+                            const sgstAmt = lineAmount * (itemSgstRate / 100);
                             const lineTotal = lineAmount + cgstAmt + sgstAmt;
                             
                             totalAmount += lineAmount;
@@ -701,14 +694,19 @@
                         %>
                         <tr class="data-row<%= index === quote.items.length - 1 ? ' last-data-row' : '' %>">
                             <td class="col-sno"><%= index + 1 %></td>
-                            <td class="col-desc" style="font-family:'Aldrich',sans-serif;"><%= item.product?.name || 'Product' %></td>
+                            <td class="col-desc" style="font-family:'Aldrich',sans-serif;">
+                                <div><%= item.product?.name || 'Product' %></div>
+                                <% if (item.description) { %>
+                                    <div style="font-size:8pt; color:#444;"><%= item.description %></div>
+                                <% } %>
+                            </td>
                             <td class="col-hsn"><%= item.product?.category?.hsnCode || '' %></td>
-                            <td class="col-uom"><%= item.uom || item.product?.uom || 'Nos' %></td>
+                            <td class="col-uom"><%= item.unit || 'Nos' %></td>
                             <td class="col-qty"><%= item.quantity %></td>
                             <td class="col-rate"><%= formatNumber(item.rate) %></td>
-                            <td class="col-cgst-rate"><%= cgstRate %></td>
+                            <td class="col-cgst-rate"><%= itemCgstRate %></td>
                             <td class="col-cgst-amt"><%= formatNumber(cgstAmt) %></td>
-                            <td class="col-sgst-rate"><%= sgstRate %></td>
+                            <td class="col-sgst-rate"><%= itemSgstRate %></td>
                             <td class="col-sgst-amt"><%= formatNumber(sgstAmt) %></td>
                             <td class="col-total"><%= formatNumber(lineTotal) %></td>
                         </tr>
