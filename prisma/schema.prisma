@@ -313,13 +313,15 @@ model Quote {
 }
 
 model QuoteItem {
-  id        Int    @id @default(autoincrement())
-  quoteId   Int    @map("quote_id")
-  productId Int    @map("product_id")
-  quantity  Int
-  unit      String // 'box', 'pack', or 'piece'
-  rate      Float
-  amount    Float
+  id          Int     @id @default(autoincrement())
+  quoteId     Int     @map("quote_id")
+  productId   Int     @map("product_id")
+  quantity    Int
+  unit        String  // 'box', 'pack', or 'piece'
+  rate        Float
+  taxRate     Float   @default(0) @map("tax_rate")
+  amount      Float
+  description String?
 
   quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
