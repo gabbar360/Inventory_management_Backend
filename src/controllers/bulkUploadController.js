@@ -566,17 +566,29 @@ class BulkUploadController {
           });
           if (!product) throw new Error(`Product '${productName}' not found`);
 
-          const stockBatch = await prisma.stockBatch.findFirst({
-            where: {
-              productId: product.id,
-              locationId: location.id,
-              OR: [
-                { remainingBoxes: { gt: 0 } },
-                { remainingPcs: { gt: 0 } },
-              ],
-            },
-            orderBy: { inwardDate: 'asc' },
-          });
+          const stockBatchIdFromFile = row.stockBatchId || row.StockBatchId || row.stock_batch_id;
+          let stockBatch;
+
+          if (stockBatchIdFromFile) {
+            stockBatch = await prisma.stockBatch.findUnique({
+              where: { id: parseInt(stockBatchIdFromFile) },
+            });
+          }
+
+          if (!stockBatch) {
+            stockBatch = await prisma.stockBatch.findFirst({
+              where: {
+                productId: product.id,
+                locationId: location.id,
+                OR: [
+                  { remainingBoxes: { gt: 0 } },
+                  { remainingPcs: { gt: 0 } },
+                ],
+              },
+              orderBy: { inwardDate: 'asc' },
+            });
+          }
+
           if (!stockBatch) throw new Error(`No stock available for product '${productName}' at location '${locationName}'`);
 
           const invoiceNo = row.invoiceNo || row.InvoiceNo || row.invoice_no;
@@ -621,10 +633,18 @@ class BulkUploadController {
             throw new Error(`Insufficient stock. Available: ${availableQuantity} ${saleUnit}(s), Required: ${quantity}`);
           }
 
-          const baseAmount = quantity * ratePerUnit;
+          // itemTotalCost = only baseAmount (quantity * ratePerUnit), same as normal create
+          const itemBaseAmount = quantity * ratePerUnit;
           const gstRate = product.category?.gstRate || 0;
-          const gstAmount = (baseAmount * gstRate) / 100;
-          const totalCost = baseAmount + gstAmount;
+
+          // COGS calculation for debug
+          const unitCost = saleUnit === 'box' ? stockBatch.costPerBox :
+                           saleUnit === 'pack' ? (stockBatch.costPerPack || stockBatch.costPerBox / (stockBatch.packPerBox || 1)) :
+                           stockBatch.costPerPcs;
+          const itemCOGS = (unitCost || 0) * quantity;
+          const itemGrossProfit = itemBaseAmount - itemCOGS;
+
+          const expense = parseFloat(row.expense || row.Expense || row.EXPENSE || 0);
 
           let invoice = await prisma.outwardInvoice.findFirst({
             where: { invoiceNo: invoiceNo.toString().trim(), customerId: customer.id },
@@ -638,12 +658,13 @@ class BulkUploadController {
                 customerId: customer.id,
                 locationId: location.id,
                 saleType: saleType,
-                expense: 0,
+                expense: expense,
                 totalCost: 0,
               },
             });
           }
 
+          // Save itemBaseAmount as totalCost (same as normal create: quantity * ratePerUnit)
           await prisma.outwardItem.create({
             data: {
               outwardInvoiceId: invoice.id,
@@ -652,7 +673,7 @@ class BulkUploadController {
               saleUnit: saleUnit,
               quantity,
               ratePerUnit,
-              totalCost,
+              totalCost: itemBaseAmount,
             },
           });
 
@@ -683,6 +704,17 @@ class BulkUploadController {
               remainingBoxes: Math.max(0, updatedRemainingBoxes),
               remainingPacks: Math.max(0, updatedRemainingPacks),
               remainingPcs: Math.max(0, updatedRemainingPcs),
+            },
+          });
+
+          await prisma.stockMovement.create({
+            data: {
+              type: 'outward',
+              referenceId: invoice.id,
+              productId: product.id,
+              locationId: location.id,
+              quantity: -quantity,
+              movementDate: date,
             },
           });
 
@@ -879,7 +911,7 @@ class BulkUploadController {
                   location: { select: { name: true } },
                 },
               },
-              product: { select: { name: true, grade: true }, include: { category: { select: { gstRate: true } } } },
+              product: { include: { category: { select: { gstRate: true } } } },
             },
             orderBy: {
               inwardInvoice: {
@@ -919,7 +951,7 @@ class BulkUploadController {
                   location: { select: { name: true } },
                 },
               },
-              product: { select: { name: true, grade: true }, include: { category: { select: { gstRate: true } } } },
+              product: { include: { category: { select: { gstRate: true } } } },
             },
             orderBy: {
               outwardInvoice: {
@@ -949,6 +981,8 @@ class BulkUploadController {
               gstAmount: gstAmount,
               totalCost: totalWithGst,
               saleType: item.outwardInvoice.saleType,
+              expense: item.outwardInvoice.expense,
+              stockBatchId: item.stockBatchId,
             };
           });
           filename = `outward_export_${new Date().toISOString().split('T')[0]}.xlsx`;

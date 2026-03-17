@@ -82,7 +82,6 @@ class OutwardService {
       invoice.items?.forEach(item => {
         totalQty += item.quantity;
         
-        // Convert all quantities to boxes
         if (item.saleUnit === 'box') {
           totalBoxes += item.quantity;
         } else if (item.saleUnit === 'pack') {
@@ -91,7 +90,6 @@ class OutwardService {
           totalBoxes += item.quantity / ((item.stockBatch?.packPerBox || 1) * (item.stockBatch?.packPerPiece || 1));
         }
 
-        // Calculate COGS
         const unitCost = item.saleUnit === 'box' ? item.stockBatch?.costPerBox : 
                         item.saleUnit === 'pack' ? (item.stockBatch?.costPerPack || item.stockBatch?.costPerBox / (item.stockBatch?.packPerBox || 1)) : 
                         item.stockBatch?.costPerPcs;
@@ -251,27 +249,21 @@ class OutwardService {
         });
       }
 
-      return await tx.outwardInvoice.findUnique({
+      const createdInvoice = await tx.outwardInvoice.findUnique({
         where: { id: invoice.id },
         include: {
           customer: true,
           location: true,
           items: {
             include: {
-              product: {
-                include: {
-                  category: true,
-                },
-              },
-              stockBatch: {
-                include: {
-                  vendor: true,
-                },
-              },
+              product: { include: { category: true } },
+              stockBatch: { include: { vendor: true } },
             },
           },
         },
       });
+
+      return createdInvoice;
     }, { timeout: 30000 });
   }
 
