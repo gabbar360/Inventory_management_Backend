@@ -6,7 +6,7 @@
     <title>Quote - <%= quote.quoteNo %></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Aldrich&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
 
         * {
@@ -23,7 +23,7 @@
         }
 
         body {
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-weight: 400;
   font-style: normal;
             font-size: 11pt;
@@ -68,8 +68,8 @@
         }
 
         .header-logo-area img {
-            max-width: 100px;
-            max-height: 80px;
+            max-width: 150px;
+            max-height: 120px;
             object-fit: contain;
         }
 
@@ -82,34 +82,34 @@
         }
 
         .company-name {
-            font-family: 'Aldrich', sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 16pt;
             font-weight: 700;
-            text-align: center;
+            text-align: left;
             margin-bottom: 2px;
         }
 
         .company-subtitle {
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 12pt;
             font-weight: 600;
-            text-align: center;
+            text-align: left;
             margin-bottom: 2px;
         }
 
         .company-address {
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 12pt;
             font-weight: bold;
-            text-align: center;
+            text-align: left;
             line-height: 1.3;
         }
 
         .company-contact {
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 12pt;
             font-weight: 600;
-            text-align: center;
+            text-align: left;
         }
 
         .header-info-area {
@@ -130,7 +130,7 @@
         }
 
         .quote-title-row h1 {
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 24pt;
             font-weight: bold;
             margin: 0;
@@ -278,7 +278,7 @@
             border-right: 1px solid #000;
             padding: 3px 4px;
             font-size: 10pt;
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             vertical-align: middle;
         }
 
@@ -298,12 +298,12 @@
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
             font-weight: bold;
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 11pt;
         }
 
         .items-table .total-row .total-label {
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 20pt;
             font-weight: bold;
             text-align: center;
@@ -413,7 +413,7 @@
         }
 
         .sig-certified {
-            font-family: "Aldrich", sans-serif;
+            font-family: 'Roboto', sans-serif;
             font-size: 8pt;
             text-align: center;
             padding: 4px 6px;
@@ -511,36 +511,27 @@
 
             <!-- ===== HEADER ===== -->
             <div class="header-section">
+                <div class="header-company-area">
+                    <div class="company-name">Vegnar Global LLP</div>
+                    <div class="company-subtitle">B-623, RK Iconic</div>
+                    <div class="company-address">
+                        <div>150 Feet Ring Road, Ayodhya Chowk</div>
+                        <div>Rajkot Gujarat 360007, India</div>
+                    </div>
+                    <div style="font-size: 10pt; text-align: left; margin-top: 4px; font-weight: bold;">
+                        GSTIN: 24ABAFV3901A1ZV
+                    </div>
+                    <div class="company-contact" style="text-align: left;">
+                        Phone: +91 9998040482 | www.vegnar.com
+                    </div>
+                </div>
+                <div class="header-info-area">
+                </div>
                 <div class="header-logo-area">
                     <% if (logoBase64) { %>
                         <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
                     <% } else { %>
                         <div style="font-size: 18pt; font-weight: bold;">Logo</div>
-                    <% } %>
-                </div>
-                <div class="header-company-area">
-                    <div class="company-name"><%= settings?.companyName || 'Company Name' %></div>
-                    <% if (settings?.companyDescription) { %>
-                        <div class="company-subtitle"><%= settings.companyDescription %></div>
-                    <% } %>
-                    <% if (settings?.companyAddress) { %>
-                        <div class="company-address">
-                            <% settings.companyAddress.split('\n').forEach(line => { %>
-                                <div><%= line %></div>
-                            <% }) %>
-                        </div>
-                    <% } %>
-                    <% if (settings?.companyPhone || settings?.companyWebsite) { %>
-                        <div class="company-contact">
-                            <% if (settings?.companyPhone) { %>Phone: <%= settings.companyPhone %><% } %>
-                            <% if (settings?.companyPhone && settings?.companyWebsite) { %> | <% } %>
-                            <% if (settings?.companyWebsite) { %><%= settings.companyWebsite %><% } %>
-                        </div>
-                    <% } %>
-                </div>
-                <div class="header-info-area">
-                    <% if (settings?.companyGstin) { %>
-                        <div>GSTIN: <%= settings.companyGstin %></div>
                     <% } %>
                 </div>
             </div>
@@ -609,39 +600,47 @@
             <div class="party-details">
                 <div class="party-left">
                     <span class="party-field">Address: </span>
-                    <span class="party-value"><%= quote.customer?.address || '' %></span>
+                    <span class="party-value">
+                        <%= quote.customer?.address || '' %><br>
+                        Rajkot Gujarat 360007<br>
+                        India<br>
+                        GST: <%= quote.customer?.gstNumber || '' %>
+                    </span>
                 </div>
                 <div class="party-right">
                     <span class="party-field">Address: </span>
-                    <span class="party-value"><%= quote.customer?.address || '' %></span>
+                    <span class="party-value">
+                        <%= quote.customer?.address || '' %><br>
+                        Rajkot Gujarat 360007<br>
+                        India<br>
+                        GST: <%= quote.customer?.gstNumber || '' %>
+                    </span>
                 </div>
             </div>
 
-            <!-- GSTIN -->
-            <div class="party-details">
+            <!-- State -->
+            <!-- <div class="party-details">
                 <div class="party-left">
-                    <span class="party-field">GSTIN: </span>
-                    <span class="party-value"><%= quote.customer?.gstNumber || '' %></span>
+                    <span class="party-field">State: </span>
+                    <span class="party-value"><%= quote.customer?.state || '' %></span>
                 </div>
                 <div class="party-right">
-                    <span class="party-field">GSTIN: </span>
-                    <span class="party-value"><%= quote.customer?.gstNumber || '' %></span>
+                    <span class="party-field">State: </span>
+                    <span class="party-value"><%= quote.customer?.state || '' %></span>
                 </div>
-            </div>
+            </div> -->
 
-            <!-- State + Code -->
-            <div class="state-row">
-                <div class="left-half">
-                    <div class="state-label">State: <%= quote.customer?.state || '' %></div>
-                    <div class="state-code-label">Code</div>
-                    <div class="state-code-value"><%= quote.customer?.stateCode || '' %></div>
+            <!-- Code -->
+            <!-- <div class="party-details" style="border-bottom: none;">
+                <div class="party-left">
+                    <span class="party-field">Code: </span>
+                    <span class="party-value"><%= quote.customer?.stateCode || '' %></span>
                 </div>
-                <div class="right-half">
-                    <div class="state-label">State: <%= quote.customer?.state || '' %></div>
-                    <div class="state-code-label">Code</div>
-                    <div class="state-code-value"><%= quote.customer?.stateCode || '' %></div>
+                <div class="party-right">
+                    <span class="party-field">Code: </span>
+                    <span class="party-value"><%= quote.customer?.stateCode || '' %></span>
                 </div>
-            </div>
+            </div> -->
 
             <!-- ===== SEPARATOR ===== -->
             <div class="separator"></div>
@@ -658,7 +657,7 @@
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th class="col-sno" rowspan="2">S. No.</th>
+                        <th class="col-sno" rowspan="2">No</th>
                         <th class="col-desc" rowspan="2">Product Description</th>
                         <th class="col-hsn" rowspan="2">HSN Code</th>
                         <th class="col-uom" rowspan="2">UOM</th>
@@ -669,9 +668,9 @@
                         <th class="col-total" rowspan="2">Total</th>
                     </tr>
                     <tr>
-                        <th class="col-cgst-rate" style="font-size:9pt;">Rate</th>
+                        <th class="col-cgst-rate" style="font-size:9pt;">%</th>
                         <th class="col-cgst-amt" style="font-size:9pt;">Amount</th>
-                        <th class="col-sgst-rate" style="font-size:9pt;">Rate</th>
+                        <th class="col-sgst-rate" style="font-size:9pt;">%</th>
                         <th class="col-sgst-amt" style="font-size:9pt;">Amount</th>
                     </tr>
                 </thead>
@@ -694,8 +693,8 @@
                         %>
                         <tr class="data-row<%= index === quote.items.length - 1 ? ' last-data-row' : '' %>">
                             <td class="col-sno"><%= index + 1 %></td>
-                            <td class="col-desc" style="font-family:'Aldrich',sans-serif;">
-                                <div><%= item.product?.name || 'Product' %></div>
+                            <td class="col-desc" style="font-family:'Roboto',sans-serif;">
+                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= item.product?.name || 'Product' %></div>
                                 <% if (item.description) { %>
                                     <div style="font-size:8pt; color:#444;"><%= item.description %></div>
                                 <% } %>
@@ -704,9 +703,9 @@
                             <td class="col-uom"><%= item.unit || 'Nos' %></td>
                             <td class="col-qty"><%= item.quantity %></td>
                             <td class="col-rate"><%= formatNumber(item.rate) %></td>
-                            <td class="col-cgst-rate"><%= itemCgstRate %></td>
+                            <td class="col-cgst-rate"><%= itemCgstRate %>%</td>
                             <td class="col-cgst-amt"><%= formatNumber(cgstAmt) %></td>
-                            <td class="col-sgst-rate"><%= itemSgstRate %></td>
+                            <td class="col-sgst-rate"><%= itemSgstRate %>%</td>
                             <td class="col-sgst-amt"><%= formatNumber(sgstAmt) %></td>
                             <td class="col-total"><%= formatNumber(lineTotal) %></td>
                         </tr>
