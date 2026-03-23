@@ -776,7 +776,7 @@
                 <div class="summary-left">
                     <div class="words-header">Total Invoice amount in words</div>
                     <div class="words-notes">
-                        <div style="margin-bottom: 8px;"><strong>Indian Rupees: </strong><%= amountInWords %></div>
+                        <div style="margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px;"><strong>Indian Rupees: </strong><%= amountInWords %></div>
                         <% if (quote.notes) { %>
                             <div><strong>Note:</strong> <%= quote.notes %></div>
                         <% } %>
@@ -820,8 +820,11 @@
                 </div>
                 <div class="sig-area">
                     <div class="sig-certified">Certified that the particulars given above are true and correct</div>
-                    <div class="sig-company">For <%= settings?.companyName || 'Company Name' %></div>
+                    <div class="sig-company">For Vegnar Global LLP</div>
                     <div class="sig-space"></div>
+                    <div style="text-align: center; padding: 4px; font-weight: bold; font-size: 11pt;">
+                        Authorised signatory
+                    </div>
                 </div>
             </div>
 
@@ -836,15 +839,15 @@
             </div>
 
             <!-- ===== AUTHORISED SIGNATORY ===== -->
-            <div class="auth-signatory">Authorised signatory</div>
+            <!-- <div class="auth-signatory">Authorised signatory</div> -->
 
             <!-- ===== FOOTER ===== -->
-            <div class="footer-address">
+            <!-- <div class="footer-address">
                 Head Office : <%= settings?.companyAddress ? settings.companyAddress.split('\n')[0] : '' %>
             </div>
             <div class="footer-gst">
                 GST: <%= settings?.companyGstin || '' %>
-            </div>
+            </div> -->
         </div>
     </div>
 </body>
