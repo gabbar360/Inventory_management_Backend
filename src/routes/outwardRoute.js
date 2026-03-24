@@ -13,5 +13,6 @@ router.post('/add-outward', validateRequest(outwardInvoiceSchema), OutwardContro
 router.put('/update-outward/:id', validateRequest(outwardInvoiceSchema), OutwardController.update);
 router.delete('/delete-outward/:id', OutwardController.delete);
 router.get('/get-outward/reports/profit-loss', OutwardController.getProfitLoss);
+router.get('/outward/:id/pdf', OutwardController.generateInvoicePDF);
 
 module.exports = router;
