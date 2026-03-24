@@ -146,18 +146,9 @@ const updateQuoteItems = async (req, res) => {
 
 const generateQuotePDF = async (req, res) => {
   try {
-    console.log('PDF Generation started for quote ID:', req.params.id);
-    
     // Fetch fresh data from database
     const quote = await quoteService.getQuoteById(req.params.id);
-    const settings = await settingsService.getSettings();
-    
-    console.log('Fresh quote data:', {
-      id: quote.id,
-      discount: quote.discount,
-      totalAmount: quote.totalAmount
-    });
-    
+    const settings = await settingsService.getSettings();  
     // Remove old calculation - let template handle it
     // Template will calculate everything correctly
     
