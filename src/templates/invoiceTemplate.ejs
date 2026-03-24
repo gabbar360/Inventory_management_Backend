@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Quote - <%= quote.quoteNo %></title>
+    <title>Invoice - <%= invoice.invoiceNo %></title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
@@ -25,11 +25,10 @@
         body {
             font-family: 'Roboto', sans-serif;
             font-weight: 400;
-  font-style: normal;
+            font-style: normal;
             font-size: 11pt;
             color: #000;
             background: white;
-
         }
 
         .page {
@@ -122,14 +121,14 @@
             font-weight: bold;
         }
 
-        /* ===== QUOTE TITLE ===== */
-        .quote-title-row {
+        /* ===== INVOICE TITLE ===== */
+        .invoice-title-row {
             text-align: center;
             border-bottom: 1px solid #000;
             padding: 8px 0;
         }
 
-        .quote-title-row h1 {
+        .invoice-title-row h1 {
             font-family: 'Roboto', sans-serif;
             font-size: 24pt;
             font-weight: bold;
@@ -219,65 +218,28 @@
             padding: 2px 0;
         }
 
-        .state-row {
-            display: flex;
-            border-bottom: 1px solid #000;
-        }
-
-        .state-row .left-half {
-            flex: 1;
-            display: flex;
-            border-right: 1px solid #000;
-        }
-
-        .state-row .right-half {
-            flex: 1;
-            display: flex;
-        }
-
-        .state-label {
-            flex: 3;
-            font-weight: bold;
-            padding: 4px 6px;
-            font-size: 11pt;
-        }
-
-        .state-code-label {
-            flex: 1;
-            font-weight: bold;
-            padding: 4px 6px;
-            font-size: 11pt;
-            border-left: 1px solid #000;
-        }
-
-        .state-code-value {
-            flex: 1;
-            padding: 4px 6px;
-            font-size: 11pt;
-        }
-
         /* ===== ITEMS TABLE ===== */
         .items-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9pt;
+            font-size: 10pt;
         }
 
         .items-table th {
             border: 1px solid #000;
             border-top: none;
-            padding: 3px 2px;
+            padding: 4px 3px;
             text-align: center;
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 10pt;
             vertical-align: middle;
             word-wrap: break-word;
         }
 
         .items-table td {
             border-right: 1px solid #000;
-            padding: 2px 3px;
-            font-size: 9pt;
+            padding: 3px 4px;
+            font-size: 10pt;
             font-family: 'Roboto', sans-serif;
             vertical-align: middle;
         }
@@ -299,12 +261,12 @@
             border-bottom: 1px solid #000;
             font-weight: bold;
             font-family: 'Roboto', sans-serif;
-            font-size: 10pt;
+            font-size: 11pt;
         }
 
         .items-table .total-row .total-label {
             font-family: 'Roboto', sans-serif;
-            font-size: 18pt;
+            font-size: 20pt;
             font-weight: bold;
             text-align: center;
         }
@@ -445,29 +407,6 @@
             font-weight: bold;
         }
 
-        .auth-signatory {
-            border-top: 1px solid #000;
-            text-align: center;
-            padding: 4px 6px;
-            font-weight: bold;
-            font-size: 11pt;
-        }
-
-        /* ===== FOOTER ===== */
-        .footer-address {
-            text-align: center;
-            padding: 4px 6px;
-            font-size: 11pt;
-            border-top: 3px double #000;
-        }
-
-        .footer-gst {
-            text-align: center;
-            padding: 4px 6px;
-            font-size: 11pt;
-            border-top: 3px double #000;
-        }
-
         /* ===== PRINT ===== */
         @page {
             size: A4;
@@ -505,8 +444,6 @@
                     const d = new Date(dateStr);
                     return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
                 }
-
-
             %>
 
             <!-- ===== HEADER ===== -->
@@ -536,44 +473,46 @@
                 </div>
             </div>
 
-            <!-- ===== QUOTE TITLE ===== -->
-            <div class="quote-title-row">
-                <h1>Quote</h1>
+            <!-- ===== INVOICE TITLE ===== -->
+            <div class="invoice-title-row">
+                <h1>Invoice</h1>
             </div>
 
-            <!-- ===== QUOTE INFO ROWS ===== -->
+            <!-- ===== INVOICE INFO ROWS ===== -->
             <div class="info-row">
                 <div class="left-section">
-                    <span class="info-label">Quote No:</span>
-                    <span class="info-value"><%= quote.quoteNo %></span>
+                    <span class="info-label">Invoice No:</span>
+                    <span class="info-value"><%= invoice.invoiceNo %></span>
                 </div>
                 <div class="right-section">
-                    <span class="info-label">Terms of Delivery:</span>
-                    <span class="info-value"><%= quote.termsOfDelivery || '' %></span>
-                </div>
-            </div>
-
-            <div class="info-row">
-                <div class="left-section">
-                    <span class="info-label">Quote Date:</span>
-                    <span class="info-value"><%= formatDate(quote.quoteDate) %></span>
-                </div>
-                <div class="right-section">
-                    <span class="info-label">Payment Terms:</span>
-                    <span class="info-value"><%= quote.paymentTerms || '' %></span>
+                    <span class="info-label">Sale Type:</span>
+                    <span class="info-value"><%= invoice.saleType?.toUpperCase() || 'DOMESTIC' %></span>
                 </div>
             </div>
 
             <div class="info-row">
                 <div class="left-section">
-                    <span class="info-label">Expiry Date:</span>
-                    <span class="info-value"><%= formatDate(quote.expiryDate) %></span>
+                    <span class="info-label">Invoice Date:</span>
+                    <span class="info-value"><%= formatDate(invoice.date) %></span>
                 </div>
                 <div class="right-section">
-                    <span class="info-label">Reference:</span>
-                    <span class="info-value"><%= quote.reference || '' %></span>
+                    <span class="info-label">Location:</span>
+                    <span class="info-value"><%= invoice.location?.name || '' %></span>
                 </div>
             </div>
+
+            <% if (invoice.expense > 0) { %>
+            <div class="info-row">
+                <div class="left-section">
+                    <span class="info-label">Additional Expense:</span>
+                    <span class="info-value">₹<%= formatNumber(invoice.expense) %></span>
+                </div>
+                <div class="right-section">
+                    <span class="info-label"></span>
+                    <span class="info-value"></span>
+                </div>
+            </div>
+            <% } %>
 
             <!-- ===== SEPARATOR ===== -->
             <div class="separator"></div>
@@ -588,11 +527,11 @@
             <div class="party-details">
                 <div class="party-left">
                     <span class="party-field">Name: </span>
-                    <span class="party-value"><%= quote.customer?.name || '' %></span>
+                    <span class="party-value"><%= invoice.customer?.name || '' %></span>
                 </div>
                 <div class="party-right">
                     <span class="party-field">Name: </span>
-                    <span class="party-value"><%= quote.customer?.name || '' %></span>
+                    <span class="party-value"><%= invoice.customer?.name || '' %></span>
                 </div>
             </div>
 
@@ -601,46 +540,22 @@
                 <div class="party-left">
                     <span class="party-field">Address: </span>
                     <span class="party-value">
-                        <%= quote.customer?.address || '' %><br>
-                        Rajkot Gujarat 360007<br>
-                        India<br>
-                        GST: <%= quote.customer?.gstNumber || '' %>
+                        <%= invoice.customer?.address || '' %><br>
+                        <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
+                        <% if (invoice.customer?.email) { %>Email: <%= invoice.customer.email %><br><% } %>
+                        GST: <%= invoice.customer?.gstNumber || '' %>
                     </span>
                 </div>
                 <div class="party-right">
                     <span class="party-field">Address: </span>
                     <span class="party-value">
-                        <%= quote.customer?.address || '' %><br>
-                        Rajkot Gujarat 360007<br>
-                        India<br>
-                        GST: <%= quote.customer?.gstNumber || '' %>
+                        <%= invoice.customer?.address || '' %><br>
+                        <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
+                        <% if (invoice.customer?.email) { %>Email: <%= invoice.customer.email %><br><% } %>
+                        GST: <%= invoice.customer?.gstNumber || '' %>
                     </span>
                 </div>
             </div>
-
-            <!-- State -->
-            <!-- <div class="party-details">
-                <div class="party-left">
-                    <span class="party-field">State: </span>
-                    <span class="party-value"><%= quote.customer?.state || '' %></span>
-                </div>
-                <div class="party-right">
-                    <span class="party-field">State: </span>
-                    <span class="party-value"><%= quote.customer?.state || '' %></span>
-                </div>
-            </div> -->
-
-            <!-- Code -->
-            <!-- <div class="party-details" style="border-bottom: none;">
-                <div class="party-left">
-                    <span class="party-field">Code: </span>
-                    <span class="party-value"><%= quote.customer?.stateCode || '' %></span>
-                </div>
-                <div class="party-right">
-                    <span class="party-field">Code: </span>
-                    <span class="party-value"><%= quote.customer?.stateCode || '' %></span>
-                </div>
-            </div> -->
 
             <!-- ===== SEPARATOR ===== -->
             <div class="separator"></div>
@@ -654,31 +569,6 @@
                 let totalLineTotal = 0;
                 let avgGstRate = 0;
                 let totalGstableAmount = 0;
-                
-                // Pre-calculate GST rates for headers
-                let tempTotalAmount = 0;
-                let tempTotalCgst = 0;
-                let tempTotalSgst = 0;
-                let tempGstableAmount = 0;
-                
-                quote.items.forEach((item) => {
-                    const itemTaxRate = item.taxRate || item.product?.category?.gstRate || 0;
-                    const lineAmount = item.quantity * item.rate;
-                    const cgstAmt = lineAmount * (itemTaxRate / 2 / 100);
-                    const sgstAmt = lineAmount * (itemTaxRate / 2 / 100);
-                    
-                    tempTotalAmount += lineAmount;
-                    tempTotalCgst += cgstAmt;
-                    tempTotalSgst += sgstAmt;
-                    
-                    if (itemTaxRate > 0) {
-                        tempGstableAmount += lineAmount;
-                    }
-                });
-                
-                const avgGstRateForHeader = tempGstableAmount > 0 ? ((tempTotalCgst + tempTotalSgst) / tempGstableAmount * 100) : 0;
-                const cgstRateForHeader = avgGstRateForHeader / 2;
-                const sgstRateForHeader = avgGstRateForHeader / 2;
             %>
 
             <table class="items-table">
@@ -690,8 +580,8 @@
                         <th class="col-uom" rowspan="2">UOM</th>
                         <th class="col-qty" rowspan="2">Qty</th>
                         <th class="col-rate" rowspan="2">Rate</th>
-                        <th colspan="2" style="text-align:center;">CGST <%= cgstRateForHeader > 0 ? '(' + cgstRateForHeader.toFixed(1) + '%)' : '' %></th>
-                        <th colspan="2" style="text-align:center;">SGST <%= sgstRateForHeader > 0 ? '(' + sgstRateForHeader.toFixed(1) + '%)' : '' %></th>
+                        <th colspan="2" style="text-align:center;">CGST</th>
+                        <th colspan="2" style="text-align:center;">SGST</th>
                         <th class="col-total" rowspan="2">Total</th>
                     </tr>
                     <tr>
@@ -702,12 +592,12 @@
                     </tr>
                 </thead>
                 <tbody>
-                    <% quote.items.forEach((item, index) => { %>
+                    <% invoice.items?.forEach((item, index) => { %>
                         <%
                             const itemTaxRate = item.taxRate || item.product?.category?.gstRate || 0;
                             const itemCgstRate = itemTaxRate / 2;
                             const itemSgstRate = itemTaxRate / 2;
-                            const lineAmount = item.quantity * item.rate;
+                            const lineAmount = item.quantity * item.ratePerUnit;
                             const cgstAmt = lineAmount * (itemCgstRate / 100);
                             const sgstAmt = lineAmount * (itemSgstRate / 100);
                             const lineTotal = lineAmount + cgstAmt + sgstAmt;
@@ -723,18 +613,18 @@
                                 totalGstableAmount += lineAmount;
                             }
                         %>
-                        <tr class="data-row<%= index === quote.items.length - 1 ? ' last-data-row' : '' %>">
+                        <tr class="data-row<%= index === invoice.items.length - 1 ? ' last-data-row' : '' %>">
                             <td class="col-sno"><%= index + 1 %></td>
                             <td class="col-desc" style="font-family:'Roboto',sans-serif;">
                                 <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= item.product?.name || 'Product' %></div>
-                                <% if (item.description) { %>
-                                    <div style="font-size:8pt; color:#444;"><%= item.description %></div>
+                                <% if (item.product?.grade) { %>
+                                    <div style="font-size:8pt; color:#444;">Grade: <%= item.product.grade %></div>
                                 <% } %>
                             </td>
                             <td class="col-hsn"><%= item.product?.category?.hsnCode || '' %></td>
-                            <td class="col-uom"><%= item.unit || 'Nos' %></td>
+                            <td class="col-uom"><%= item.saleUnit || 'Nos' %></td>
                             <td class="col-qty"><%= item.quantity %></td>
-                            <td class="col-rate"><%= formatNumber(item.rate) %></td>
+                            <td class="col-rate"><%= formatNumber(item.ratePerUnit) %></td>
                             <td class="col-cgst-rate"><%= itemCgstRate %>%</td>
                             <td class="col-cgst-amt"><%= formatNumber(cgstAmt) %></td>
                             <td class="col-sgst-rate"><%= itemSgstRate %>%</td>
@@ -759,12 +649,11 @@
 
             <!-- ===== SUMMARY SECTION ===== -->
             <%
-                const freight = quote.freight || 0;
-                const discount = quote.discount || 0;
+                const expense = invoice.expense || 0;
                 const totalTaxAmt = totalCgstAmt + totalSgstAmt;
-                const grandTotal = totalLineTotal + freight - discount;
+                const grandTotal = totalLineTotal + expense;
                 
-                // Calculate average GST rate for summary
+                // Calculate average GST rate
                 avgGstRate = totalGstableAmount > 0 ? ((totalCgstAmt + totalSgstAmt) / totalGstableAmount * 100) : 0;
                 const cgstRate = avgGstRate / 2;
                 const sgstRate = avgGstRate / 2;
@@ -815,9 +704,7 @@
                     <div class="words-header">Total Invoice amount in words</div>
                     <div class="words-notes">
                         <div style="margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px;"><strong>Indian Rupees: </strong><%= amountInWords %></div>
-                        <% if (quote.notes) { %>
-                            <div><strong>Note:</strong> <%= quote.notes %></div>
-                        <% } %>
+                        <div><strong>Note:</strong> Payment is due within 30 days of invoice date. Late payments may incur additional charges.</div>
                     </div>
                 </div>
                 <div class="summary-right">
@@ -837,16 +724,10 @@
                         <div class="summary-label">Total Tax Amount</div>
                         <div class="summary-value"><%= formatNumber(totalTaxAmt) %></div>
                     </div>
-                    <% if (discount > 0) { %>
+                    <% if (expense > 0) { %>
                     <div class="summary-row">
-                        <div class="summary-label">Discount</div>
-                        <div class="summary-value">(<%= formatNumber(discount) %>)</div>
-                    </div>
-                    <% } %>
-                    <% if (freight > 0) { %>
-                    <div class="summary-row">
-                        <div class="summary-label">Freight</div>
-                        <div class="summary-value"><%= formatNumber(freight) %></div>
+                        <div class="summary-label">Additional Expense</div>
+                        <div class="summary-value"><%= formatNumber(expense) %></div>
                     </div>
                     <% } %>
                     <div class="summary-row" style="border-bottom: none;">
@@ -878,22 +759,14 @@
             <div class="terms-section">
                 <div class="terms-content">
                     <div class="terms-title">Terms & conditions:-</div>
-                    <% if (quote.termsAndConditions) { %>
-                        <div style="white-space: pre-wrap; font-size: 10pt;"><%= quote.termsAndConditions %></div>
-                    <% } %>
+                    <div style="white-space: pre-wrap; font-size: 10pt;">
+                        1. Payment is due within 30 days of invoice date.
+                        2. Late payments may incur additional charges.
+                        3. All disputes must be reported within 7 days.
+                        4. Goods once sold will not be taken back.
+                    </div>
                 </div>
             </div>
-
-            <!-- ===== AUTHORISED SIGNATORY ===== -->
-            <!-- <div class="auth-signatory">Authorised signatory</div> -->
-
-            <!-- ===== FOOTER ===== -->
-            <!-- <div class="footer-address">
-                Head Office : <%= settings?.companyAddress ? settings.companyAddress.split('\n')[0] : '' %>
-            </div>
-            <div class="footer-gst">
-                GST: <%= settings?.companyGstin || '' %>
-            </div> -->
         </div>
     </div>
 </body>
