@@ -118,8 +118,8 @@ const updateQuote = async (req, res) => {
       quoteDate,
       expiryDate,
       status,
-      discount,
-      tax,
+      discount: discount !== undefined ? discount : 0,
+      tax: tax !== undefined ? tax : 0,
       totalAmount,
       notes,
       termsAndConditions,
@@ -148,11 +148,18 @@ const generateQuotePDF = async (req, res) => {
   try {
     console.log('PDF Generation started for quote ID:', req.params.id);
     
+    // Fetch fresh data from database
     const quote = await quoteService.getQuoteById(req.params.id);
     const settings = await settingsService.getSettings();
     
-    const finalTotal = quote.totalAmount + (quote.totalAmount * (quote.tax || 5) / 100) - (quote.discount || 0);
-    quote.totalInWords = numberToWords(Math.floor(finalTotal));
+    console.log('Fresh quote data:', {
+      id: quote.id,
+      discount: quote.discount,
+      totalAmount: quote.totalAmount
+    });
+    
+    // Remove old calculation - let template handle it
+    // Template will calculate everything correctly
     
     // Convert logo to base64
     const logoPath = path.join(__dirname, '../public/images/vegnar.webp');
@@ -192,7 +199,9 @@ const generateQuotePDF = async (req, res) => {
     
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader('Content-Disposition', `inline; filename="Quote-${quote.quoteNo}.pdf"`);
-    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     
     res.end(pdfBuffer);
     

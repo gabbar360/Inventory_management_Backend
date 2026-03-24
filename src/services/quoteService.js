@@ -102,8 +102,8 @@ const getQuoteById = async (id) => {
 const updateQuote = async (id, data) => {
   const updateData = {
     status: data.status,
-    discount: data.discount,
-    tax: data.tax,
+    discount: data.discount !== undefined ? data.discount : 0,
+    tax: data.tax !== undefined ? data.tax : 0,
     totalAmount: data.totalAmount,
     notes: data.notes,
     termsAndConditions: data.termsAndConditions,
