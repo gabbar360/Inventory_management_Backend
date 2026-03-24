@@ -303,6 +303,9 @@ model Quote {
   tax                  Float    @default(0)
   notes                String?
   termsAndConditions   String?  @map("terms_and_conditions")
+  termsOfDelivery      String?  @map("terms_of_delivery")
+  paymentTerms         String?  @map("payment_terms")
+  reference            String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

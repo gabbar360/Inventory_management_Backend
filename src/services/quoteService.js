@@ -24,6 +24,9 @@ const createQuote = async (data) => {
       tax: data.tax || 0,
       notes: data.notes,
       termsAndConditions: data.termsAndConditions,
+      termsOfDelivery: data.termsOfDelivery || null,
+      paymentTerms: data.paymentTerms || null,
+      reference: data.reference || null,
       items: {
         create: data.items.map(item => ({
           productId: item.productId,
@@ -107,6 +110,9 @@ const updateQuote = async (id, data) => {
     totalAmount: data.totalAmount,
     notes: data.notes,
     termsAndConditions: data.termsAndConditions,
+    termsOfDelivery: data.termsOfDelivery !== undefined ? data.termsOfDelivery : null,
+    paymentTerms: data.paymentTerms !== undefined ? data.paymentTerms : null,
+    reference: data.reference !== undefined ? data.reference : null,
   };
 
   // Add optional fields if provided
