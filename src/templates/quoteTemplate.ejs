@@ -728,8 +728,9 @@
             <!-- ===== SUMMARY SECTION ===== -->
             <%
                 const freight = quote.freight || 0;
+                const discount = quote.discount || 0;
                 const totalTaxAmt = totalCgstAmt + totalSgstAmt;
-                const grandTotal = totalAmount + totalTaxAmt + freight - (quote.discount || 0);
+                const grandTotal = totalLineTotal + freight - discount;
 
                 // Amount in words
                 function numberToWords(num) {
@@ -796,13 +797,21 @@
                         <div class="summary-value"><%= formatNumber(totalSgstAmt) %></div>
                     </div>
                     <div class="summary-row">
-                        <div class="summary-label">Freight</div>
-                        <div class="summary-value"><%= formatNumber(freight) %></div>
-                    </div>
-                    <div class="summary-row">
                         <div class="summary-label">Total Tax Amount</div>
                         <div class="summary-value"><%= formatNumber(totalTaxAmt) %></div>
                     </div>
+                    <% if (discount > 0) { %>
+                    <div class="summary-row">
+                        <div class="summary-label">Discount</div>
+                        <div class="summary-value">(<%= formatNumber(discount) %>)</div>
+                    </div>
+                    <% } %>
+                    <% if (freight > 0) { %>
+                    <div class="summary-row">
+                        <div class="summary-label">Freight</div>
+                        <div class="summary-value"><%= formatNumber(freight) %></div>
+                    </div>
+                    <% } %>
                     <div class="summary-row" style="border-bottom: none;">
                         <div class="grand-total-label">Grand Total</div>
                         <div class="grand-total-value"><%= formatNumber(grandTotal) %></div>
