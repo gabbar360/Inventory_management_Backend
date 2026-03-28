@@ -88,10 +88,18 @@
             margin-bottom: 2px;
         }
 
+        .company-name-bold {
+            font-family: 'Roboto', sans-serif;
+            font-size: 16pt;
+            font-weight: 600;
+            text-align: left;
+            margin-bottom: 2px;
+        }
+
         .company-subtitle {
             font-family: 'Roboto', sans-serif;
             font-size: 12pt;
-            font-weight: 600;
+            font-weight: 400;
             text-align: left;
             margin-bottom: 2px;
         }
@@ -99,7 +107,7 @@
         .company-address {
             font-family: 'Roboto', sans-serif;
             font-size: 12pt;
-            font-weight: bold;
+            font-weight: 400;
             text-align: left;
             line-height: 1.3;
         }
@@ -107,7 +115,7 @@
         .company-contact {
             font-family: 'Roboto', sans-serif;
             font-size: 12pt;
-            font-weight: 600;
+            font-weight: 400;
             text-align: left;
         }
 
@@ -152,7 +160,7 @@
         }
 
         .info-label {
-            font-weight: bold;
+            font-weight: 400;
             padding: 4px 6px;
             font-size: 11pt;
             white-space: nowrap;
@@ -161,6 +169,7 @@
         .info-value {
             padding: 4px 6px;
             font-size: 11pt;
+            font-weight: 600;
         }
 
         /* ===== SEPARATOR ===== */
@@ -208,7 +217,7 @@
         }
 
         .party-field {
-            font-weight: bold;
+            font-weight: 400;
             font-size: 11pt;
             padding: 2px 0;
         }
@@ -216,6 +225,7 @@
         .party-value {
             font-size: 11pt;
             padding: 2px 0;
+            font-weight: 600;
         }
 
         /* ===== ITEMS TABLE ===== */
@@ -259,14 +269,14 @@
         .items-table .total-row td {
             border-top: 1px solid #000;
             border-bottom: 1px solid #000;
-            font-weight: bold;
+            font-weight: 600;
             font-family: 'Roboto', sans-serif;
             font-size: 11pt;
         }
 
         .items-table .total-row .total-label {
             font-family: 'Roboto', sans-serif;
-            font-size: 20pt;
+            font-size: 14pt;
             font-weight: bold;
             text-align: center;
         }
@@ -306,7 +316,7 @@
         .summary-label {
             flex: 1;
             padding: 4px 6px;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 11pt;
         }
 
@@ -320,7 +330,7 @@
         .grand-total-label {
             flex: 1;
             padding: 4px 6px;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 12pt;
         }
 
@@ -328,7 +338,7 @@
             width: 120px;
             text-align: right;
             padding: 4px 6px;
-            font-weight: bold;
+            font-weight: 600;
             font-size: 12pt;
         }
 
@@ -365,7 +375,7 @@
 
         .bank-row {
             padding: 4px 6px;
-            font-weight: bold;
+            font-weight: 400;
             font-size: 11pt;
         }
 
@@ -398,13 +408,21 @@
         }
 
         .terms-content {
-            padding: 4px 6px;
+            padding: 0 6px;
             font-size: 11pt;
-            min-height: 60px;
+            white-space: pre-wrap;
+            margin: 0;
+            line-height: 1.2;
+            text-align: left;
         }
 
         .terms-title {
             font-weight: bold;
+            margin: 0;
+            padding: 0;
+            line-height: 1.2;
+            display: inline;
+            text-align: left;
         }
 
         /* ===== PRINT ===== */
@@ -449,13 +467,13 @@
             <!-- ===== HEADER ===== -->
             <div class="header-section">
                 <div class="header-company-area">
-                    <div class="company-name">Vegnar Global LLP</div>
+                    <div class="company-name-bold"><strong>Vegnar Global LLP</strong></div>
                     <div class="company-subtitle">B-623, RK Iconic</div>
                     <div class="company-address">
                         <div>150 Feet Ring Road, Ayodhya Chowk</div>
                         <div>Rajkot Gujarat 360007, India</div>
                     </div>
-                    <div style="font-size: 10pt; text-align: left; margin-top: 4px; font-weight: bold;">
+                    <div style="font-size: 10pt; text-align: left; margin-top: 4px; font-weight: 400;">
                         GSTIN: 24ABAFV3901A1ZV
                     </div>
                     <div class="company-contact" style="text-align: left;">
@@ -482,22 +500,22 @@
             <div class="info-row">
                 <div class="left-section">
                     <span class="info-label">Invoice No:</span>
-                    <span class="info-value"><%= invoice.invoiceNo %></span>
+                    <span class="info-value"><strong><%= invoice.invoiceNo %></strong></span>
                 </div>
                 <div class="right-section">
                     <span class="info-label">Sale Type:</span>
-                    <span class="info-value"><%= invoice.saleType?.toUpperCase() || 'DOMESTIC' %></span>
+                    <span class="info-value"><strong><%= invoice.saleType?.toUpperCase() || 'DOMESTIC' %></strong></span>
                 </div>
             </div>
 
             <div class="info-row">
                 <div class="left-section">
                     <span class="info-label">Invoice Date:</span>
-                    <span class="info-value"><%= formatDate(invoice.date) %></span>
+                    <span class="info-value"><strong><%= formatDate(invoice.date) %></strong></span>
                 </div>
                 <div class="right-section">
                     <span class="info-label">Location:</span>
-                    <span class="info-value"><%= invoice.location?.name || '' %></span>
+                    <span class="info-value"><strong><%= invoice.location?.name || '' %></strong></span>
                 </div>
             </div>
 
@@ -527,11 +545,11 @@
             <div class="party-details">
                 <div class="party-left">
                     <span class="party-field">Name: </span>
-                    <span class="party-value"><%= invoice.customer?.name || '' %></span>
+                    <span class="party-value"><strong><%= invoice.customer?.name || '' %></strong></span>
                 </div>
                 <div class="party-right">
                     <span class="party-field">Name: </span>
-                    <span class="party-value"><%= invoice.customer?.name || '' %></span>
+                    <span class="party-value"><strong><%= invoice.customer?.name || '' %></strong></span>
                 </div>
             </div>
 
@@ -540,19 +558,19 @@
                 <div class="party-left">
                     <span class="party-field">Address: </span>
                     <span class="party-value">
-                        <%= invoice.customer?.address || '' %><br>
-                        <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
-                        <% if (invoice.customer?.email) { %>Email: <%= invoice.customer.email %><br><% } %>
-                        GST: <%= invoice.customer?.gstNumber || '' %>
+                        <strong><%= invoice.customer?.address || '' %></strong><br>
+                        <% if (invoice.customer?.phone) { %><span class="party-field">Phone:</span> <strong><%= invoice.customer.phone %></strong><br><% } %>
+                        <% if (invoice.customer?.email) { %><span class="party-field">Email:</span> <strong><%= invoice.customer.email %></strong><br><% } %>
+                        <span class="party-field">GST:</span> <strong><%= invoice.customer?.gstNumber || '' %></strong>
                     </span>
                 </div>
                 <div class="party-right">
                     <span class="party-field">Address: </span>
                     <span class="party-value">
-                        <%= invoice.customer?.address || '' %><br>
-                        <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
-                        <% if (invoice.customer?.email) { %>Email: <%= invoice.customer.email %><br><% } %>
-                        GST: <%= invoice.customer?.gstNumber || '' %>
+                        <strong><%= invoice.customer?.address || '' %></strong><br>
+                        <% if (invoice.customer?.phone) { %><span class="party-field">Phone:</span> <strong><%= invoice.customer.phone %></strong><br><% } %>
+                        <% if (invoice.customer?.email) { %><span class="party-field">Email:</span> <strong><%= invoice.customer.email %></strong><br><% } %>
+                        <span class="party-field">GST:</span> <strong><%= invoice.customer?.gstNumber || '' %></strong>
                     </span>
                 </div>
             </div>
@@ -703,8 +721,8 @@
                 <div class="summary-left">
                     <div class="words-header">Total Invoice amount in words</div>
                     <div class="words-notes">
-                        <div style="margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px;"><strong>Indian Rupees: </strong><%= amountInWords %></div>
-                        <div><strong>Note:</strong> Payment is due within 30 days of invoice date. Late payments may incur additional charges.</div>
+                        <div style="margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px;"><%= amountInWords %></div>
+                        <div><strong>Notes:</strong> Payment is due within 30 days of invoice date. Late payments may incur additional charges.</div>
                     </div>
                 </div>
                 <div class="summary-right">
@@ -741,9 +759,9 @@
             <div class="bank-sig-section">
                 <div class="bank-area">
                     <div class="bank-title">Bank Details</div>
-                    <div class="bank-row">Bank Name: <%= settings?.bankName || '' %></div>
-                    <div class="bank-row">Bank A/C: <%= settings?.accountNumber || '' %></div>
-                    <div class="bank-row" style="border-bottom: none;">Bank IFSC: <%= settings?.ifscCode || '' %></div>
+                    <div class="bank-row">Bank Name: <strong><%= settings?.bankName || '' %></strong></div>
+                    <div class="bank-row">Bank A/C: <strong><%= settings?.accountNumber || '' %></strong></div>
+                    <div class="bank-row" style="border-bottom: none;">Bank IFSC: <strong><%= settings?.ifscCode || '' %></strong></div>
                 </div>
                 <div class="sig-area">
                     <div class="sig-certified">Certified that the particulars given above are true and correct</div>
@@ -757,15 +775,11 @@
 
             <!-- ===== TERMS & CONDITIONS ===== -->
             <div class="terms-section">
-                <div class="terms-content">
-                    <div class="terms-title">Terms & conditions:-</div>
-                    <div style="white-space: pre-wrap; font-size: 10pt;">
-                        1. Payment is due within 30 days of invoice date.
-                        2. Late payments may incur additional charges.
-                        3. All disputes must be reported within 7 days.
-                        4. Goods once sold will not be taken back.
-                    </div>
-                </div>
+                <div class="terms-content"><div class="terms-title">Terms & conditions:-</div>
+1. Payment is due within 30 days of invoice date.
+2. Late payments may incur additional charges.
+3. All disputes must be reported within 7 days.
+4. Goods once sold will not be taken back.</div>
             </div>
         </div>
     </div>
