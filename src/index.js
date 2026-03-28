@@ -44,7 +44,13 @@ const allowedOrigins = getAllowedOrigins();
 
 app.use(
   cors({
-    origin: true,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile apps, curl, etc.) - only for non-public routes
+      if (!origin || allowedOrigins.some((o) => origin === o || origin.endsWith('.vegnar.com'))) {
+        return callback(null, true);
+      }
+      return callback(new Error('Not allowed by CORS'));
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
     allowedHeaders: [
@@ -91,6 +97,10 @@ const startServer = async () => {
     // Add auth routes first (public)
     const authRoute = require('./routes/authRoutes');
     app.use('/api/v1/auth', authRoute);
+
+    // Public routes (no auth required)
+    const publicRoute = require('./routes/publicRoute');
+    app.use('/api/v1/public', publicRoute);
 
     // Load all other routes
     await loadRoutes();
