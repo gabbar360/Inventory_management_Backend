@@ -45,15 +45,10 @@ const allowedOrigins = getAllowedOrigins();
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.)
-      if (!origin) {
+      // Allow requests with no origin (mobile apps, curl, etc.) - only for non-public routes
+      if (!origin || allowedOrigins.some((o) => origin === o || origin.endsWith('.vegnar.com'))) {
         return callback(null, true);
       }
-      // Check if origin is in allowed list
-      if (allowedOrigins.includes(origin) || origin.endsWith('.vegnar.com')) {
-        return callback(null, true);
-      }
-      console.warn(`CORS blocked origin: ${origin}`);
       return callback(new Error('Not allowed by CORS'));
     },
     credentials: true,
