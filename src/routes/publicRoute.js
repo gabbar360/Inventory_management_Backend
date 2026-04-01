@@ -8,6 +8,7 @@ const ALLOWED_PUBLIC_ORIGINS = [
   'https://vegnar.com',
   'https://www.vegnar.com',
   'http://localhost:3000',
+  'http://localhost:3001',
 ];
 
 const restrictToVegnar = (req, res, next) => {

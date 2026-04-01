@@ -21,6 +21,27 @@ class LeadController {
     }
   }
 
+  static async create(req, res) {
+    try {
+      const { name, email, phone, company, country, message, formType } = req.body;
+      if (!name) return sendError(res, 400, 'Name is required');
+      const lead = await LeadService.create({
+        name,
+        email: email ? email.toLowerCase() : null,
+        phone: phone || null,
+        company: company || null,
+        country: country || null,
+        message: message || null,
+        formType: formType || 'Manual',
+        source: 'manual',
+        status: 'new',
+      });
+      return sendResponse(res, 201, true, lead, 'Lead created successfully');
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
   static async update(req, res) {
     try {
       const lead = await LeadService.update(req.params.id, req.body);
