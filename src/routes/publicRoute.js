@@ -1,5 +1,6 @@
 const { Router } = require('express');
 const { PrismaClient } = require('@prisma/client');
+const axios = require('axios');
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -66,5 +67,88 @@ router.post('/lead', restrictToVegnar, async (req, res) => {
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });
+
+// ─── Facebook Webhook ────────────────────────────────────────────────────────
+
+// Step 1: Meta webhook verification (GET)
+router.get('/facebook/webhook', (req, res) => {
+  const mode = req.query['hub.mode'];
+  const token = req.query['hub.verify_token'];
+  const challenge = req.query['hub.challenge'];
+
+  if (mode === 'subscribe' && token === process.env.FB_WEBHOOK_VERIFY_TOKEN) {
+    return res.status(200).send(challenge);
+  }
+  return res.status(403).json({ success: false, message: 'Forbidden' });
+});
+
+// Step 2: Receive lead notification from Meta (POST)
+router.post('/facebook/webhook', async (req, res) => {
+  // Acknowledge immediately so Meta doesn't retry
+  res.status(200).send('EVENT_RECEIVED');
+
+  try {
+    const body = req.body;
+    if (body.object !== 'page') return;
+
+    for (const entry of body.entry || []) {
+      for (const change of entry.changes || []) {
+        if (change.field !== 'leadgen') continue;
+
+        const leadgenId = change.value.leadgen_id;
+        await fetchAndSaveFacebookLead(leadgenId);
+      }
+    }
+  } catch (error) {
+    console.error('Facebook webhook error:', error.message);
+  }
+});
+
+async function fetchAndSaveFacebookLead(leadgenId) {
+  try {
+    const { data } = await axios.get(
+      `https://graph.facebook.com/v25.0/${leadgenId}`,
+      { params: { access_token: process.env.FB_PAGE_ACCESS_TOKEN } }
+    );
+
+    // Parse field_data array into key-value object
+    const fields = {};
+    for (const f of data.field_data || []) {
+      fields[f.name] = f.values?.[0] || null;
+    }
+
+    const email = fields['email'] ? fields['email'].toLowerCase() : null;
+    const phone = fields['phone_number'] || fields['phone'] || null;
+    const name = fields['full_name'] || fields['first_name']
+      ? `${fields['first_name'] || ''} ${fields['last_name'] || ''}`.trim()
+      : fields['full_name'] || 'Facebook Lead';
+    const company = fields['company_name'] || fields['company'] || null;
+    const country = fields['country'] || null;
+
+    // Duplicate check
+    if (email) {
+      const existing = await prisma.lead.findFirst({ where: { email } });
+      if (existing) return;
+    }
+
+    await prisma.lead.create({
+      data: {
+        name,
+        email,
+        phone,
+        company,
+        country,
+        message: `Facebook Lead ID: ${leadgenId}`,
+        formType: 'FacebookAd',
+        source: 'facebook',
+        status: 'new',
+      },
+    });
+
+    console.log(`✅ Facebook lead saved: ${name} (${email})`);
+  } catch (error) {
+    console.error('fetchAndSaveFacebookLead error:', error.response?.data || error.message);
+  }
+}
 
 module.exports = router;
