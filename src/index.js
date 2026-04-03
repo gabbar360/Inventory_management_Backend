@@ -46,8 +46,9 @@ const allowedOrigins = getAllowedOrigins();
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.) - only for non-public routes
-      if (!origin || allowedOrigins.some((o) => origin === o || origin.endsWith('.vegnar.com'))) {
+      // Allow Meta/Facebook webhooks (no origin header) and allowed origins
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.some((o) => origin === o || origin.endsWith('.vegnar.com')) || origin.endsWith('.facebook.com') || origin.endsWith('.fbcdn.net')) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
