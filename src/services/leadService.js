@@ -1,5 +1,6 @@
 const { PrismaClient } = require('@prisma/client');
 const { calculatePagination } = require('../utils/helpers');
+const { NotificationService } = require('./notificationService');
 
 const prisma = new PrismaClient();
 
@@ -40,7 +41,33 @@ class LeadService {
   }
 
   static async create(data) {
-    return await prisma.lead.create({ data });
+    const lead = await prisma.lead.create({ data });
+    
+    // Send notifications to all users
+    try {
+      const { sendNotificationToUser } = require('../socket/socket');
+      const users = await prisma.user.findMany({
+        select: { id: true },
+      });
+
+      for (const user of users) {
+        const notification = await NotificationService.create({
+          type: 'NEW_LEAD',
+          title: 'New Lead Created',
+          message: `New lead: ${lead.name} from ${lead.company || 'Unknown'}`,
+          receiverId: user.id,
+          relatedId: lead.id,
+          relatedType: 'LEAD',
+        });
+
+        // Send via socket
+        await sendNotificationToUser(user.id, notification);
+      }
+    } catch (error) {
+      console.error('[LEAD] Error creating notifications:', error.message);
+    }
+    
+    return lead;
   }
 
   static async update(id, data) {

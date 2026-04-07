@@ -11,6 +11,7 @@ const { PrismaClient } = require('@prisma/client');
 
 const { app, loadRoutes } = require('./app');
 const { errorHandler, notFound } = require('./middleware/error');
+const { initializeSocket } = require('./socket/socket');
 
 const PORT = process.env.PORT || 5000;
 const prisma = new PrismaClient();
@@ -118,6 +119,9 @@ const startServer = async () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`🔗 API Base URL: http://localhost:${PORT}/api/v1`);
+      
+      // Initialize Socket.io after server starts
+      initializeSocket(server);
     });
 
     server.on('error', (err) => {
