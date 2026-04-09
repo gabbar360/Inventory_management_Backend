@@ -37,7 +37,10 @@ class AuthController {
       const result = await AuthService.register(email, password, name, deviceInfo, ipAddress);
       setCookies(res, result.accessToken, result.refreshToken);
       
-      return sendResponse(res, 201, true, { user: result.user }, 'User registered successfully');
+      return sendResponse(res, 201, true, { 
+        user: result.user,
+        accessToken: result.accessToken 
+      }, 'User registered successfully');
     } catch (error) {
       return sendError(res, 400, error.message);
     }
@@ -52,7 +55,10 @@ class AuthController {
       const result = await AuthService.login(email, password, deviceInfo, ipAddress);
       setCookies(res, result.accessToken, result.refreshToken);
       
-      return sendResponse(res, 200, true, { user: result.user }, 'Login successful');
+      return sendResponse(res, 200, true, { 
+        user: result.user,
+        accessToken: result.accessToken 
+      }, 'Login successful');
     } catch (error) {
       return sendError(res, 401, error.message);
     }
@@ -69,7 +75,10 @@ class AuthController {
       const result = await AuthService.refreshAccessToken(refreshToken);
       setCookies(res, result.accessToken, result.refreshToken);
       
-      return sendResponse(res, 200, true, { user: result.user }, 'Token refreshed successfully');
+      return sendResponse(res, 200, true, { 
+        user: result.user,
+        accessToken: result.accessToken 
+      }, 'Token refreshed successfully');
     } catch (error) {
       res.clearCookie('accessToken');
       res.clearCookie('refreshToken');
@@ -114,7 +123,10 @@ class AuthController {
       }
 
       const result = await AuthService.verifyToken(accessToken);
-      return sendResponse(res, 200, true, result, 'Token is valid');
+      return sendResponse(res, 200, true, { 
+        ...result,
+        accessToken 
+      }, 'Token is valid');
     } catch (error) {
       return sendError(res, 401, error.message);
     }

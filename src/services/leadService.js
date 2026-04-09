@@ -40,7 +40,8 @@ class LeadService {
   }
 
   static async create(data) {
-    return await prisma.lead.create({ data });
+    const lead = await prisma.lead.create({ data });
+    return lead;
   }
 
   static async update(id, data) {

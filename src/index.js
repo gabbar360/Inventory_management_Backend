@@ -6,7 +6,6 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
-const { createServer } = require('http');
 const { PrismaClient } = require('@prisma/client');
 
 const { app, loadRoutes } = require('./app');
@@ -46,8 +45,9 @@ const allowedOrigins = getAllowedOrigins();
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (mobile apps, curl, etc.) - only for non-public routes
-      if (!origin || allowedOrigins.some((o) => origin === o || origin.endsWith('.vegnar.com'))) {
+      // Allow Meta/Facebook webhooks (no origin header) and allowed origins
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.some((o) => origin === o || origin.endsWith('.vegnar.com')) || origin.endsWith('.facebook.com') || origin.endsWith('.fbcdn.net')) {
         return callback(null, true);
       }
       return callback(new Error('Not allowed by CORS'));
@@ -109,15 +109,13 @@ const startServer = async () => {
     app.use(notFound);
     app.use(errorHandler);
 
-    // Create HTTP server
-    const server = createServer(app);
-    httpServer = server;
-
-    server.listen(PORT, () => {
+    // Start server
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`🔗 API Base URL: http://localhost:${PORT}/api/v1`);
     });
+    httpServer = server;
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
