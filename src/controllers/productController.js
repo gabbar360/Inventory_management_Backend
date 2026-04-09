@@ -25,7 +25,6 @@ class ProductController {
   }
 
   static async create(req, res) {
-    console.log('Creating product with data:', req.body);
     try {
       const product = await ProductService.create(req.body);
       return sendResponse(res, 201, true, product, 'Product created successfully');
