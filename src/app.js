@@ -14,17 +14,12 @@ const loadRoutes = async () => {
       file.endsWith('Route.js') &&
       file !== 'basicAuthRoute.js' &&
       file !== 'invitationRoute.js' &&
-      file !== 'authRoute.js' &&
-      file !== 'notificationRoute.js'
+      file !== 'authRoute.js'
     ) {
       const route = require(`./routes/${file}`);
       app.use('/api/v1', route);
     }
   }
-
-  // Add notification routes
-  const notificationRoute = require('./routes/notificationRoute');
-  app.use('/api/v1', notificationRoute);
 };
 
 module.exports = { app, loadRoutes };

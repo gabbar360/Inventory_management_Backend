@@ -6,12 +6,10 @@ const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
-const { createServer } = require('http');
 const { PrismaClient } = require('@prisma/client');
 
 const { app, loadRoutes } = require('./app');
 const { errorHandler, notFound } = require('./middleware/error');
-const { initializeSocket } = require('./socket/socket');
 
 const PORT = process.env.PORT || 5000;
 const prisma = new PrismaClient();
@@ -111,18 +109,13 @@ const startServer = async () => {
     app.use(notFound);
     app.use(errorHandler);
 
-    // Create HTTP server
-    const server = createServer(app);
-    httpServer = server;
-
-    server.listen(PORT, () => {
+    // Start server
+    const server = app.listen(PORT, () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Health check: http://localhost:${PORT}/health`);
       console.log(`🔗 API Base URL: http://localhost:${PORT}/api/v1`);
-      
-      // Initialize Socket.io after server starts
-      initializeSocket(server);
     });
+    httpServer = server;
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
