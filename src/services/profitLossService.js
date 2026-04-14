@@ -8,7 +8,11 @@ const prisma = new PrismaClient();
 
 class ProfitLossService {
   static async generateProfitLossReport(startDate, endDate) {
-    const where = {};
+    const where = {
+      invoiceNo: {
+        not: 'OUT-SAMPLES'
+      }
+    };
     if (startDate && endDate) {
       where.date = { gte: new Date(startDate), lte: new Date(endDate) };
     }
@@ -162,7 +166,7 @@ class ProfitLossService {
         },
       });
 
-      if (!invoice) {
+      if (!invoice || invoice.invoiceNo === 'OUT-SAMPLES') {
         throw new Error('Invoice not found');
       }
 
