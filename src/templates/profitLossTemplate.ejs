@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profit & Loss Analysis Report</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #333;
+            background-color: #f5f5f5;
+        }
+
+        .container {
+            width: 100%;
+            padding: 20px;
+            background-color: white;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 3px solid #2c3e50;
+            padding-bottom: 20px;
+        }
+
+        .logo {
+            max-width: 100px;
+            height: auto;
+        }
+
+        .company-info {
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .company-info h1 {
+            font-size: 24px;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+
+        .company-info p {
+            font-size: 12px;
+            color: #666;
+            margin: 2px 0;
+        }
+
+        .report-title {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .report-title h2 {
+            font-size: 20px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .date-range {
+            text-align: center;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .summary-section {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .summary-card {
+            color: #333;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #ddd;
+            background-color: white;
+        }
+
+        .summary-card.revenue {
+            background-color: white;
+        }
+
+        .summary-card.cogs {
+            background-color: white;
+        }
+
+        .summary-card.profit {
+            background-color: white;
+        }
+
+        .summary-card.margin {
+            background-color: white;
+        }
+
+        .summary-card h3 {
+            font-size: 12px;
+            margin-bottom: 8px;
+            opacity: 0.9;
+            color: #666;
+        }
+
+        .summary-card .value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 11px;
+        }
+
+        thead {
+            background-color: #2c3e50;
+            color: white;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border: 1px solid #ddd;
+        }
+
+        td {
+            padding: 10px 12px;
+            border: 1px solid #ddd;
+        }
+
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        tbody tr:hover {
+            background-color: #f0f0f0;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .text-center {
+            text-align: center;
+        }
+
+        .positive {
+            color: #27ae60;
+            font-weight: 600;
+        }
+
+        .negative {
+            color: #e74c3c;
+            font-weight: 600;
+        }
+
+        .footer {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            font-size: 11px;
+            color: #666;
+        }
+
+        @media print {
+            body {
+                background-color: white;
+            }
+            .container {
+                padding: 0;
+            }
+        }
+
+        .page-break {
+            page-break-after: always;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <% if (logoBase64) { %>
+                <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo" class="logo">
+            <% } %>
+            <div class="company-info">
+                <h1><%= settings?.companyName || 'Company Name' %></h1>
+                <p><strong>Address:</strong> <%= settings?.companyAddress || 'N/A' %></p>
+                <p><strong>Phone:</strong> <%= settings?.companyPhone || 'N/A' %></p>
+                <p><strong>Email:</strong> <%= settings?.companyEmail || 'N/A' %></p>
+                <p><strong>GSTIN:</strong> <%= settings?.companyGstin || 'N/A' %></p>
+            </div>
+        </div>
+
+        <!-- Report Title -->
+        <div class="report-title">
+            <h2>📊 Profit & Loss Analysis Report</h2>
+            <div class="date-range">
+                <strong>Period:</strong> <%= startDate %> to <%= endDate %>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="summary-section">
+            <div class="summary-card revenue">
+                <h3>Total Revenue</h3>
+                <div class="value">₹<%= summary.totalRevenue.toFixed(2) %></div>
+            </div>
+            <div class="summary-card cogs">
+                <h3>Total COGS</h3>
+                <div class="value">₹<%= summary.totalCOGS.toFixed(2) %></div>
+            </div>
+            <div class="summary-card profit">
+                <h3>Total Profit</h3>
+                <div class="value <%= summary.totalProfit >= 0 ? 'positive' : 'negative' %>">
+                    ₹<%= summary.totalProfit.toFixed(2) %>
+                </div>
+            </div>
+            <div class="summary-card margin">
+                <h3>Profit Margin</h3>
+                <div class="value"><%= summary.profitMargin %>%</div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <table>
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>UOM</th>
+                    <th>PCS/PACK</th>
+                    <th>PACK/BOX</th>
+                    <th>PCS/BOX</th>
+                    <th>Order Qty</th>
+                    <th>Dispatch Qty</th>
+                    <th>Vendor</th>
+                    <th class="text-right">Purchase Price</th>
+                    <th class="text-right">Sales Price</th>
+                    <th class="text-right">Difference</th>
+                    <th class="text-right">Margin %</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% reportData.forEach(item => { %>
+                    <tr>
+                        <td><strong><%= item.productName %></strong> <% if(item.productGrade) { %><br><small>(<%= item.productGrade %>)</small><% } %></td>
+                        <td><%= item.uom %></td>
+                        <td class="text-center"><%= item.packPerPiece %></td>
+                        <td class="text-center"><%= item.packPerBox %></td>
+                        <td class="text-center"><%= item.pcsPerBox %></td>
+                        <td class="text-center"><%= item.orderQty %> <%= item.saleUnit %></td>
+                        <td class="text-center"><%= item.dispatchQty %> <%= item.saleUnit %></td>
+                        <td><%= item.vendorName %></td>
+                        <td class="text-right">₹<%= item.purchasePrice %></td>
+                        <td class="text-right">₹<%= item.salesPrice %></td>
+                        <td class="text-right <%= parseFloat(item.difference) >= 0 ? 'positive' : 'negative' %>">
+                            ₹<%= item.difference %>
+                        </td>
+                        <td class="text-right <%= parseFloat(item.profitMargin) >= 0 ? 'positive' : 'negative' %>">
+                            <%= item.profitMargin %>%
+                        </td>
+                    </tr>
+                <% }); %>
+            </tbody>
+        </table>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>&copy; <%= new Date().getFullYear() %> <%= settings?.companyName || 'Company' %>. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>
