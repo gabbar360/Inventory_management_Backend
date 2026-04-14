@@ -9,12 +9,23 @@ const prisma = new PrismaClient();
 class ProfitLossService {
   static async generateProfitLossReport(startDate, endDate) {
     const where = {
-      invoiceNo: {
-        not: 'OUT-SAMPLES'
-      }
+      AND: [
+        {
+          invoiceNo: {
+            not: 'OUT-SAMPLES'
+          }
+        },
+        {
+          invoiceNo: {
+            not: { startsWith: 'INW' }
+          }
+        }
+      ]
     };
     if (startDate && endDate) {
-      where.date = { gte: new Date(startDate), lte: new Date(endDate) };
+      where.AND.push({
+        date: { gte: new Date(startDate), lte: new Date(endDate) }
+      });
     }
 
     const invoices = await prisma.outwardInvoice.findMany({
