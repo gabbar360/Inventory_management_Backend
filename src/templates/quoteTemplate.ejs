@@ -649,30 +649,7 @@
                 let avgGstRate = 0;
                 let totalGstableAmount = 0;
                 
-                // Pre-calculate GST rates for headers
-                let tempTotalAmount = 0;
-                let tempTotalCgst = 0;
-                let tempTotalSgst = 0;
-                let tempGstableAmount = 0;
-                
-                quote.items.forEach((item) => {
-                    const itemTaxRate = item.taxRate || item.product?.category?.gstRate || 0;
-                    const lineAmount = item.quantity * item.rate;
-                    const cgstAmt = lineAmount * (itemTaxRate / 2 / 100);
-                    const sgstAmt = lineAmount * (itemTaxRate / 2 / 100);
-                    
-                    tempTotalAmount += lineAmount;
-                    tempTotalCgst += cgstAmt;
-                    tempTotalSgst += sgstAmt;
-                    
-                    if (itemTaxRate > 0) {
-                        tempGstableAmount += lineAmount;
-                    }
-                });
-                
-                const avgGstRateForHeader = tempGstableAmount > 0 ? ((tempTotalCgst + tempTotalSgst) / tempGstableAmount * 100) : 0;
-                const cgstRateForHeader = avgGstRateForHeader / 2;
-                const sgstRateForHeader = avgGstRateForHeader / 2;
+                // No pre-calc needed for header (per-row rates shown)
             %>
 
             <table class="items-table">
@@ -684,8 +661,8 @@
                         <th class="col-uom" rowspan="2">UOM</th>
                         <th class="col-qty" rowspan="2">Qty</th>
                         <th class="col-rate" rowspan="2">Rate</th>
-                        <th colspan="2" style="text-align:center;">CGST <%= cgstRateForHeader > 0 ? '(' + cgstRateForHeader.toFixed(1) + '%)' : '' %></th>
-                        <th colspan="2" style="text-align:center;">SGST <%= sgstRateForHeader > 0 ? '(' + sgstRateForHeader.toFixed(1) + '%)' : '' %></th>
+                        <th colspan="2" style="text-align:center;">CGST</th>
+                        <th colspan="2" style="text-align:center;">SGST</th>
                         <th class="col-total" rowspan="2">Total</th>
                     </tr>
                     <tr>
@@ -757,11 +734,19 @@
                 const discount = quote.discount || 0;
                 const totalTaxAmt = totalCgstAmt + totalSgstAmt;
                 const grandTotal = totalLineTotal + freight - discount;
-                
-                // Calculate average GST rate for summary
-                avgGstRate = totalGstableAmount > 0 ? ((totalCgstAmt + totalSgstAmt) / totalGstableAmount * 100) : 0;
-                const cgstRate = avgGstRate / 2;
-                const sgstRate = avgGstRate / 2;
+
+                // Group GST by tax rate
+                const gstGroups = {};
+                quote.items.forEach((item) => {
+                    const rate = item.taxRate || item.product?.category?.gstRate || 0;
+                    if (rate <= 0) return;
+                    const lineAmt = item.quantity * item.rate;
+                    if (!gstGroups[rate]) gstGroups[rate] = { taxableAmt: 0, cgstAmt: 0, sgstAmt: 0 };
+                    gstGroups[rate].taxableAmt += lineAmt;
+                    gstGroups[rate].cgstAmt += lineAmt * (rate / 2 / 100);
+                    gstGroups[rate].sgstAmt += lineAmt * (rate / 2 / 100);
+                });
+                const gstGroupKeys = Object.keys(gstGroups).map(Number).sort((a,b) => a - b);
 
                 // Amount in words
                 function numberToWords(num) {
@@ -819,14 +804,16 @@
                         <div class="summary-label">Total Amount before Tax</div>
                         <div class="summary-value"><%= formatNumber(totalAmount) %></div>
                     </div>
+                    <% gstGroupKeys.forEach(function(rate) { var g = gstGroups[rate]; %>
                     <div class="summary-row">
-                        <div class="summary-label">CGST <%= cgstRate > 0 ? '(' + cgstRate.toFixed(1) + '%)' : '' %></div>
-                        <div class="summary-value"><%= formatNumber(totalCgstAmt) %></div>
+                        <div class="summary-label">CGST (<%= (rate/2).toFixed(1) %>%)</div>
+                        <div class="summary-value"><%= formatNumber(g.cgstAmt) %></div>
                     </div>
                     <div class="summary-row">
-                        <div class="summary-label">SGST <%= sgstRate > 0 ? '(' + sgstRate.toFixed(1) + '%)' : '' %></div>
-                        <div class="summary-value"><%= formatNumber(totalSgstAmt) %></div>
+                        <div class="summary-label">SGST (<%= (rate/2).toFixed(1) %>%)</div>
+                        <div class="summary-value"><%= formatNumber(g.sgstAmt) %></div>
                     </div>
+                    <% }); %>
                     <div class="summary-row">
                         <div class="summary-label">Total Tax Amount</div>
                         <div class="summary-value"><%= formatNumber(totalTaxAmt) %></div>

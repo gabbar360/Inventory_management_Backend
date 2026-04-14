@@ -30,7 +30,7 @@ class LocationService {
         _count: {
           select: { 
             inwardInvoices: true, 
-            outwardInvoices: true,
+            outwardItems: true,
             stockBatches: true,
           },
         },
@@ -71,7 +71,7 @@ class LocationService {
         _count: {
           select: { 
             inwardInvoices: true, 
-            outwardInvoices: true,
+            outwardItems: true,
             stockBatches: true,
           },
         },
@@ -92,7 +92,7 @@ class LocationService {
         _count: {
           select: { 
             inwardInvoices: true, 
-            outwardInvoices: true,
+            outwardItems: true,
             stockBatches: true,
           },
         },
@@ -108,7 +108,7 @@ class LocationService {
         _count: {
           select: { 
             inwardInvoices: true, 
-            outwardInvoices: true,
+            outwardItems: true,
             stockBatches: true,
           },
         },
@@ -123,7 +123,7 @@ class LocationService {
         _count: {
           select: { 
             inwardInvoices: true, 
-            outwardInvoices: true,
+            outwardItems: true,
             stockBatches: true,
           },
         },
@@ -134,7 +134,7 @@ class LocationService {
       throw new Error('Location not found');
     }
 
-    if (location._count.inwardInvoices > 0 || location._count.outwardInvoices > 0 || location._count.stockBatches > 0) {
+    if (location._count.inwardInvoices > 0 || location._count.outwardItems > 0 || location._count.stockBatches > 0) {
       throw new Error('Cannot delete location with associated transactions or stock');
     }
 
