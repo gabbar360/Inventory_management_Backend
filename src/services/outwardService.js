@@ -4,6 +4,28 @@ const { InventoryService } = require('./inventoryService');
 
 const prisma = new PrismaClient();
 
+const ITEM_INCLUDE = {
+  product: {
+    select: {
+      name: true,
+      grade: true,
+      category: { select: { name: true, gstRate: true } },
+    },
+  },
+  stockBatch: {
+    select: {
+      vendor: { select: { name: true } },
+      inwardDate: true,
+      costPerBox: true,
+      costPerPack: true,
+      costPerPcs: true,
+      packPerBox: true,
+      packPerPiece: true,
+    },
+  },
+  location: { select: { name: true } },
+};
+
 class OutwardService {
   static async getAll(page, limit, search, sortBy, sortOrder) {
     const where = search
@@ -17,7 +39,6 @@ class OutwardService {
 
     const total = await prisma.outwardInvoice.count({ where });
     const { offset } = calculatePagination(page, limit, total);
-
     const orderBy = sortBy
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
@@ -28,60 +49,18 @@ class OutwardService {
       take: limit,
       orderBy,
       include: {
-        customer: {
-          select: {
-            name: true,
-            code: true,
-          },
-        },
-        location: {
-          select: {
-            name: true,
-          },
-        },
-        items: {
-          include: {
-            product: {
-              select: {
-                name: true,
-                grade: true,
-                category: {
-                  select: {
-                    name: true,
-                    gstRate: true,
-                  },
-                },
-              },
-            },
-            stockBatch: {
-              select: {
-                vendor: {
-                  select: {
-                    name: true,
-                  },
-                },
-                inwardDate: true,
-                costPerBox: true,
-                costPerPack: true,
-                costPerPcs: true,
-                packPerBox: true,
-                packPerPiece: true,
-              },
-            },
-          },
-        },
+        customer: { select: { name: true, code: true } },
+        items: { include: ITEM_INCLUDE },
       },
     });
 
-    // Calculate additional fields for each invoice
-    const enrichedInvoices = invoices.map(invoice => {
+    const enrichedInvoices = invoices.map((invoice) => {
       let totalQty = 0;
       let totalBoxes = 0;
       let totalCOGS = 0;
 
-      invoice.items?.forEach(item => {
+      invoice.items?.forEach((item) => {
         totalQty += item.quantity;
-        
         if (item.saleUnit === 'box') {
           totalBoxes += item.quantity;
         } else if (item.saleUnit === 'pack') {
@@ -89,10 +68,10 @@ class OutwardService {
         } else {
           totalBoxes += item.quantity / ((item.stockBatch?.packPerBox || 1) * (item.stockBatch?.packPerPiece || 1));
         }
-
-        const unitCost = item.saleUnit === 'box' ? item.stockBatch?.costPerBox : 
-                        item.saleUnit === 'pack' ? (item.stockBatch?.costPerPack || item.stockBatch?.costPerBox / (item.stockBatch?.packPerBox || 1)) : 
-                        item.stockBatch?.costPerPcs;
+        const unitCost =
+          item.saleUnit === 'box' ? item.stockBatch?.costPerBox :
+          item.saleUnit === 'pack' ? (item.stockBatch?.costPerPack || item.stockBatch?.costPerBox / (item.stockBatch?.packPerBox || 1)) :
+          item.stockBatch?.costPerPcs;
         totalCOGS += (unitCost || 0) * item.quantity;
       });
 
@@ -108,10 +87,7 @@ class OutwardService {
       };
     });
 
-    return {
-      invoices: enrichedInvoices,
-      pagination: calculatePagination(page, limit, total),
-    };
+    return { invoices: enrichedInvoices, pagination: calculatePagination(page, limit, total) };
   }
 
   static async getById(id) {
@@ -119,41 +95,26 @@ class OutwardService {
       where: { id: parseInt(id) },
       include: {
         customer: true,
-        location: true,
         items: {
           include: {
-            product: {
-              include: {
-                category: true,
-              },
-            },
-            stockBatch: {
-              include: {
-                vendor: true,
-              },
-            },
+            product: { include: { category: true } },
+            stockBatch: { include: { vendor: true } },
+            location: true,
           },
         },
       },
     });
 
-    if (!invoice) {
-      throw new Error('Invoice not found');
-    }
-
+    if (!invoice) throw new Error('Invoice not found');
     return invoice;
   }
 
   static async create(data) {
     return await prisma.$transaction(async (tx) => {
-      // Check for duplicate invoice number
       const existingInvoice = await tx.outwardInvoice.findFirst({
         where: { invoiceNo: data.invoiceNo },
       });
-
-      if (existingInvoice) {
-        throw new Error('Invoice number already exists');
-      }
+      if (existingInvoice) throw new Error('Invoice number already exists');
 
       const processedItems = data.items.map((item) => ({
         ...item,
@@ -167,7 +128,6 @@ class OutwardService {
           invoiceNo: data.invoiceNo,
           date: new Date(data.date),
           customerId: parseInt(data.customerId),
-          locationId: parseInt(data.locationId),
           saleType: data.saleType,
           expense: data.expense,
           totalCost: totalInvoiceCost,
@@ -181,6 +141,7 @@ class OutwardService {
               outwardInvoiceId: invoice.id,
               productId: parseInt(item.productId),
               stockBatchId: parseInt(item.stockBatchId),
+              locationId: parseInt(item.locationId),
               saleUnit: item.saleUnit,
               quantity: item.quantity,
               ratePerUnit: item.ratePerUnit,
@@ -191,13 +152,8 @@ class OutwardService {
       );
 
       for (const item of items) {
-        const stockBatch = await tx.stockBatch.findUnique({
-          where: { id: item.stockBatchId },
-        });
-
-        if (!stockBatch) {
-          throw new Error(`Stock batch not found`);
-        }
+        const stockBatch = await tx.stockBatch.findUnique({ where: { id: item.stockBatchId } });
+        if (!stockBatch) throw new Error('Stock batch not found');
 
         let updatedBoxes = stockBatch.remainingBoxes;
         let updatedPacks = stockBatch.remainingPacks;
@@ -210,31 +166,19 @@ class OutwardService {
         } else if (item.saleUnit === 'pack') {
           updatedPacks -= item.quantity;
           updatedPcs -= item.quantity * stockBatch.packPerPiece;
-          // Calculate boxes reduction from packs
-          const packsReduced = item.quantity;
-          const boxesReduced = Math.floor(packsReduced / stockBatch.packPerBox);
-          updatedBoxes -= boxesReduced;
+          updatedBoxes -= Math.floor(item.quantity / stockBatch.packPerBox);
         } else {
           updatedPcs -= item.quantity;
-          // Calculate packs and boxes reduction from pieces
-          const pcsReduced = item.quantity;
-          const packsReduced = Math.floor(pcsReduced / stockBatch.packPerPiece);
-          const boxesReduced = Math.floor(packsReduced / stockBatch.packPerBox);
+          const packsReduced = Math.floor(item.quantity / stockBatch.packPerPiece);
           updatedPacks -= packsReduced;
-          updatedBoxes -= boxesReduced;
+          updatedBoxes -= Math.floor(packsReduced / stockBatch.packPerBox);
         }
 
-        if (updatedBoxes < 0 || updatedPacks < 0 || updatedPcs < 0) {
-          throw new Error('Insufficient stock');
-        }
+        if (updatedBoxes < 0 || updatedPacks < 0 || updatedPcs < 0) throw new Error('Insufficient stock');
 
         await tx.stockBatch.update({
           where: { id: item.stockBatchId },
-          data: {
-            remainingBoxes: updatedBoxes,
-            remainingPacks: updatedPacks,
-            remainingPcs: updatedPcs,
-          },
+          data: { remainingBoxes: updatedBoxes, remainingPacks: updatedPacks, remainingPcs: updatedPcs },
         });
 
         await tx.stockMovement.create({
@@ -242,28 +186,20 @@ class OutwardService {
             type: 'outward',
             referenceId: invoice.id,
             productId: parseInt(item.productId),
-            locationId: parseInt(data.locationId),
+            locationId: item.locationId,
             quantity: -item.quantity,
             movementDate: new Date(data.date),
           },
         });
       }
 
-      const createdInvoice = await tx.outwardInvoice.findUnique({
+      return await tx.outwardInvoice.findUnique({
         where: { id: invoice.id },
         include: {
           customer: true,
-          location: true,
-          items: {
-            include: {
-              product: { include: { category: true } },
-              stockBatch: { include: { vendor: true } },
-            },
-          },
+          items: { include: { product: { include: { category: true } }, stockBatch: { include: { vendor: true } }, location: true } },
         },
       });
-
-      return createdInvoice;
     }, { timeout: 30000 });
   }
 
@@ -273,27 +209,16 @@ class OutwardService {
         where: { id: parseInt(id) },
         include: { items: true },
       });
+      if (!existingInvoice) throw new Error('Invoice not found');
 
-      if (!existingInvoice) {
-        throw new Error('Invoice not found');
-      }
-
-      // Check for duplicate invoice number (excluding current invoice)
       const duplicateInvoice = await tx.outwardInvoice.findFirst({
-        where: {
-          invoiceNo: data.invoiceNo,
-          id: { not: parseInt(id) },
-        },
+        where: { invoiceNo: data.invoiceNo, id: { not: parseInt(id) } },
       });
+      if (duplicateInvoice) throw new Error('Invoice number already exists');
 
-      if (duplicateInvoice) {
-        throw new Error('Invoice number already exists');
-      }
-
+      // Restore stock for old items
       for (const item of existingInvoice.items) {
-        const stockBatch = await tx.stockBatch.findUnique({ 
-          where: { id: item.stockBatchId } 
-        });
+        const stockBatch = await tx.stockBatch.findUnique({ where: { id: item.stockBatchId } });
         if (stockBatch) {
           let restoredBoxes = stockBatch.remainingBoxes;
           let restoredPacks = stockBatch.remainingPacks;
@@ -306,27 +231,17 @@ class OutwardService {
           } else if (item.saleUnit === 'pack') {
             restoredPacks += item.quantity;
             restoredPcs += item.quantity * stockBatch.packPerPiece;
-            // Restore boxes from packs
-            const packsRestored = item.quantity;
-            const boxesRestored = Math.floor(packsRestored / stockBatch.packPerBox);
-            restoredBoxes += boxesRestored;
+            restoredBoxes += Math.floor(item.quantity / stockBatch.packPerBox);
           } else {
             restoredPcs += item.quantity;
-            // Restore packs and boxes from pieces
-            const pcsRestored = item.quantity;
-            const packsRestored = Math.floor(pcsRestored / stockBatch.packPerPiece);
-            const boxesRestored = Math.floor(packsRestored / stockBatch.packPerBox);
+            const packsRestored = Math.floor(item.quantity / stockBatch.packPerPiece);
             restoredPacks += packsRestored;
-            restoredBoxes += boxesRestored;
+            restoredBoxes += Math.floor(packsRestored / stockBatch.packPerBox);
           }
 
           await tx.stockBatch.update({
             where: { id: item.stockBatchId },
-            data: { 
-              remainingBoxes: restoredBoxes, 
-              remainingPacks: restoredPacks,
-              remainingPcs: restoredPcs 
-            },
+            data: { remainingBoxes: restoredBoxes, remainingPacks: restoredPacks, remainingPcs: restoredPcs },
           });
         }
       }
@@ -347,7 +262,6 @@ class OutwardService {
           invoiceNo: data.invoiceNo,
           date: new Date(data.date),
           customerId: parseInt(data.customerId),
-          locationId: parseInt(data.locationId),
           saleType: data.saleType,
           expense: data.expense,
           totalCost: totalInvoiceCost,
@@ -361,6 +275,7 @@ class OutwardService {
               outwardInvoiceId: invoice.id,
               productId: parseInt(item.productId),
               stockBatchId: parseInt(item.stockBatchId),
+              locationId: parseInt(item.locationId),
               saleUnit: item.saleUnit,
               quantity: item.quantity,
               ratePerUnit: item.ratePerUnit,
@@ -371,13 +286,8 @@ class OutwardService {
       );
 
       for (const item of items) {
-        const stockBatch = await tx.stockBatch.findUnique({
-          where: { id: item.stockBatchId },
-        });
-
-        if (!stockBatch) {
-          throw new Error(`Stock batch not found for item ${item.id}`);
-        }
+        const stockBatch = await tx.stockBatch.findUnique({ where: { id: item.stockBatchId } });
+        if (!stockBatch) throw new Error('Stock batch not found');
 
         let updatedBoxes = stockBatch.remainingBoxes;
         let updatedPacks = stockBatch.remainingPacks;
@@ -390,27 +300,17 @@ class OutwardService {
         } else if (item.saleUnit === 'pack') {
           updatedPacks -= item.quantity;
           updatedPcs -= item.quantity * stockBatch.packPerPiece;
-          // Calculate boxes reduction from packs
-          const packsReduced = item.quantity;
-          const boxesReduced = Math.floor(packsReduced / stockBatch.packPerBox);
-          updatedBoxes -= boxesReduced;
+          updatedBoxes -= Math.floor(item.quantity / stockBatch.packPerBox);
         } else {
           updatedPcs -= item.quantity;
-          // Calculate packs and boxes reduction from pieces
-          const pcsReduced = item.quantity;
-          const packsReduced = Math.floor(pcsReduced / stockBatch.packPerPiece);
-          const boxesReduced = Math.floor(packsReduced / stockBatch.packPerBox);
+          const packsReduced = Math.floor(item.quantity / stockBatch.packPerPiece);
           updatedPacks -= packsReduced;
-          updatedBoxes -= boxesReduced;
+          updatedBoxes -= Math.floor(packsReduced / stockBatch.packPerBox);
         }
 
         await tx.stockBatch.update({
           where: { id: item.stockBatchId },
-          data: {
-            remainingBoxes: updatedBoxes,
-            remainingPacks: updatedPacks,
-            remainingPcs: updatedPcs,
-          },
+          data: { remainingBoxes: updatedBoxes, remainingPacks: updatedPacks, remainingPcs: updatedPcs },
         });
 
         await tx.stockMovement.create({
@@ -418,7 +318,7 @@ class OutwardService {
             type: 'outward',
             referenceId: invoice.id,
             productId: parseInt(item.productId),
-            locationId: parseInt(data.locationId),
+            locationId: item.locationId,
             quantity: -item.quantity,
             movementDate: new Date(data.date),
           },
@@ -429,21 +329,7 @@ class OutwardService {
         where: { id: invoice.id },
         include: {
           customer: true,
-          location: true,
-          items: {
-            include: {
-              product: {
-                include: {
-                  category: true,
-                },
-              },
-              stockBatch: {
-                include: {
-                  vendor: true,
-                },
-              },
-            },
-          },
+          items: { include: { product: { include: { category: true } }, stockBatch: { include: { vendor: true } }, location: true } },
         },
       });
     }, { timeout: 30000 });
@@ -455,16 +341,10 @@ class OutwardService {
         where: { id: parseInt(id) },
         include: { items: true },
       });
-
-      if (!invoice) {
-        throw new Error('Invoice not found');
-      }
+      if (!invoice) throw new Error('Invoice not found');
 
       for (const item of invoice.items) {
-        const stockBatch = await tx.stockBatch.findUnique({
-          where: { id: item.stockBatchId },
-        });
-
+        const stockBatch = await tx.stockBatch.findUnique({ where: { id: item.stockBatchId } });
         if (stockBatch) {
           let restoredBoxes = stockBatch.remainingBoxes;
           let restoredPacks = stockBatch.remainingPacks;
@@ -477,41 +357,23 @@ class OutwardService {
           } else if (item.saleUnit === 'pack') {
             restoredPacks += item.quantity;
             restoredPcs += item.quantity * stockBatch.packPerPiece;
-            // Restore boxes from packs
-            const packsRestored = item.quantity;
-            const boxesRestored = Math.floor(packsRestored / stockBatch.packPerBox);
-            restoredBoxes += boxesRestored;
+            restoredBoxes += Math.floor(item.quantity / stockBatch.packPerBox);
           } else {
             restoredPcs += item.quantity;
-            // Restore packs and boxes from pieces
-            const pcsRestored = item.quantity;
-            const packsRestored = Math.floor(pcsRestored / stockBatch.packPerPiece);
-            const boxesRestored = Math.floor(packsRestored / stockBatch.packPerBox);
+            const packsRestored = Math.floor(item.quantity / stockBatch.packPerPiece);
             restoredPacks += packsRestored;
-            restoredBoxes += boxesRestored;
+            restoredBoxes += Math.floor(packsRestored / stockBatch.packPerBox);
           }
 
           await tx.stockBatch.update({
             where: { id: item.stockBatchId },
-            data: {
-              remainingBoxes: restoredBoxes,
-              remainingPacks: restoredPacks,
-              remainingPcs: restoredPcs,
-            },
+            data: { remainingBoxes: restoredBoxes, remainingPacks: restoredPacks, remainingPcs: restoredPcs },
           });
         }
       }
 
-      await tx.stockMovement.deleteMany({
-        where: {
-          referenceId: parseInt(id),
-          type: 'outward',
-        },
-      });
-
-      await tx.outwardInvoice.delete({
-        where: { id: parseInt(id) },
-      });
+      await tx.stockMovement.deleteMany({ where: { referenceId: parseInt(id), type: 'outward' } });
+      await tx.outwardInvoice.delete({ where: { id: parseInt(id) } });
 
       return { message: 'Invoice deleted successfully' };
     });
@@ -519,32 +381,21 @@ class OutwardService {
 
   static async getProfitLoss(startDate, endDate) {
     const where = {};
-    
     if (startDate && endDate) {
-      where.date = {
-        gte: new Date(startDate),
-        lte: new Date(endDate),
-      };
+      where.date = { gte: new Date(startDate), lte: new Date(endDate) };
     }
 
     const invoices = await prisma.outwardInvoice.findMany({
       where,
-      include: {
-        items: {
-          include: {
-            stockBatch: true,
-          },
-        },
-      },
+      include: { items: { include: { stockBatch: true } } },
     });
 
-    const profitLossData = await Promise.all(
+    return Promise.all(
       invoices.map(async (invoice) => {
         const revenue = invoice.totalCost;
         const cogs = await InventoryService.calculateCOGS(invoice.items);
         const grossProfit = revenue - cogs - invoice.expense;
         const margin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
-
         return {
           invoiceId: invoice.id,
           invoiceNo: invoice.invoiceNo,
@@ -557,8 +408,6 @@ class OutwardService {
         };
       })
     );
-
-    return profitLossData;
   }
 }
 module.exports = { OutwardService };

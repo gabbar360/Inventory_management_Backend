@@ -112,7 +112,7 @@ model Location {
   updatedAt DateTime @updatedAt
 
   inwardInvoices  InwardInvoice[]
-  outwardInvoices OutwardInvoice[]
+  outwardItems    OutwardItem[]
   stockBatches    StockBatch[]
 
   @@map("locations")
@@ -166,7 +166,6 @@ model OutwardInvoice {
   invoiceNo  String   @unique @map("invoice_no")
   date       DateTime
   customerId Int      @map("customer_id")
-  locationId Int      @map("location_id")
   saleType   String   @map("sale_type") // 'export' or 'domestic'
   expense    Float    @default(0)
   totalCost  Float    @map("total_cost")
@@ -174,7 +173,6 @@ model OutwardInvoice {
   updatedAt  DateTime @updatedAt
 
   customer Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  location Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
   items    OutwardItem[]
 
   @@map("outward_invoices")
@@ -185,7 +183,8 @@ model OutwardItem {
   outwardInvoiceId Int    @map("outward_invoice_id")
   productId        Int    @map("product_id")
   stockBatchId     Int    @map("stock_batch_id")
-  saleUnit         String @map("sale_unit") // 'box' or 'piece'
+  locationId       Int    @map("location_id")
+  saleUnit         String @map("sale_unit") // 'box', 'pack' or 'piece'
   quantity         Int
   ratePerUnit      Float  @map("rate_per_unit")
   totalCost        Float  @map("total_cost")
@@ -193,6 +192,7 @@ model OutwardItem {
   outwardInvoice OutwardInvoice @relation(fields: [outwardInvoiceId], references: [id], onDelete: Cascade)
   product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
   stockBatch     StockBatch     @relation(fields: [stockBatchId], references: [id], onDelete: Cascade)
+  location       Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
 
   @@map("outward_items")
 }
