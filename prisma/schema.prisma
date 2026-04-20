@@ -262,14 +262,25 @@ model Sample {
   customerEmail   String?  @map("customer_email")
   customerPhone   String?  @map("customer_phone")
   customerAddress String?  @map("customer_address")
-  sentBy          String   @map("sent_by") // Employee name who sent the sample
-  sampleType      String   @map("sample_type") // 'domestic' or 'export'
+  state           String?  @map("state")
+  userType        String?  @map("user_type") // 'company' or 'customer'
+  gstNumber       String?  @map("gst_number")
+  panNumber       String?  @map("pan_number")
+  paymentId       String?  @map("payment_id")
+  orderId         String?  @map("order_id")
+  invoiceNumber   String?  @map("invoice_number")
+  source          String   @default("manual") @map("source") // 'manual' or 'website'
+  sentBy          String?  @map("sent_by")
+  sampleType      String   @default("domestic") @map("sample_type")
   kitPrice        Float    @map("kit_price") @default(0)
+  subtotal        Float?   @map("subtotal")
+  tax             Float?   @map("tax")
   trackingNumber  String?  @map("tracking_number")
-  dispatchMethod  String   @map("dispatch_method") // 'courier', 'hand_delivery', 'transport'
-  sentDate        DateTime @map("sent_date")
-  status          String   @default("pending") // 'pending', 'approved', 'rejected'
+  dispatchMethod  String   @default("courier") @map("dispatch_method")
+  sentDate        DateTime @default(now()) @map("sent_date")
+  status          String   @default("pending")
   remarks         String?
+  products        String?  @map("products")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
