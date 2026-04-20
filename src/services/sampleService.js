@@ -4,16 +4,20 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class SampleService {
-  static async getAll(page, limit, search, sortBy, sortOrder) {
-    const where = search
-      ? {
-          OR: [
-            { sampleNo: { contains: search, mode: 'insensitive' } },
-            { customerName: { contains: search, mode: 'insensitive' } },
-            { status: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {};
+  static async getAll(page, limit, search, sortBy, sortOrder, source) {
+    const where = {};
+
+    if (search) {
+      where.OR = [
+        { sampleNo: { contains: search, mode: 'insensitive' } },
+        { customerName: { contains: search, mode: 'insensitive' } },
+        { status: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (source) {
+      where.source = source;
+    }
 
     const total = await prisma.sample.count({ where });
     const { offset } = calculatePagination(page, limit, total);
@@ -64,6 +68,40 @@ class SampleService {
     }
 
     return sample;
+  }
+
+  static async createFromWebsite(data) {
+    const lastSample = await prisma.sample.findFirst({
+      orderBy: { sampleNo: 'desc' },
+    });
+
+    const sampleNo = generateCode('SMP', lastSample?.sampleNo);
+
+    return await prisma.sample.create({
+      data: {
+        sampleNo,
+        source: 'website',
+        userType: data.userType,
+        customerName: data.customerName,
+        customerEmail: data.customerEmail,
+        customerPhone: data.customerPhone,
+        customerAddress: data.customerAddress,
+        state: data.state,
+        gstNumber: data.gstNumber || null,
+        panNumber: data.panNumber || null,
+        products: data.products || null,
+        paymentId: data.paymentId,
+        orderId: data.orderId || null,
+        invoiceNumber: data.invoiceNumber || null,
+        kitPrice: parseFloat(data.kitPrice) || 0,
+        subtotal: data.subtotal ? parseFloat(data.subtotal) : null,
+        tax: data.tax ? parseFloat(data.tax) : null,
+        sampleType: 'domestic',
+        dispatchMethod: 'courier',
+        sentDate: new Date(),
+        status: 'pending',
+      },
+    });
   }
 
   static async create(data) {

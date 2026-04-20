@@ -1,0 +1,16 @@
+-- AlterTable
+ALTER TABLE "samples" ADD COLUMN     "gst_number" TEXT,
+ADD COLUMN     "invoice_number" TEXT,
+ADD COLUMN     "order_id" TEXT,
+ADD COLUMN     "pan_number" TEXT,
+ADD COLUMN     "payment_id" TEXT,
+ADD COLUMN     "products" TEXT,
+ADD COLUMN     "source" TEXT NOT NULL DEFAULT 'manual',
+ADD COLUMN     "state" TEXT,
+ADD COLUMN     "subtotal" DOUBLE PRECISION,
+ADD COLUMN     "tax" DOUBLE PRECISION,
+ADD COLUMN     "user_type" TEXT,
+ALTER COLUMN "sent_date" SET DEFAULT CURRENT_TIMESTAMP,
+ALTER COLUMN "dispatch_method" SET DEFAULT 'courier',
+ALTER COLUMN "sample_type" SET DEFAULT 'domestic',
+ALTER COLUMN "sent_by" DROP NOT NULL;

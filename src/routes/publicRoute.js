@@ -1,6 +1,7 @@
 const { Router } = require('express');
 const { PrismaClient } = require('@prisma/client');
 const axios = require('axios');
+const { generateCode } = require('../utils/helpers');
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -64,6 +65,55 @@ router.post('/lead', restrictToVegnar, async (req, res) => {
     });
   } catch (error) {
     console.error('Public lead error:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
+// Public endpoint - create sample from vegnar website (after payment)
+router.post('/sample', restrictToVegnar, async (req, res) => {
+  try {
+    const { 
+      invoiceNumber, timestamp, userType, customerName, customerEmail, customerPhone, 
+      state, customerAddress, products, gstNumber, panNumber, paymentId, orderId, 
+      subtotal, tax, kitPrice 
+    } = req.body;
+
+    if (!customerName || !paymentId) {
+      return res.status(400).json({ success: false, message: 'Customer name and payment ID are required' });
+    }
+
+    const lastSample = await prisma.sample.findFirst({ orderBy: { sampleNo: 'desc' } });
+    const sampleNo = generateCode('SMP', lastSample?.sampleNo);
+
+    const sample = await prisma.sample.create({
+      data: {
+        sampleNo,
+        source: 'website',
+        invoiceNumber: invoiceNumber || null,
+        userType: userType || null,
+        customerName,
+        customerEmail: customerEmail || null,
+        customerPhone: customerPhone || null,
+        customerAddress: customerAddress || null,
+        state: state || null,
+        gstNumber: gstNumber || null,
+        panNumber: panNumber || null,
+        products: products || null,
+        paymentId,
+        orderId: orderId || null,
+        kitPrice: parseFloat(kitPrice) || 3150,
+        subtotal: subtotal ? parseFloat(subtotal) : null,
+        tax: tax ? parseFloat(tax) : null,
+        sampleType: 'domestic',
+        dispatchMethod: 'courier',
+        sentDate: timestamp ? new Date(timestamp) : new Date(),
+        status: 'pending',
+      },
+    });
+
+    return res.status(201).json({ success: true, message: 'Sample request saved', sampleNo: sample.sampleNo });
+  } catch (error) {
+    console.error('Public sample error:', error);
     return res.status(500).json({ success: false, message: 'Internal server error' });
   }
 });

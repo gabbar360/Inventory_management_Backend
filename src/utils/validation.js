@@ -71,6 +71,24 @@ const sampleSchema = z.object({
   items: z.array(sampleItemSchema).min(1, 'At least one product is required'),
 });
 
+const websiteSampleSchema = z.object({
+  customerName: z.string().min(1, 'Customer name is required'),
+  customerEmail: z.string().email('Invalid email'),
+  customerPhone: z.string().min(1, 'Phone is required'),
+  customerAddress: z.string().min(1, 'Address is required'),
+  state: z.string().min(1, 'State is required'),
+  userType: z.enum(['company', 'customer']),
+  gstNumber: z.string().optional().nullable(),
+  panNumber: z.string().optional().nullable(),
+  products: z.string().optional().nullable(),
+  paymentId: z.string().min(1, 'Payment ID is required'),
+  orderId: z.string().optional().nullable(),
+  invoiceNumber: z.string().optional().nullable(),
+  subtotal: z.number().optional(),
+  tax: z.number().optional(),
+  kitPrice: z.number().min(0),
+});
+
 // Inward schemas
 const inwardItemSchema = z.object({
   productId: z.union([z.string(), z.number()]).transform(val => String(val)),
@@ -116,6 +134,7 @@ module.exports = {
   customerSchema,
   locationSchema,
   sampleSchema,
+  websiteSampleSchema,
   inwardItemSchema,
   inwardInvoiceSchema,
   outwardItemSchema,
