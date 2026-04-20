@@ -1,6 +1,7 @@
 const { sendResponse, sendError, parseQueryParams } = require("../utils/helpers");
 const { Request, Response } = require('express');
 const { OutwardService } = require('../services/outwardService');
+const { ProfitLossService } = require('../services/profitLossService');
 const settingsService = require('../services/settingsService');
 const ejs = require('ejs');
 const puppeteer = require('puppeteer');
@@ -61,12 +62,51 @@ class OutwardController {
   static async getProfitLoss(req, res) {
     try {
       const { startDate, endDate } = req.query;
-      const result = await OutwardService.getProfitLoss(
-        startDate,
-        endDate
-      );
+      const result = await ProfitLossService.getProfitLossData(startDate, endDate);
       return sendResponse(res, 200, true, result, 'Profit & Loss report retrieved successfully');
     } catch (error) {
+      return sendError(res, 500, error.message);
+    }
+  }
+
+  static async generateProfitLossPDF(req, res) {
+    try {
+      const { startDate, endDate } = req.query;
+      const settings = await settingsService.getSettings();
+      
+      const pdfBuffer = await ProfitLossService.generateProfitLossPDF(startDate, endDate, settings);
+      
+      const fileName = `ProfitLoss_${new Date().toISOString().split('T')[0]}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error('PDF Generation Error:', error);
+      return sendError(res, 500, error.message);
+    }
+  }
+
+  static async generateSingleInvoiceProfitLossPDF(req, res) {
+    try {
+      const { id } = req.params;
+      const settings = await settingsService.getSettings();
+      
+      const pdfBuffer = await ProfitLossService.generateSingleInvoiceProfitLossPDF(id, settings);
+      
+      const fileName = `ProfitLoss_Invoice_${new Date().toISOString().split('T')[0]}.pdf`;
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error('PDF Generation Error:', error);
       return sendError(res, 500, error.message);
     }
   }
