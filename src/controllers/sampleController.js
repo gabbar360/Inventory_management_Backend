@@ -4,8 +4,8 @@ const { SampleService } = require('../services/sampleService');
 class SampleController {
   static async getAll(req, res) {
     try {
-      const { page, limit, search, sortBy, sortOrder } = parseQueryParams(req.query);
-      const result = await SampleService.getAll(page, limit, search, sortBy, sortOrder);
+      const { page, limit, search, sortBy, sortOrder, source } = parseQueryParams(req.query);
+      const result = await SampleService.getAll(page, limit, search, sortBy, sortOrder, source);
       return sendResponse(res, 200, true, result.samples, 'Samples retrieved successfully', result.pagination);
     } catch (error) {
       return sendError(res, 500, error.message);
@@ -19,6 +19,15 @@ class SampleController {
       return sendResponse(res, 200, true, sample, 'Sample retrieved successfully');
     } catch (error) {
       return sendError(res, 404, error.message);
+    }
+  }
+
+  static async createFromWebsite(req, res) {
+    try {
+      const sample = await SampleService.createFromWebsite(req.body);
+      return sendResponse(res, 201, true, sample, 'Sample request submitted successfully');
+    } catch (error) {
+      return sendError(res, 400, error.message);
     }
   }
 

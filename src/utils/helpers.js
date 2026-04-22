@@ -12,7 +12,8 @@ const parseQueryParams = (query) => {
   const search = query.search || '';
   const sortBy = query.sortBy || 'createdAt';
   const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
-  return { page, limit, search, sortBy, sortOrder };
+  const source = query.source || null;
+  return { page, limit, search, sortBy, sortOrder, source };
 };
 
 const calculatePagination = (page, limit, total) => {
