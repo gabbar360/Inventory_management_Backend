@@ -56,6 +56,7 @@ class InventoryService {
               select: {
                 name: true,
                 hsnCode: true,
+                gstRate: true,
               },
             },
           },
