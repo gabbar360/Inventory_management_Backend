@@ -2,880 +2,333 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <title>Quote - <%= quote.quoteNo %></title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Roboto', sans-serif;
-            font-weight: 400;
-  font-style: normal;
-            font-size: 11pt;
-            color: #000;
-            background: white;
-
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; font-size: 10pt; color: #333; background: #fff; }
 
         .page {
             width: 210mm;
             min-height: 297mm;
             margin: 0 auto;
-            padding: 8mm 10mm;
-            background: white;
-            box-sizing: border-box;
-            page-break-after: always;
+            padding: 10mm 12mm;
+            background: #fff;
         }
 
-        .page:last-child {
-            page-break-after: avoid;
-        }
-
-        /* ===== OUTER BORDER ===== */
-        .main-container {
-            border: 2px solid #000;
-            width: 100%;
-        }
-
-        /* ===== HEADER SECTION ===== */
-        .header-section {
-            display: flex;
-            align-items: stretch;
-            border-bottom: 1px solid #000;
-        }
-
-        .header-logo-area {
-            width: 140px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 8px;
-        }
-
-        .header-logo-area img {
-            max-width: 150px;
-            max-height: 120px;
-            object-fit: contain;
-        }
-
-        .header-company-area {
-            flex: 1;
-            padding: 8px 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .company-name {
-            font-family: 'Roboto', sans-serif;
-            font-size: 16pt;
-            font-weight: 700;
-            text-align: left;
-            margin-bottom: 2px;
-        }
-
-        .company-subtitle {
-            font-family: 'Roboto', sans-serif;
-            font-size: 12pt;
-            font-weight: 600;
-            text-align: left;
-            margin-bottom: 2px;
-        }
-
-        .company-address {
-            font-family: 'Roboto', sans-serif;
-            font-size: 12pt;
-            font-weight: bold;
-            text-align: left;
-            line-height: 1.3;
-        }
-
-        .company-contact {
-            font-family: 'Roboto', sans-serif;
-            font-size: 12pt;
-            font-weight: 600;
-            text-align: left;
-        }
-
-        .header-info-area {
-            width: 200px;
-            padding: 8px 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            font-size: 11pt;
-            font-weight: bold;
-        }
-
-        /* ===== QUOTE TITLE ===== */
-        .quote-title-row {
-            text-align: center;
-            border-bottom: 1px solid #000;
-            padding: 8px 0;
-        }
-
-        .quote-title-row h1 {
-            font-family: 'Roboto', sans-serif;
-            font-size: 24pt;
-            font-weight: bold;
-            margin: 0;
-        }
-
-        /* ===== INFO ROWS ===== */
-        .info-row {
-            display: flex;
-        }
-
-        .info-row .left-section {
-            flex: 1;
-            display: flex;
-            border-right: 1px solid #000;
-        }
-
-        .info-row .right-section {
-            flex: 1;
-            display: flex;
-        }
-
-        .info-label {
-            font-weight: bold;
-            padding: 4px 6px;
-            font-size: 11pt;
-            white-space: nowrap;
-        }
-
-        .info-value {
-            padding: 4px 6px;
-            font-size: 11pt;
-        }
-
-        /* ===== SEPARATOR ===== */
-        .separator {
-            border-bottom: 1px solid #000;
-            height: 8px;
-        }
-
-        /* ===== BILL TO / SHIP TO ===== */
-        .party-header {
-            display: flex;
-            border-bottom: 1px solid #000;
-        }
-
-        .party-header-left {
-            flex: 1;
-            border-right: 1px solid #000;
-            padding: 4px 6px;
-            font-weight: bold;
-            text-align: center;
-            font-size: 11pt;
-        }
-
-        .party-header-right {
-            flex: 1;
-            padding: 4px 6px;
-            font-weight: bold;
-            text-align: center;
-            font-size: 11pt;
-        }
-
-        .party-details {
-            display: flex;
-        }
-
-        .party-left {
-            flex: 1;
-            border-right: 1px solid #000;
-            padding: 4px 6px;
-        }
-
-        .party-right {
-            flex: 1;
-            padding: 4px 6px;
-        }
-
-        .party-field {
-            font-weight: bold;
-            font-size: 11pt;
-            padding: 2px 0;
-        }
-
-        .party-value {
-            font-size: 11pt;
-            padding: 2px 0;
-        }
-
-        .state-row {
-            display: flex;
-            border-bottom: 1px solid #000;
-        }
-
-        .state-row .left-half {
-            flex: 1;
-            display: flex;
-            border-right: 1px solid #000;
-        }
+        .top-container { border: 1.5px solid #bbb; margin-bottom: 0; }
 
-        .state-row .right-half {
-            flex: 1;
-            display: flex;
-        }
-
-        .state-label {
-            flex: 3;
-            font-weight: bold;
-            padding: 4px 6px;
-            font-size: 11pt;
-        }
-
-        .state-code-label {
-            flex: 1;
-            font-weight: bold;
-            padding: 4px 6px;
-            font-size: 11pt;
-            border-left: 1px solid #000;
-        }
-
-        .state-code-value {
-            flex: 1;
-            padding: 4px 6px;
-            font-size: 11pt;
-        }
-
-        /* ===== ITEMS TABLE ===== */
-        .items-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 9pt;
-        }
-
-        .items-table th {
-            border: 1px solid #000;
-            border-top: none;
-            padding: 3px 2px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 9pt;
-            vertical-align: middle;
-            word-wrap: break-word;
-        }
-
-        .items-table td {
-            border-right: 1px solid #000;
-            padding: 2px 3px;
-            font-size: 9pt;
-            font-family: 'Roboto', sans-serif;
-            vertical-align: middle;
-        }
-
-        .items-table .col-sno { width: 5%; text-align: right; }
-        .items-table .col-desc { width: 18%; text-align: left; }
-        .items-table .col-hsn { width: 10%; text-align: center; }
-        .items-table .col-uom { width: 7%; text-align: center; }
-        .items-table .col-qty { width: 7%; text-align: center; }
-        .items-table .col-rate { width: 12%; text-align: center; }
-        .items-table .col-cgst-rate { width: 6%; text-align: right; }
-        .items-table .col-cgst-amt { width: 8%; text-align: right; }
-        .items-table .col-sgst-rate { width: 6%; text-align: right; }
-        .items-table .col-sgst-amt { width: 6%; text-align: right; }
-        .items-table .col-total { width: 15%; text-align: right; }
-
-        .items-table .total-row td {
-            border-top: 1px solid #000;
-            border-bottom: 1px solid #000;
-            font-weight: bold;
-            font-family: 'Roboto', sans-serif;
-            font-size: 10pt;
-        }
-
-        .items-table .total-row .total-label {
-            font-family: 'Roboto', sans-serif;
-            font-size: 18pt;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .items-table .data-row td {
-            border-bottom: 1px solid #000;
-        }
-
-        .items-table .last-data-row td {
-            border-bottom: 1px solid #000;
-        }
-
-        /* ===== SUMMARY SECTION ===== */
-        .summary-section {
-            display: flex;
-            border-bottom: 1px solid #000;
-        }
-
-        .summary-left {
-            flex: 1;
-            border-right: 1px solid #000;
-        }
-
-        .summary-right {
-            width: 45%;
-        }
-
-        .summary-row {
-            display: flex;
-            border-bottom: 1px solid #000;
-        }
+        .header { display: flex; align-items: stretch; padding: 8px 10px; border-bottom: 1.5px solid #bbb; }
 
-        .summary-row:last-child {
-            border-bottom: none;
-        }
-
-        .summary-label {
-            flex: 1;
-            padding: 4px 6px;
-            font-weight: bold;
-            font-size: 11pt;
-        }
-
-        .summary-value {
-            width: 120px;
-            text-align: right;
-            padding: 4px 6px;
-            font-size: 11pt;
-        }
-
-        .grand-total-label {
-            flex: 1;
-            padding: 4px 6px;
-            font-weight: bold;
-            font-size: 12pt;
-        }
-
-        .grand-total-value {
-            width: 120px;
-            text-align: right;
-            padding: 4px 6px;
-            font-weight: bold;
-            font-size: 12pt;
-        }
-
-        .words-header {
-            padding: 4px 6px;
-            font-weight: bold;
-            font-size: 11pt;
-            text-align: center;
-            border-bottom: 1px solid #000;
-        }
-
-        .words-notes {
-            padding: 6px 6px;
-            font-size: 11pt;
-            min-height: 80px;
-        }
-
-        /* ===== BANK + SIGNATURE ===== */
-        .bank-sig-section {
-            display: flex;
-        }
+        .logo-block { width: 100px; display: flex; align-items: center; justify-content: flex-start; flex-shrink: 0; margin-right: 14px; }
+        .logo-block img { max-width: 90px; max-height: 70px; object-fit: contain; }
 
-        .bank-area {
-            flex: 1;
-            border-right: 1px solid #000;
-        }
+        .company-block { flex: 1; }
+        .company-name { font-size: 16pt; font-weight: 700; color: #222; line-height: 1.1; }
+        .company-info { font-size: 8.5pt; color: #555; line-height: 1.5; margin-top: 3px; }
 
-        .bank-title {
-            padding: 4px 6px;
-            font-weight: bold;
-            font-size: 12pt;
-            border-bottom: 1px solid #000;
-        }
+        .invoice-title-block { width: 160px; display: flex; align-items: flex-end; justify-content: flex-end; flex-shrink: 0; }
+        .invoice-title-text { font-size: 18pt; font-weight: 700; color: #222; letter-spacing: 1px; text-align: right; }
 
-        .bank-row {
-            padding: 4px 6px;
-            font-weight: bold;
-            font-size: 11pt;
-        }
+        .meta-row { display: flex; border-bottom: 1.5px solid #bbb; }
+        .meta-left { flex: 1; border-right: 1.5px solid #bbb; padding: 8px 10px; }
+        .meta-right { width: 260px; padding: 8px 10px; }
 
-        .sig-area {
-            width: 45%;
-            text-align: center;
-        }
+        .meta-table { width: 100%; border-collapse: collapse; }
+        .meta-table td { padding: 2px 4px; font-size: 9.5pt; vertical-align: top; }
+        .meta-table td:first-child { color: #666; white-space: nowrap; }
+        .meta-table td:last-child { font-weight: 600; color: #222; }
 
-        .sig-certified {
-            font-family: 'Roboto', sans-serif;
-            font-size: 8pt;
-            text-align: center;
-            padding: 4px 6px;
-        }
+        .party-row { display: flex; }
+        .party-box { flex: 1; padding: 8px 10px; }
+        .party-box:first-child { border-right: 1.5px solid #bbb; }
+        .party-label { font-size: 9pt; color: #333; font-weight: 700; background: #e8e8e8; padding: 4px 10px; margin: -8px -10px 8px -10px; border-bottom: 1.5px solid #bbb; }
+        .party-name { font-size: 11pt; font-weight: 700; color: #222; margin-bottom: 2px; }
+        .party-addr { font-size: 9pt; color: #555; line-height: 1.5; }
 
-        .sig-company {
-            font-weight: bold;
-            font-size: 11pt;
-            text-align: center;
-            padding: 4px 6px;
-        }
+        .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 0; border: 1.5px solid #bbb; }
+        .items-table thead tr { background: #f0f0f0; }
+        .items-table th { padding: 6px 6px; font-size: 9pt; font-weight: 700; color: #444; text-align: center; border: 1px solid #bbb; }
+        .items-table th.left { text-align: left; }
+        .items-table td { padding: 5px 6px; font-size: 9.5pt; border: 1px solid #ddd; vertical-align: top; }
+        .items-table td.center { text-align: center; }
+        .items-table td.right { text-align: right; }
+        .items-table td.sno { text-align: center; color: #888; }
 
-        .sig-space {
-            min-height: 60px;
-        }
+        .item-name { font-weight: 500; color: #222; }
+        .item-desc { font-size: 8.5pt; color: #888; margin-top: 1px; }
 
-        /* ===== TERMS ===== */
-        .terms-section {
-            border-top: 1px solid #000;
-        }
+        .bottom-section { display: flex; margin-top: 0; border: 1.5px solid #bbb; border-top: none; }
+        .bottom-left { flex: 1; padding: 10px; border-right: 1.5px solid #bbb; }
+        .bottom-right { width: 260px; padding: 10px; }
 
-        .terms-content {
-            padding: 4px 6px;
-            font-size: 11pt;
-            min-height: 60px;
-        }
+        .section-label { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .words-text { font-size: 9.5pt; color: #222; font-style: italic; margin-bottom: 10px; }
 
-        .terms-title {
-            font-weight: bold;
-        }
+        .bank-row { font-size: 9pt; color: #555; line-height: 1.7; }
+        .bank-row span { font-weight: 600; color: #333; }
 
-        .auth-signatory {
-            border-top: 1px solid #000;
-            text-align: center;
-            padding: 4px 6px;
-            font-weight: bold;
-            font-size: 11pt;
-        }
+        .summary-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 9.5pt; }
+        .summary-row .s-label { color: #555; }
+        .summary-row .s-value { font-weight: 500; color: #222; }
+        .summary-row.total-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
+        .summary-row.total-row .s-label { font-size: 11pt; font-weight: 700; color: #222; }
+        .summary-row.total-row .s-value { font-size: 11pt; font-weight: 700; color: #222; }
+        .summary-row.balance-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
+        .summary-row.balance-row .s-label { font-size: 12pt; font-weight: 700; color: #222; }
+        .summary-row.balance-row .s-value { font-size: 12pt; font-weight: 700; color: #222; }
 
-        /* ===== FOOTER ===== */
-        .footer-address {
-            text-align: center;
-            padding: 4px 6px;
-            font-size: 11pt;
-            border-top: 3px double #000;
-        }
+        .terms-section { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ccc; }
+        .terms-title { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .terms-list { font-size: 9pt; color: #555; line-height: 1.7; }
 
-        .footer-gst {
-            text-align: center;
-            padding: 4px 6px;
-            font-size: 11pt;
-            border-top: 3px double #000;
-        }
+        .sig-section { margin-top: 10px; text-align: right; }
+        .sig-label { font-size: 9pt; color: #888; }
 
-        /* ===== PRINT ===== */
-        @page {
-            size: A4;
-            margin: 0;
-        }
+        .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #bbb; border-top: 1px solid #ccc; padding-top: 6px; }
 
+        @page { size: A4; margin: 0; }
         @media print {
-            html, body {
-                margin: 0;
-                padding: 0;
-                width: 100%;
-                height: 100%;
-            }
-            .page {
-                margin: 0;
-                padding: 8mm 10mm;
-                box-shadow: none;
-                page-break-after: avoid;
-            }
+            body { margin: 0; }
+            .page { margin: 0; padding: 10mm 12mm; }
         }
     </style>
 </head>
 <body>
-    <div class="page">
-        <div class="main-container">
-            <%
-                // === Helper functions ===
-                function formatNumber(num) {
-                    if (!num || isNaN(num)) return '0.00';
-                    return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-                }
+<div class="page">
+    <%
+        function fmt(num) {
+            if (!num || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+        function numToWords(n) {
+            const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+            const teens = ['Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+            const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+            if (n === 0) return 'Zero';
+            const h = (x) => {
+                let r = '';
+                if (x >= 100) { r += ones[Math.floor(x/100)] + ' Hundred '; x %= 100; }
+                if (x >= 20) { r += tens[Math.floor(x/10)] + ' '; x %= 10; }
+                else if (x >= 10) { r += teens[x-10] + ' '; x = 0; }
+                if (x > 0) r += ones[x] + ' ';
+                return r;
+            };
+            let r = '', num = Math.floor(n);
+            const cr = Math.floor(num/10000000); if (cr) { r += h(cr)+'Crore '; num %= 10000000; }
+            const lk = Math.floor(num/100000); if (lk) { r += h(lk)+'Lakh '; num %= 100000; }
+            const th = Math.floor(num/1000); if (th) { r += h(th)+'Thousand '; num %= 1000; }
+            if (num > 0) r += h(num);
+            return 'Indian Rupee ' + r.trim() + ' Only';
+        }
 
-                function formatDate(dateStr) {
-                    if (!dateStr) return '';
-                    const d = new Date(dateStr);
-                    return d.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
-                }
+        let subTotal = 0, totalTax = 0, totalQty = 0;
+        let taxLines = {};
+        quote.items?.forEach(item => {
+            const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
+            const lineAmt = item.quantity * item.rate;
+            const taxAmt = lineAmt * (taxRate / 100);
+            subTotal += lineAmt;
+            totalTax += taxAmt;
+            totalQty += item.quantity;
+            const key = taxRate + '%';
+            if (!taxLines[key]) taxLines[key] = { rate: taxRate, amt: 0 };
+            taxLines[key].amt += taxAmt;
+        });
+        const freight = quote.freight || 0;
+        const discount = quote.discount || 0;
+        const grandTotal = subTotal + totalTax + freight - discount;
+    %>
 
-
-            %>
-
-            <!-- ===== HEADER ===== -->
-            <div class="header-section">
-                <div class="header-company-area">
-                    <div class="company-name">Vegnar Global LLP</div>
-                    <div class="company-subtitle">B-623, RK Iconic</div>
-                    <div class="company-address">
-                        <div>150 Feet Ring Road, Ayodhya Chowk</div>
-                        <div>Rajkot Gujarat 360007, India</div>
-                    </div>
-                    <div style="font-size: 10pt; text-align: left; margin-top: 4px; font-weight: bold;">
-                        GSTIN: 24ABAFV3901A1ZV
-                    </div>
-                    <div class="company-contact" style="text-align: left;">
-                        Phone: +91 9998040482 | www.vegnar.com
-                    </div>
-                </div>
-                <div class="header-info-area">
-                </div>
-                <div class="header-logo-area">
-                    <% if (logoBase64) { %>
-                        <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
-                    <% } else { %>
-                        <div style="font-size: 18pt; font-weight: bold;">Logo</div>
-                    <% } %>
-                </div>
+    <!-- HEADER -->
+    <div class="top-container">
+    <div class="header">
+        <div class="logo-block">
+            <% if (logoBase64) { %>
+                <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+            <% } %>
+        </div>
+        <div class="company-block">
+            <div class="company-name">Vegnar Global LLP</div>
+            <div class="company-info">
+                B-623, RK Iconic, 150 Feet Ring Road, Ayodhya Chowk<br>
+                Rajkot Gujarat 360007, India<br>
+                GSTIN: 24ABAFV3901A1ZV<br>
+                sales@vegnar.com | +91 9998040482 | www.vegnar.com
             </div>
-
-            <!-- ===== QUOTE TITLE ===== -->
-            <div class="quote-title-row">
-                <h1>Quote</h1>
-            </div>
-
-            <!-- ===== QUOTE INFO ROWS ===== -->
-            <div class="info-row">
-                <div class="left-section">
-                    <span class="info-label">Quote No:</span>
-                    <span class="info-value"><%= quote.quoteNo %></span>
-                </div>
-                <div class="right-section">
-                    <span class="info-label">Terms of Delivery:</span>
-                    <span class="info-value"><%= quote.termsOfDelivery || '' %></span>
-                </div>
-            </div>
-
-            <div class="info-row">
-                <div class="left-section">
-                    <span class="info-label">Quote Date:</span>
-                    <span class="info-value"><%= formatDate(quote.quoteDate) %></span>
-                </div>
-                <div class="right-section">
-                    <span class="info-label">Payment Terms:</span>
-                    <span class="info-value"><%= quote.paymentTerms || '' %></span>
-                </div>
-            </div>
-
-            <div class="info-row">
-                <div class="left-section">
-                    <span class="info-label">Expiry Date:</span>
-                    <span class="info-value"><%= formatDate(quote.expiryDate) %></span>
-                </div>
-                <div class="right-section">
-                    <span class="info-label">Reference:</span>
-                    <span class="info-value"><%= quote.reference || '' %></span>
-                </div>
-            </div>
-
-            <!-- ===== SEPARATOR ===== -->
-            <div class="separator"></div>
-
-            <!-- ===== BILLED TO / SHIPPED TO HEADER ===== -->
-            <div class="party-header">
-                <div class="party-header-left">Detail of Receiver (Billed to)</div>
-                <div class="party-header-right">Detail of Consignee (Shipped to)</div>
-            </div>
-
-            <!-- Name -->
-            <div class="party-details">
-                <div class="party-left">
-                    <span class="party-field">Name: </span>
-                    <span class="party-value"><%= quote.customer?.name || '' %></span>
-                </div>
-                <div class="party-right">
-                    <span class="party-field">Name: </span>
-                    <span class="party-value"><%= quote.customer?.name || '' %></span>
-                </div>
-            </div>
-
-            <!-- Address -->
-            <div class="party-details">
-                <div class="party-left">
-                    <span class="party-field">Address: </span>
-                    <span class="party-value">
-                        <%= quote.customer?.address || '' %>
-                    </span>
-                </div>
-                <div class="party-right">
-                    <span class="party-field">Address: </span>
-                    <span class="party-value">
-                        <%= quote.customer?.address || '' %>
-                    </span>
-                </div>
-            </div>
-
-            <!-- State -->
-            <!-- <div class="party-details">
-                <div class="party-left">
-                    <span class="party-field">State: </span>
-                    <span class="party-value"><%= quote.customer?.state || '' %></span>
-                </div>
-                <div class="party-right">
-                    <span class="party-field">State: </span>
-                    <span class="party-value"><%= quote.customer?.state || '' %></span>
-                </div>
-            </div> -->
-
-            <!-- Code -->
-            <!-- <div class="party-details" style="border-bottom: none;">
-                <div class="party-left">
-                    <span class="party-field">Code: </span>
-                    <span class="party-value"><%= quote.customer?.stateCode || '' %></span>
-                </div>
-                <div class="party-right">
-                    <span class="party-field">Code: </span>
-                    <span class="party-value"><%= quote.customer?.stateCode || '' %></span>
-                </div>
-            </div> -->
-
-            <!-- ===== SEPARATOR ===== -->
-            <div class="separator"></div>
-
-            <!-- ===== ITEMS TABLE ===== -->
-            <%
-                let totalAmount = 0;
-                let totalQty = 0;
-                let totalCgstAmt = 0;
-                let totalSgstAmt = 0;
-                let totalLineTotal = 0;
-                let avgGstRate = 0;
-                let totalGstableAmount = 0;
-                
-                // No pre-calc needed for header (per-row rates shown)
-            %>
-
-            <table class="items-table">
-                <thead>
-                    <tr>
-                        <th class="col-sno" rowspan="2">No</th>
-                        <th class="col-desc" rowspan="2">Product Description</th>
-                        <th class="col-hsn" rowspan="2">HSN Code</th>
-                        <th class="col-uom" rowspan="2">UOM</th>
-                        <th class="col-qty" rowspan="2">Qty</th>
-                        <th class="col-rate" rowspan="2">Rate</th>
-                        <th colspan="2" style="text-align:center;">CGST</th>
-                        <th colspan="2" style="text-align:center;">SGST</th>
-                        <th class="col-total" rowspan="2">Total</th>
-                    </tr>
-                    <tr>
-                        <th class="col-cgst-rate" style="font-size:9pt;">%</th>
-                        <th class="col-cgst-amt" style="font-size:9pt;">Amount</th>
-                        <th class="col-sgst-rate" style="font-size:9pt;">%</th>
-                        <th class="col-sgst-amt" style="font-size:9pt;">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <% quote.items.forEach((item, index) => { %>
-                        <%
-                            const itemTaxRate = item.taxRate || item.product?.category?.gstRate || 0;
-                            const itemCgstRate = itemTaxRate / 2;
-                            const itemSgstRate = itemTaxRate / 2;
-                            const lineAmount = item.quantity * item.rate;
-                            const cgstAmt = lineAmount * (itemCgstRate / 100);
-                            const sgstAmt = lineAmount * (itemSgstRate / 100);
-                            const lineTotal = lineAmount + cgstAmt + sgstAmt;
-                            
-                            totalAmount += lineAmount;
-                            totalQty += item.quantity;
-                            totalCgstAmt += cgstAmt;
-                            totalSgstAmt += sgstAmt;
-                            totalLineTotal += lineTotal;
-                            
-                            // Track GST rates for summary
-                            if (itemTaxRate > 0) {
-                                totalGstableAmount += lineAmount;
-                            }
-                        %>
-                        <tr class="data-row<%= index === quote.items.length - 1 ? ' last-data-row' : '' %>">
-                            <td class="col-sno"><%= index + 1 %></td>
-                            <td class="col-desc" style="font-family:'Roboto',sans-serif;">
-                                <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"><%= item.product?.name || 'Product' %></div>
-                                <% if (item.description) { %>
-                                    <div style="font-size:8pt; color:#444;"><%= item.description %></div>
-                                <% } %>
-                            </td>
-                            <td class="col-hsn"><%= item.product?.category?.hsnCode || '' %></td>
-                            <td class="col-uom"><%= item.unit || 'Nos' %></td>
-                            <td class="col-qty"><%= item.quantity %></td>
-                            <td class="col-rate"><%= formatNumber(item.rate) %></td>
-                            <td class="col-cgst-rate"><%= itemCgstRate %>%</td>
-                            <td class="col-cgst-amt"><%= formatNumber(cgstAmt) %></td>
-                            <td class="col-sgst-rate"><%= itemSgstRate %>%</td>
-                            <td class="col-sgst-amt"><%= formatNumber(sgstAmt) %></td>
-                            <td class="col-total"><%= formatNumber(lineAmount) %></td>
-                        </tr>
-                    <% }) %>
-
-                    <!-- TOTAL ROW -->
-                    <tr class="total-row">
-                        <td class="total-label" colspan="4">Total</td>
-                        <td style="text-align:center;"><%= totalQty %></td>
-                        <td style="text-align:center;">-</td>
-                        <td style="text-align:center;">-</td>
-                        <td style="text-align:right;"><%= formatNumber(totalCgstAmt) %></td>
-                        <td style="text-align:center;">-</td>
-                        <td style="text-align:right;"><%= formatNumber(totalSgstAmt) %></td>
-                        <td style="text-align:right;"><%= formatNumber(totalAmount) %></td>
-                    </tr>
-                </tbody>
-            </table>
-
-            <!-- ===== SUMMARY SECTION ===== -->
-            <%
-                const freight = quote.freight || 0;
-                const discount = quote.discount || 0;
-                const totalTaxAmt = totalCgstAmt + totalSgstAmt;
-                const grandTotal = totalLineTotal + freight - discount;
-
-                // Group GST by tax rate
-                const gstGroups = {};
-                quote.items.forEach((item) => {
-                    const rate = item.taxRate || item.product?.category?.gstRate || 0;
-                    if (rate <= 0) return;
-                    const lineAmt = item.quantity * item.rate;
-                    if (!gstGroups[rate]) gstGroups[rate] = { taxableAmt: 0, cgstAmt: 0, sgstAmt: 0 };
-                    gstGroups[rate].taxableAmt += lineAmt;
-                    gstGroups[rate].cgstAmt += lineAmt * (rate / 2 / 100);
-                    gstGroups[rate].sgstAmt += lineAmt * (rate / 2 / 100);
-                });
-                const gstGroupKeys = Object.keys(gstGroups).map(Number).sort((a,b) => a - b);
-
-                // Amount in words
-                function numberToWords(num) {
-                    const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-                    const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-                    const tensArr = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-
-                    if (num === 0) return 'Zero';
-
-                    const convertHundreds = (n) => {
-                        let result = '';
-                        if (n >= 100) {
-                            result += ones[Math.floor(n / 100)] + ' Hundred ';
-                            n %= 100;
-                        }
-                        if (n >= 20) {
-                            result += tensArr[Math.floor(n / 10)] + ' ';
-                            n %= 10;
-                        } else if (n >= 10) {
-                            result += teens[n - 10] + ' ';
-                            n = 0;
-                        }
-                        if (n > 0) {
-                            result += ones[n] + ' ';
-                        }
-                        return result;
-                    };
-
-                    let result = '';
-                    let crores = Math.floor(num / 10000000);
-                    if (crores > 0) { result += convertHundreds(crores) + 'Crore '; num %= 10000000; }
-                    let lakhs = Math.floor(num / 100000);
-                    if (lakhs > 0) { result += convertHundreds(lakhs) + 'Lakh '; num %= 100000; }
-                    let thousands = Math.floor(num / 1000);
-                    if (thousands > 0) { result += convertHundreds(thousands) + 'Thousand '; num %= 1000; }
-                    if (num > 0) { result += convertHundreds(num); }
-                    return result.trim() + ' Only';
-                }
-
-                const amountInWords = grandTotal ? numberToWords(Math.floor(grandTotal)) : '';
-            %>
-
-            <div class="summary-section">
-                <div class="summary-left">
-                    <div class="words-header">Total Invoice amount in words</div>
-                    <div class="words-notes">
-                        <div style="margin-bottom: 8px; border-bottom: 1px solid #000; padding-bottom: 4px;"><strong>Indian Rupees: </strong><%= amountInWords %></div>
-                        <% if (quote.notes) { %>
-                            <div><strong>Note:</strong> <%= quote.notes %></div>
-                        <% } %>
-                    </div>
-                </div>
-                <div class="summary-right">
-                    <div class="summary-row">
-                        <div class="summary-label">Total Amount before Tax</div>
-                        <div class="summary-value"><%= formatNumber(totalAmount) %></div>
-                    </div>
-                    <% gstGroupKeys.forEach(function(rate) { var g = gstGroups[rate]; %>
-                    <div class="summary-row">
-                        <div class="summary-label">CGST (<%= (rate/2).toFixed(1) %>%)</div>
-                        <div class="summary-value"><%= formatNumber(g.cgstAmt) %></div>
-                    </div>
-                    <div class="summary-row">
-                        <div class="summary-label">SGST (<%= (rate/2).toFixed(1) %>%)</div>
-                        <div class="summary-value"><%= formatNumber(g.sgstAmt) %></div>
-                    </div>
-                    <% }); %>
-                    <div class="summary-row">
-                        <div class="summary-label">Total Tax Amount</div>
-                        <div class="summary-value"><%= formatNumber(totalTaxAmt) %></div>
-                    </div>
-                    <% if (discount > 0) { %>
-                    <div class="summary-row">
-                        <div class="summary-label">Discount</div>
-                        <div class="summary-value">(<%= formatNumber(discount) %>)</div>
-                    </div>
-                    <% } %>
-                    <% if (freight > 0) { %>
-                    <div class="summary-row">
-                        <div class="summary-label">Freight</div>
-                        <div class="summary-value"><%= formatNumber(freight) %></div>
-                    </div>
-                    <% } %>
-                    <div class="summary-row" style="border-bottom: none;">
-                        <div class="grand-total-label">Grand Total</div>
-                        <div class="grand-total-value"><%= formatNumber(grandTotal) %></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== BANK DETAILS + SIGNATURE ===== -->
-            <div class="bank-sig-section">
-                <div class="bank-area">
-                    <div class="bank-title">Bank Details</div>
-                    <div class="bank-row">Bank Name: <%= settings?.bankName || '' %></div>
-                    <div class="bank-row">Bank A/C: <%= settings?.accountNumber || '' %></div>
-                    <div class="bank-row" style="border-bottom: none;">Bank IFSC: <%= settings?.ifscCode || '' %></div>
-                </div>
-                <div class="sig-area">
-                    <div class="sig-certified">Certified that the particulars given above are true and correct</div>
-                    <div class="sig-company">For Vegnar Global LLP</div>
-                    <div class="sig-space"></div>
-                    <div style="text-align: center; padding: 4px; font-weight: bold; font-size: 11pt;">
-                        Authorised signatory
-                    </div>
-                </div>
-            </div>
-
-            <!-- ===== TERMS & CONDITIONS ===== -->
-            <div class="terms-section">
-                <div class="terms-content">
-                    <div class="terms-title">Terms & conditions:-</div>
-                    <% if (quote.termsAndConditions) { %>
-                        <div style="white-space: pre-wrap; font-size: 10pt;"><%= quote.termsAndConditions %></div>
-                    <% } %>
-                </div>
-            </div>
-
-            <!-- ===== AUTHORISED SIGNATORY ===== -->
-            <!-- <div class="auth-signatory">Authorised signatory</div> -->
-
-            <!-- ===== FOOTER ===== -->
-            <!-- <div class="footer-address">
-                Head Office : <%= settings?.companyAddress ? settings.companyAddress.split('\n')[0] : '' %>
-            </div>
-            <div class="footer-gst">
-                GST: <%= settings?.companyGstin || '' %>
-            </div> -->
+        </div>
+        <div class="invoice-title-block">
+            <div class="invoice-title-text">Quote</div>
         </div>
     </div>
+
+    <!-- META -->
+    <div class="meta-row">
+        <div class="meta-left">
+            <table class="meta-table">
+                <tr><td>#</td><td><%= quote.quoteNo %></td></tr>
+                <tr><td>Quote Date</td><td><%= fmtDate(quote.quoteDate) %></td></tr>
+                <tr><td>Expiry Date</td><td><%= fmtDate(quote.expiryDate) %></td></tr>
+                <% if (quote.reference) { %><tr><td>Reference</td><td><%= quote.reference %></td></tr><% } %>
+            </table>
+        </div>
+        <div class="meta-right">
+            <table class="meta-table">
+                <% if (quote.termsOfDelivery) { %><tr><td>Terms of Delivery</td><td><%= quote.termsOfDelivery %></td></tr><% } %>
+                <% if (quote.paymentTerms) { %><tr><td>Payment Terms</td><td><%= quote.paymentTerms %></td></tr><% } %>
+            </table>
+        </div>
+    </div>
+
+    <!-- BILL TO / SHIP TO -->
+    <div class="party-row">
+        <div class="party-box">
+            <div class="party-label">Bill To</div>
+            <div class="party-name"><%= quote.customer?.name || '' %></div>
+            <div class="party-addr">
+                <%= quote.customer?.address || '' %><br>
+                <% if (quote.customer?.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
+                <% if (quote.customer?.email) { %>Email: <%= quote.customer.email %><br><% } %>
+                <% if (quote.customer?.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %>
+            </div>
+        </div>
+        <div class="party-box">
+            <div class="party-label">Ship To</div>
+            <div class="party-name"><%= quote.customer?.name || '' %></div>
+            <div class="party-addr">
+                <%= quote.customer?.address || '' %><br>
+                <% if (quote.customer?.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
+                <% if (quote.customer?.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %>
+            </div>
+        </div>
+    </div>
+    </div><!-- end top-container -->
+
+    <!-- ITEMS TABLE -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th class="left" style="width:4%">#</th>
+                <th class="left" style="width:28%">Item & Description</th>
+                <th style="width:10%">HSN/SAC</th>
+                <th style="width:6%">UOM</th>
+                <th style="width:8%">Qty</th>
+                <th style="width:10%">Rate</th>
+                <th style="width:6%">CGST%</th>
+                <th style="width:8%">CGST Amt</th>
+                <th style="width:6%">SGST%</th>
+                <th style="width:8%">SGST Amt</th>
+                <th style="width:10%">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% quote.items?.forEach((item, i) => {
+                const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
+                const lineAmt = item.quantity * item.rate;
+                const cgstRate = taxRate / 2;
+                const cgstAmt = lineAmt * (cgstRate / 100);
+            %>
+            <tr>
+                <td class="sno"><%= i + 1 %></td>
+                <td>
+                    <div class="item-name"><%= item.product?.name || 'Product' %></div>
+                    <% if (item.description) { %>
+                    <div class="item-desc"><%= item.description %></div>
+                    <% } %>
+                </td>
+                <td class="center"><%= item.product?.category?.hsnCode || '' %></td>
+                <td class="center"><%= item.unit || 'Nos' %></td>
+                <td class="center"><%= item.quantity %></td>
+                <td class="right"><%= fmt(item.rate) %></td>
+                <td class="center"><%= cgstRate %>%</td>
+                <td class="right"><%= fmt(cgstAmt) %></td>
+                <td class="center"><%= cgstRate %>%</td>
+                <td class="right"><%= fmt(cgstAmt) %></td>
+                <td class="right"><%= fmt(lineAmt) %></td>
+            </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <!-- BOTTOM SECTION -->
+    <div class="bottom-section">
+        <div class="bottom-left">
+            <div class="section-label">Total In Words</div>
+            <div class="words-text"><%= numToWords(grandTotal) %></div>
+
+            <div class="section-label">Bank Details</div>
+            <div class="bank-row">
+                Beneficiary Name: <span>Vegnar Global LLP</span><br>
+                Bank Name: <span><%= settings?.bankName || 'Axis Bank' %></span><br>
+                Account Number: <span><%= settings?.accountNumber || '' %></span><br>
+                IFSC Code: <span><%= settings?.ifscCode || '' %></span><br>
+                <% if (settings?.branchAddress) { %>Bank Address: <span><%= settings.branchAddress %></span><br><% } %>
+                <% if (settings?.swiftCode) { %>Swift Code: <span><%= settings.swiftCode %></span><% } %>
+            </div>
+
+            <div class="terms-section">
+                <div class="terms-title">Terms & Conditions</div>
+                <div class="terms-list">
+                    <% if (quote.termsAndConditions) { %>
+                        <%= quote.termsAndConditions %>
+                    <% } else { %>
+                        1. Prices are valid till the expiry date mentioned above.<br>
+                        2. Payment must be clear against the receipt of the invoice.<br>
+                        3. Subject to Rajkot Jurisdiction "E&OE"
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-right">
+            <div class="summary-row">
+                <span class="s-label">Sub Total</span>
+                <span class="s-value"><%= fmt(subTotal) %></span>
+            </div>
+            <% Object.values(taxLines).forEach(t => { %>
+            <div class="summary-row">
+                <span class="s-label">CGST (<%= t.rate/2 %>%)</span>
+                <span class="s-value"><%= fmt(t.amt / 2) %></span>
+            </div>
+            <div class="summary-row">
+                <span class="s-label">SGST (<%= t.rate/2 %>%)</span>
+                <span class="s-value"><%= fmt(t.amt / 2) %></span>
+            </div>
+            <% }) %>
+            <% if (discount > 0) { %>
+            <div class="summary-row">
+                <span class="s-label">Discount</span>
+                <span class="s-value">(<%= fmt(discount) %>)</span>
+            </div>
+            <% } %>
+            <% if (freight > 0) { %>
+            <div class="summary-row">
+                <span class="s-label">Freight</span>
+                <span class="s-value"><%= fmt(freight) %></span>
+            </div>
+            <% } %>
+            <div class="summary-row total-row">
+                <span class="s-label">Total</span>
+                <span class="s-value">₹<%= fmt(grandTotal) %></span>
+            </div>
+            <div class="summary-row balance-row">
+                <span class="s-label">Grand Total</span>
+                <span class="s-value">₹<%= fmt(grandTotal) %></span>
+            </div>
+
+            <div class="sig-section" style="margin-top: 30px;">
+                <div style="border-top: 1.5px solid #bbb; padding-top: 6px;">
+                    <div class="sig-label">Authorized Signature</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">Thanks for your business.</div>
+</div>
 </body>
 </html>

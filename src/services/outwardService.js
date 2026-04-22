@@ -308,6 +308,8 @@ class OutwardService {
           updatedBoxes -= Math.floor(packsReduced / stockBatch.packPerBox);
         }
 
+        if (updatedBoxes < 0 || updatedPacks < 0 || updatedPcs < 0) throw new Error('Insufficient stock');
+
         await tx.stockBatch.update({
           where: { id: item.stockBatchId },
           data: { remainingBoxes: updatedBoxes, remainingPacks: updatedPacks, remainingPcs: updatedPcs },
