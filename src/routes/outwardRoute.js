@@ -13,6 +13,7 @@ router.post('/add-outward', validateRequest(outwardInvoiceSchema), OutwardContro
 router.put('/update-outward/:id', validateRequest(outwardInvoiceSchema), OutwardController.update);
 router.delete('/delete-outward/:id', OutwardController.delete);
 router.get('/get-outward/reports/profit-loss', OutwardController.getProfitLoss);
+router.get('/get-outward/reports/product-wise-profit-loss', OutwardController.getProductWiseProfitLoss);
 router.get('/outward/:id/pdf', OutwardController.generateInvoicePDF);
 router.get('/reports/profit-loss-pdf', OutwardController.generateProfitLossPDF);
 router.get('/reports/profit-loss-pdf/:id', OutwardController.generateSingleInvoiceProfitLossPDF);

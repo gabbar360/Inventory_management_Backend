@@ -279,6 +279,98 @@ class ProfitLossService {
   static async getProfitLossData(startDate, endDate) {
     return await this.generateProfitLossReport(startDate, endDate);
   }
+
+  static async getProductWiseProfitLoss(startDate, endDate) {
+    const where = {
+      isIncludeInProfitLoss: true,
+      invoiceNo: {
+        not: 'OUT-SAMPLES'
+      }
+    };
+    if (startDate && endDate) {
+      where.date = { gte: new Date(startDate), lte: new Date(endDate) };
+    }
+
+    const invoices = await prisma.outwardInvoice.findMany({
+      where,
+      include: {
+        customer: true,
+        items: {
+          include: {
+            product: { include: { category: true } },
+            stockBatch: { include: { vendor: true } },
+            location: true,
+          },
+        },
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    const productMap = new Map();
+
+    for (const invoice of invoices) {
+      for (const item of invoice.items) {
+        const stockBatch = item.stockBatch;
+        const productKey = `${item.product.id}-${item.product.name}-${item.product.grade || 'N/A'}`;
+        
+        let purchasePrice = 0;
+        if (item.saleUnit === 'box') {
+          purchasePrice = stockBatch.costPerBox;
+        } else if (item.saleUnit === 'pack') {
+          purchasePrice = stockBatch.costPerPack || (stockBatch.costPerBox / stockBatch.packPerBox);
+        } else {
+          purchasePrice = stockBatch.costPerPcs;
+        }
+
+        const totalPurchasePrice = purchasePrice * item.quantity;
+        const totalSalesPrice = item.totalCost;
+        const profit = totalSalesPrice - totalPurchasePrice;
+
+        if (!productMap.has(productKey)) {
+          productMap.set(productKey, {
+            productId: item.product.id,
+            productName: item.product.name,
+            productGrade: item.product.grade || 'N/A',
+            categoryName: item.product.category.name,
+            totalQuantity: 0,
+            totalPurchasePrice: 0,
+            totalSalesPrice: 0,
+            totalProfit: 0,
+            transactions: []
+          });
+        }
+
+        const product = productMap.get(productKey);
+        product.totalQuantity += item.quantity;
+        product.totalPurchasePrice += totalPurchasePrice;
+        product.totalSalesPrice += totalSalesPrice;
+        product.totalProfit += profit;
+        product.transactions.push({
+          invoiceNo: invoice.invoiceNo,
+          invoiceDate: invoice.date,
+          customerName: invoice.customer.name,
+          quantity: item.quantity,
+          saleUnit: item.saleUnit,
+          purchasePrice: purchasePrice.toFixed(2),
+          salesPrice: item.ratePerUnit.toFixed(2),
+          totalPurchasePrice: totalPurchasePrice.toFixed(2),
+          totalSalesPrice: totalSalesPrice.toFixed(2),
+          profit: profit.toFixed(2),
+          profitMargin: totalSalesPrice > 0 ? ((profit / totalSalesPrice) * 100).toFixed(2) : 0
+        });
+      }
+    }
+
+    const productWiseData = Array.from(productMap.values()).map(product => ({
+      ...product,
+      totalPurchasePrice: product.totalPurchasePrice.toFixed(2),
+      totalSalesPrice: product.totalSalesPrice.toFixed(2),
+      totalProfit: product.totalProfit.toFixed(2),
+      profitMargin: product.totalSalesPrice > 0 ? ((product.totalProfit / product.totalSalesPrice) * 100).toFixed(2) : 0
+    }));
+
+    return productWiseData.sort((a, b) => parseFloat(b.totalProfit) - parseFloat(a.totalProfit));
+  }
 }
 
 module.exports = { ProfitLossService };

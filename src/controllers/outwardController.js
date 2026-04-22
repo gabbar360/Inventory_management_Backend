@@ -111,6 +111,16 @@ class OutwardController {
     }
   }
 
+  static async getProductWiseProfitLoss(req, res) {
+    try {
+      const { startDate, endDate } = req.query;
+      const result = await ProfitLossService.getProductWiseProfitLoss(startDate, endDate);
+      return sendResponse(res, 200, true, result, 'Product-wise profit & loss report retrieved successfully');
+    } catch (error) {
+      return sendError(res, 500, error.message);
+    }
+  }
+
   static async generateInvoicePDF(req, res) {
     try {
       // Fetch fresh data from database
