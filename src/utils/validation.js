@@ -68,7 +68,7 @@ const sampleSchema = z.object({
   sentDate: z.string().min(1, 'Sent date is required'),
   status: z.enum(['pending', 'approved', 'rejected']).optional(),
   remarks: z.string().optional(),
-  items: z.array(sampleItemSchema).min(1, 'At least one product is required'),
+  items: z.array(sampleItemSchema).optional(),
 });
 
 const websiteSampleSchema = z.object({

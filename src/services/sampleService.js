@@ -126,13 +126,15 @@ class SampleService {
         sentDate: new Date(data.sentDate),
         status: data.status || 'pending',
         remarks: data.remarks,
-        items: {
-          create: data.items.map(item => ({
-            productId: parseInt(item.productId),
-            quantity: parseInt(item.quantity),
-            unit: item.unit,
-          })),
-        },
+        ...(data.items && data.items.length > 0 && {
+          items: {
+            create: data.items.map(item => ({
+              productId: parseInt(item.productId),
+              quantity: parseInt(item.quantity),
+              unit: item.unit,
+            })),
+          },
+        }),
       },
       include: {
         items: {
