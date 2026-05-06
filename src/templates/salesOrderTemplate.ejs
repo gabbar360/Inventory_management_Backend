@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Tax Invoice - <%= invoice.invoiceNo %></title>
+    <title>Sales Order - <%= order.orderNo %></title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -16,47 +16,21 @@
             background: #fff;
         }
 
-        /* ===== TOP CONTAINER (same as bottom-section box) ===== */
-        .top-container {
-            border: 1.5px solid #bbb;
-            margin-bottom: 0;
-        }
+        .top-container { border: 1.5px solid #bbb; margin-bottom: 0; }
 
-        /* ===== HEADER ===== */
         .header { display: flex; align-items: stretch; padding: 8px 10px; border-bottom: 1.5px solid #bbb; }
 
-        .logo-block {
-            width: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            flex-shrink: 0;
-            margin-right: 14px;
-        }
+        .logo-block { width: 100px; display: flex; align-items: center; justify-content: flex-start; flex-shrink: 0; margin-right: 14px; }
         .logo-block img { max-width: 90px; max-height: 70px; object-fit: contain; }
 
         .company-block { flex: 1; }
         .company-name { font-size: 16pt; font-weight: 700; color: #222; line-height: 1.1; }
         .company-info { font-size: 8.5pt; color: #555; line-height: 1.5; margin-top: 3px; }
 
-        .invoice-title-block {
-            width: 160px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: flex-end;
-            flex-shrink: 0;
-        }
-        .invoice-title-text {
-            font-size: 18pt;
-            font-weight: 700;
-            color: #222;
-            letter-spacing: 1px;
-            text-align: right;
-        }
+        .invoice-title-block { width: 160px; display: flex; align-items: flex-end; justify-content: flex-end; flex-shrink: 0; }
+        .invoice-title-text { font-size: 18pt; font-weight: 700; color: #222; letter-spacing: 1px; text-align: right; }
 
-        /* ===== META ROW ===== */
         .meta-row { display: flex; border-bottom: 1.5px solid #bbb; }
-
         .meta-left { flex: 1; border-right: 1.5px solid #bbb; padding: 8px 10px; }
         .meta-right { width: 260px; padding: 8px 10px; }
 
@@ -65,7 +39,6 @@
         .meta-table td:first-child { color: #666; white-space: nowrap; }
         .meta-table td:last-child { font-weight: 600; color: #222; }
 
-        /* ===== BILL TO / SHIP TO ===== */
         .party-row { display: flex; }
         .party-box { flex: 1; padding: 8px 10px; }
         .party-box:first-child { border-right: 1.5px solid #bbb; }
@@ -73,13 +46,10 @@
         .party-name { font-size: 11pt; font-weight: 700; color: #222; margin-bottom: 2px; }
         .party-addr { font-size: 9pt; color: #555; line-height: 1.5; }
 
-        /* ===== ITEMS TABLE ===== */
         .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 0; border: 1.5px solid #bbb; }
-
         .items-table thead tr { background: #f0f0f0; }
         .items-table th { padding: 6px 6px; font-size: 9pt; font-weight: 700; color: #444; text-align: center; border: 1px solid #bbb; }
         .items-table th.left { text-align: left; }
-
         .items-table td { padding: 5px 6px; font-size: 9.5pt; border: 1px solid #ddd; vertical-align: top; }
         .items-table td.center { text-align: center; }
         .items-table td.right { text-align: right; }
@@ -88,41 +58,33 @@
         .item-name { font-weight: 500; color: #222; }
         .item-desc { font-size: 8.5pt; color: #888; margin-top: 1px; }
 
-        /* ===== BOTTOM SECTION ===== */
         .bottom-section { display: flex; margin-top: 0; border: 1.5px solid #bbb; border-top: none; }
-
-        .bottom-left { flex: 1; padding: 10px 10px 10px 10px; border-right: 1.5px solid #bbb; }
-        .bottom-right { width: 260px; padding: 10px 10px 10px 10px; }
+        .bottom-left { flex: 1; padding: 10px; border-right: 1.5px solid #bbb; }
+        .bottom-right { width: 260px; padding: 10px; }
 
         .section-label { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
-
         .words-text { font-size: 9.5pt; color: #222; font-style: italic; margin-bottom: 10px; }
 
         .bank-row { font-size: 9pt; color: #555; line-height: 1.7; }
         .bank-row span { font-weight: 600; color: #333; }
 
-        /* Summary rows */
         .summary-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 9.5pt; }
         .summary-row .s-label { color: #555; }
         .summary-row .s-value { font-weight: 500; color: #222; }
         .summary-row.total-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
         .summary-row.total-row .s-label { font-size: 11pt; font-weight: 700; color: #222; }
         .summary-row.total-row .s-value { font-size: 11pt; font-weight: 700; color: #222; }
-        .summary-row.payment-row .s-value { color: #c0392b; }
         .summary-row.balance-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
         .summary-row.balance-row .s-label { font-size: 12pt; font-weight: 700; color: #222; }
         .summary-row.balance-row .s-value { font-size: 12pt; font-weight: 700; color: #222; }
 
-        /* ===== TERMS ===== */
         .terms-section { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ccc; }
         .terms-title { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
         .terms-list { font-size: 9pt; color: #555; line-height: 1.7; }
 
-        /* ===== SIGNATURE ===== */
         .sig-section { margin-top: 10px; text-align: right; }
         .sig-label { font-size: 9pt; color: #888; }
 
-        /* ===== FOOTER ===== */
         .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #bbb; border-top: 1px solid #ccc; padding-top: 6px; }
 
         @page { size: A4; margin: 0; }
@@ -166,9 +128,9 @@
 
         let subTotal = 0, totalTax = 0, totalQty = 0;
         let taxLines = {};
-        invoice.items?.forEach(item => {
+        order.items?.forEach(item => {
             const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
-            const lineAmt = item.quantity * item.ratePerUnit;
+            const lineAmt = item.quantity * item.rate;
             const taxAmt = lineAmt * (taxRate / 100);
             subTotal += lineAmt;
             totalTax += taxAmt;
@@ -177,10 +139,7 @@
             if (!taxLines[key]) taxLines[key] = { rate: taxRate, amt: 0 };
             taxLines[key].amt += taxAmt;
         });
-        const expense = invoice.expense || 0;
-        const grandTotal = subTotal + totalTax + expense;
-        const saleType = (invoice.saleType || 'domestic').toLowerCase();
-        const isIGST = saleType === 'export' || saleType === 'interstate';
+        const grandTotal = subTotal + totalTax;
     %>
 
     <!-- HEADER -->
@@ -201,7 +160,7 @@
             </div>
         </div>
         <div class="invoice-title-block">
-            <div class="invoice-title-text">TAX INVOICE</div>
+            <div class="invoice-title-text">SALES ORDER</div>
         </div>
     </div>
 
@@ -209,17 +168,15 @@
     <div class="meta-row">
         <div class="meta-left">
             <table class="meta-table">
-                <tr><td>#</td><td><%= invoice.invoiceNo %></td></tr>
-                <tr><td>Invoice Date</td><td><%= fmtDate(invoice.date) %></td></tr>
-                <tr><td>Terms</td><td>Due on Receipt</td></tr>
-                <tr><td>Due Date</td><td><%= fmtDate(invoice.date) %></td></tr>
-                <% if (invoice.poNumber) { %><tr><td>P.O.#</td><td><%= invoice.poNumber %></td></tr><% } %>
-                <% if (invoice.saleType) { %><tr><td>Sale Type</td><td><%= invoice.saleType.toUpperCase() %></td></tr><% } %>
+                <tr><td>#</td><td><%= order.orderNo %></td></tr>
+                <tr><td>Order Date</td><td><%= fmtDate(order.orderDate) %></td></tr>
+                <tr><td>Status</td><td><%= order.status?.toUpperCase() %></td></tr>
+                <% if (order.quote?.quoteNo) { %><tr><td>Quote Ref</td><td><%= order.quote.quoteNo %></td></tr><% } %>
             </table>
         </div>
         <div class="meta-right">
             <table class="meta-table">
-                <tr><td>Place Of Supply</td><td><%= invoice.location?.name || '' %></td></tr>
+                <tr><td>Sale Type</td><td><%= order.saleType?.toUpperCase() %></td></tr>
             </table>
         </div>
     </div>
@@ -228,21 +185,21 @@
     <div class="party-row">
         <div class="party-box">
             <div class="party-label">Bill To</div>
-            <div class="party-name"><%= invoice.customer?.name || '' %></div>
+            <div class="party-name"><%= order.customer?.name || '' %></div>
             <div class="party-addr">
-                <%= invoice.customer?.address || '' %><br>
-                <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
-                <% if (invoice.customer?.email) { %>Email: <%= invoice.customer.email %><br><% } %>
-                <% if (invoice.customer?.gstNumber) { %>GSTIN: <%= invoice.customer.gstNumber %><% } %>
+                <%= order.customer?.address || '' %><br>
+                <% if (order.customer?.phone) { %>Phone: <%= order.customer.phone %><br><% } %>
+                <% if (order.customer?.email) { %>Email: <%= order.customer.email %><br><% } %>
+                <% if (order.customer?.gstNumber) { %>GSTIN: <%= order.customer.gstNumber %><% } %>
             </div>
         </div>
         <div class="party-box">
             <div class="party-label">Ship To</div>
-            <div class="party-name"><%= invoice.customer?.name || '' %></div>
+            <div class="party-name"><%= order.customer?.name || '' %></div>
             <div class="party-addr">
-                <%= invoice.customer?.address || '' %><br>
-                <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
-                <% if (invoice.customer?.gstNumber) { %>GSTIN: <%= invoice.customer.gstNumber %><% } %>
+                <%= order.customer?.address || '' %><br>
+                <% if (order.customer?.phone) { %>Phone: <%= order.customer.phone %><br><% } %>
+                <% if (order.customer?.gstNumber) { %>GSTIN: <%= order.customer.gstNumber %><% } %>
             </div>
         </div>
     </div>
@@ -258,23 +215,17 @@
                 <th style="width:6%">UOM</th>
                 <th style="width:8%">Qty</th>
                 <th style="width:10%">Rate</th>
-                <% if (isIGST) { %>
-                <th style="width:6%">IGST%</th>
-                <th style="width:10%">IGST Amt</th>
-                <% } else { %>
                 <th style="width:6%">CGST%</th>
                 <th style="width:8%">CGST Amt</th>
                 <th style="width:6%">SGST%</th>
                 <th style="width:8%">SGST Amt</th>
-                <% } %>
                 <th style="width:10%">Amount</th>
             </tr>
         </thead>
         <tbody>
-            <% invoice.items?.forEach((item, i) => {
+            <% order.items?.forEach((item, i) => {
                 const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
-                const lineAmt = item.quantity * item.ratePerUnit;
-                const taxAmt = lineAmt * (taxRate / 100);
+                const lineAmt = item.quantity * item.rate;
                 const cgstRate = taxRate / 2;
                 const cgstAmt = lineAmt * (cgstRate / 100);
             %>
@@ -282,23 +233,18 @@
                 <td class="sno"><%= i + 1 %></td>
                 <td>
                     <div class="item-name"><%= item.product?.name || 'Product' %></div>
-                    <% if (item.product?.grade || item.saleUnit) { %>
-                    <div class="item-desc"><%= [item.product?.grade, item.saleUnit].filter(Boolean).join(' | ') %></div>
+                    <% if (item.description) { %>
+                    <div class="item-desc"><%= item.description %></div>
                     <% } %>
                 </td>
                 <td class="center"><%= item.product?.category?.hsnCode || '' %></td>
-                <td class="center"><%= item.saleUnit || 'Nos' %></td>
+                <td class="center"><%= item.unit || 'Nos' %></td>
                 <td class="center"><%= item.quantity %></td>
-                <td class="right"><%= fmt(item.ratePerUnit) %></td>
-                <% if (isIGST) { %>
-                <td class="center"><%= taxRate %>%</td>
-                <td class="right"><%= fmt(taxAmt) %></td>
-                <% } else { %>
+                <td class="right"><%= fmt(item.rate) %></td>
                 <td class="center"><%= cgstRate %>%</td>
                 <td class="right"><%= fmt(cgstAmt) %></td>
                 <td class="center"><%= cgstRate %>%</td>
                 <td class="right"><%= fmt(cgstAmt) %></td>
-                <% } %>
                 <td class="right"><%= fmt(lineAmt) %></td>
             </tr>
             <% }) %>
@@ -308,61 +254,51 @@
     <!-- BOTTOM SECTION -->
     <div class="bottom-section">
         <div class="bottom-left">
-            <!-- Total in Words -->
             <div class="section-label">Total In Words</div>
             <div class="words-text"><%= numToWords(grandTotal) %></div>
 
-            <!-- Bank Details -->
             <div class="section-label">Bank Details</div>
             <div class="bank-row">
                 Beneficiary Name: <span>Vegnar Global LLP</span><br>
                 Bank Name: <span><%= settings?.bankName || 'Axis Bank' %></span><br>
                 Account Number: <span><%= settings?.accountNumber || '' %></span><br>
                 IFSC Code: <span><%= settings?.ifscCode || '' %></span><br>
-                <% if (settings?.branchAddress) { %>Bank Address: <span><%= settings.branchAddress %></span><br><% } %>
+                <% if (settings?.bankAddress) { %>Bank Address: <span><%= settings.bankAddress %></span><br><% } %>
                 <% if (settings?.swiftCode) { %>Swift Code: <span><%= settings.swiftCode %></span><% } %>
             </div>
 
-            <!-- Terms -->
+            <% if (order.notes) { %>
             <div class="terms-section">
-                <div class="terms-title">Terms & Conditions</div>
-                <div class="terms-list">
-                    1. Sold material will not be taken back after dispatch.<br>
-                    2. Shipping transit time as per actual by logistic operator.<br>
-                    3. Payment must be clear against the receipt of the invoice.<br>
-                    4. Subject to Rajkot Jurisdiction "E&OE"
-                </div>
+                <div class="terms-title">Notes</div>
+                <div class="terms-list"><%= order.notes %></div>
             </div>
+            <% } %>
         </div>
 
         <div class="bottom-right">
-            <!-- Summary -->
             <div class="summary-row">
                 <span class="s-label">Sub Total</span>
                 <span class="s-value"><%= fmt(subTotal) %></span>
             </div>
             <% Object.values(taxLines).forEach(t => { %>
             <div class="summary-row">
-                <span class="s-label"><%= isIGST ? 'IGST' : 'CGST+SGST' %> (<%= t.rate %>%)</span>
-                <span class="s-value"><%= fmt(t.amt) %></span>
+                <span class="s-label">CGST (<%= t.rate/2 %>%)</span>
+                <span class="s-value"><%= fmt(t.amt / 2) %></span>
+            </div>
+            <div class="summary-row">
+                <span class="s-label">SGST (<%= t.rate/2 %>%)</span>
+                <span class="s-value"><%= fmt(t.amt / 2) %></span>
             </div>
             <% }) %>
-            <% if (expense > 0) { %>
-            <div class="summary-row">
-                <span class="s-label">Additional Expense</span>
-                <span class="s-value"><%= fmt(expense) %></span>
-            </div>
-            <% } %>
             <div class="summary-row total-row">
                 <span class="s-label">Total</span>
                 <span class="s-value">₹<%= fmt(grandTotal) %></span>
             </div>
             <div class="summary-row balance-row">
-                <span class="s-label">Balance Due</span>
+                <span class="s-label">Grand Total</span>
                 <span class="s-value">₹<%= fmt(grandTotal) %></span>
             </div>
 
-            <!-- Signature -->
             <div class="sig-section" style="margin-top: 30px;">
                 <div style="border-top: 1.5px solid #bbb; padding-top: 6px;">
                     <div class="sig-label">Authorized Signature</div>
