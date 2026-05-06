@@ -64,7 +64,7 @@ const sampleSchema = z.object({
   sampleType: z.enum(['domestic', 'export'], { required_error: 'Sample type is required' }),
   kitPrice: z.number().min(0, 'Kit price must be positive'),
   trackingNumber: z.string().optional(),
-  dispatchMethod: z.enum(['courier', 'hand_delivery', 'transport'], { required_error: 'Dispatch method is required' }),
+  dispatchMethod: z.string().min(1, 'Dispatch method is required'),
   sentDate: z.string().min(1, 'Sent date is required'),
   status: z.enum(['pending', 'approved', 'rejected']).optional(),
   remarks: z.string().optional(),

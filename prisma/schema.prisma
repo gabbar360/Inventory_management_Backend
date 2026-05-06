@@ -66,6 +66,7 @@ model Product {
   stockBatches StockBatch[]
   sampleItems  SampleItem[]
   quoteItems   QuoteItem[]
+  salesOrderItems SalesOrderItem[]
 
   @@unique([name, grade])
   @@map("products")
@@ -100,6 +101,7 @@ model Customer {
 
   outwardInvoices OutwardInvoice[]
   quotes          Quote[]
+  salesOrders     SalesOrder[]
 
   @@map("customers")
 }
@@ -323,6 +325,7 @@ model Quote {
 
   customer Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
   items    QuoteItem[]
+  salesOrders SalesOrder[]
 
   @@map("quotes")
 }
@@ -342,6 +345,43 @@ model QuoteItem {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("quote_items")
+}
+
+model SalesOrder {
+  id          Int      @id @default(autoincrement())
+  orderNo     String   @unique @map("order_no")
+  quoteId     Int?     @map("quote_id")
+  customerId  Int      @map("customer_id")
+  orderDate   DateTime @map("order_date")
+  status      String   @default("pending") // 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'
+  saleType    String   @default("domestic") @map("sale_type")
+  totalAmount Float    @default(0) @map("total_amount")
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customer Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  quote    Quote?           @relation(fields: [quoteId], references: [id], onDelete: SetNull)
+  items    SalesOrderItem[]
+
+  @@map("sales_orders")
+}
+
+model SalesOrderItem {
+  id           Int    @id @default(autoincrement())
+  salesOrderId Int    @map("sales_order_id")
+  productId    Int    @map("product_id")
+  quantity     Int
+  unit         String
+  rate         Float
+  taxRate      Float  @default(0) @map("tax_rate")
+  amount       Float
+  description  String?
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("sales_order_items")
 }
 
 model Lead {
