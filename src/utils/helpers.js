@@ -8,7 +8,7 @@ const sendError = (res, statusCode, error) => {
 
 const parseQueryParams = (query) => {
   const page = parseInt(query.page) || 1;
-  const limit = Math.min(parseInt(query.limit) || 10, 100);
+  const limit = Math.min(parseInt(query.limit) || 10, 10000);
   const search = query.search || '';
   const sortBy = query.sortBy || 'createdAt';
   const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
