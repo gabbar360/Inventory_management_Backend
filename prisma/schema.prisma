@@ -348,17 +348,21 @@ model QuoteItem {
 }
 
 model SalesOrder {
-  id          Int      @id @default(autoincrement())
-  orderNo     String   @unique @map("order_no")
-  quoteId     Int?     @map("quote_id")
-  customerId  Int      @map("customer_id")
-  orderDate   DateTime @map("order_date")
-  status      String   @default("pending") // 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'
-  saleType    String   @default("domestic") @map("sale_type")
-  totalAmount Float    @default(0) @map("total_amount")
-  notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                   Int      @id @default(autoincrement())
+  orderNo              String   @unique @map("order_no")
+  quoteId              Int?     @map("quote_id")
+  customerId           Int      @map("customer_id")
+  orderDate            DateTime @map("order_date")
+  status               String   @default("pending") // 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'
+  saleType             String   @default("domestic") @map("sale_type")
+  totalAmount          Float    @default(0) @map("total_amount")
+  notes                String?
+  reference            String?
+  expectedShipmentDate DateTime? @map("expected_shipment_date")
+  placeOfSupply        String?  @map("place_of_supply")
+  deliveryMethod       String?  @map("delivery_method")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   customer Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
   quote    Quote?           @relation(fields: [quoteId], references: [id], onDelete: SetNull)
