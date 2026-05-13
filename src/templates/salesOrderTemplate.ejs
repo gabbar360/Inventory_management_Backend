@@ -170,13 +170,14 @@
             <table class="meta-table">
                 <tr><td>#</td><td><%= order.orderNo %></td></tr>
                 <tr><td>Order Date</td><td><%= fmtDate(order.orderDate) %></td></tr>
-                <tr><td>Status</td><td><%= order.status?.toUpperCase() %></td></tr>
-                <% if (order.quote?.quoteNo) { %><tr><td>Quote Ref</td><td><%= order.quote.quoteNo %></td></tr><% } %>
+                <% if (order.expectedShipmentDate) { %><tr><td>Expected Shipment</td><td><%= fmtDate(order.expectedShipmentDate) %></td></tr><% } %>
+                <% if (order.reference) { %><tr><td>Ref#</td><td><%= order.reference %></td></tr><% } %>
             </table>
         </div>
         <div class="meta-right">
             <table class="meta-table">
-                <tr><td>Sale Type</td><td><%= order.saleType?.toUpperCase() %></td></tr>
+                <% if (order.placeOfSupply) { %><tr><td>Place of Supply</td><td><%= order.placeOfSupply %></td></tr><% } %>
+                <% if (order.deliveryMethod) { %><tr><td>Delivery Method</td><td><%= order.deliveryMethod %></td></tr><% } %>
             </table>
         </div>
     </div>
