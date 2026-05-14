@@ -388,6 +388,37 @@ model SalesOrderItem {
   @@map("sales_order_items")
 }
 
+model WebsiteQuote {
+  id                     Int      @id @default(autoincrement())
+  quoteNo                String   @unique @map("quote_no")
+  companyName            String   @map("company_name")
+  contactPerson          String?  @map("contact_person")
+  email                  String?
+  mobile                 String?
+  orderType              String   @default("domestic") @map("order_type") // 'domestic' | 'international'
+  gstin                  String?
+  city                   String?
+  state                  String?
+  pincode                String?
+  billingAddress         String?  @map("billing_address")
+  country                String?
+  deliveryTerms          String?  @map("delivery_terms")
+  portOfDischarge        String?  @map("port_of_discharge")
+  address                String?
+  additionalRequirements String?  @map("additional_requirements")
+  totalPieces            Int      @default(0) @map("total_pieces")
+  totalWeight            String?  @map("total_weight")
+  totalCBM               String?  @map("total_cbm")
+  products               String   // JSON string of cart items
+  quoteDate              DateTime @default(now()) @map("quote_date")
+  status                 String   @default("new") // 'new' | 'contacted' | 'converted' | 'rejected'
+  remarks                String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@map("website_quotes")
+}
+
 model Lead {
   id        Int      @id @default(autoincrement())
   name      String
