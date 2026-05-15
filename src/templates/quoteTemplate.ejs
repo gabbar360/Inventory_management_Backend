@@ -139,7 +139,7 @@
             if (!taxLines[key]) taxLines[key] = { rate: taxRate, amt: 0 };
             taxLines[key].amt += taxAmt;
         });
-        const freight = quote.freight || 0;
+        const freight = quote.shippingCharge || 0;
         const discount = quote.discount || 0;
         const grandTotal = subTotal + totalTax + freight - discount;
     %>
@@ -307,7 +307,7 @@
             <% } %>
             <% if (freight > 0) { %>
             <div class="summary-row">
-                <span class="s-label">Freight</span>
+                <span class="s-label">Shipping Charge</span>
                 <span class="s-value"><%= fmt(freight) %></span>
             </div>
             <% } %>
