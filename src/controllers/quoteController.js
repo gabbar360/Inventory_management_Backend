@@ -59,7 +59,7 @@ const numberToWords = (num) => {
 
 const createQuote = async (req, res) => {
   try {
-    const { customerId, quoteDate, expiryDate, items, discount, tax, notes, termsAndConditions, termsOfDelivery, paymentTerms, reference } = req.body;
+    const { customerId, quoteDate, expiryDate, items, discount, tax, notes, termsAndConditions, termsOfDelivery, paymentTerms, reference, shippingCharge } = req.body;
 
     if (!customerId || !quoteDate || !expiryDate || !items || items.length === 0) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
@@ -80,6 +80,7 @@ const createQuote = async (req, res) => {
       termsOfDelivery: termsOfDelivery || null,
       paymentTerms: paymentTerms || null,
       reference: reference || null,
+      shippingCharge: shippingCharge || 0,
     });
 
     res.status(201).json({ success: true, data: quote });
@@ -109,7 +110,7 @@ const getQuoteById = async (req, res) => {
 
 const updateQuote = async (req, res) => {
   try {
-    const { customerId, quoteDate, expiryDate, status, discount, tax, totalAmount, notes, termsAndConditions, termsOfDelivery, paymentTerms, reference, items } = req.body;
+    const { customerId, quoteDate, expiryDate, status, discount, tax, totalAmount, notes, termsAndConditions, termsOfDelivery, paymentTerms, reference, items, shippingCharge } = req.body;
     
     let quote;
     if (items && items.length > 0) {
@@ -129,6 +130,7 @@ const updateQuote = async (req, res) => {
       termsOfDelivery: termsOfDelivery !== undefined ? termsOfDelivery : null,
       paymentTerms: paymentTerms !== undefined ? paymentTerms : null,
       reference: reference !== undefined ? reference : null,
+      shippingCharge: shippingCharge !== undefined ? shippingCharge : 0,
     });
     
     res.json({ success: true, data: quote });

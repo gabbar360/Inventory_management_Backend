@@ -27,6 +27,7 @@ const createQuote = async (data) => {
       termsOfDelivery: data.termsOfDelivery || null,
       paymentTerms: data.paymentTerms || null,
       reference: data.reference || null,
+      shippingCharge: data.shippingCharge || 0,
       items: {
         create: data.items.map(item => ({
           productId: item.productId,
@@ -113,6 +114,7 @@ const updateQuote = async (id, data) => {
     termsOfDelivery: data.termsOfDelivery !== undefined ? data.termsOfDelivery : null,
     paymentTerms: data.paymentTerms !== undefined ? data.paymentTerms : null,
     reference: data.reference !== undefined ? data.reference : null,
+    shippingCharge: data.shippingCharge !== undefined ? data.shippingCharge : 0,
   };
 
   // Add optional fields if provided
