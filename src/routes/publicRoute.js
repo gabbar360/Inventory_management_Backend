@@ -118,6 +118,55 @@ router.post('/sample', restrictToVegnar, async (req, res) => {
   }
 });
 
+// Public endpoint - save website quote to inventory
+router.post('/website-quote', restrictToVegnar, async (req, res) => {
+  try {
+    const {
+      companyName, contactPerson, email, mobile, orderType,
+      gstin, city, state, pincode, billingAddress,
+      country, deliveryTerms, portOfDischarge, address,
+      additionalRequirements, products, totalPieces, totalWeight, totalCBM,
+      quoteNo, quoteDate
+    } = req.body;
+
+    if (!companyName || !products || products.length === 0) {
+      return res.status(400).json({ success: false, message: 'Company name and products are required' });
+    }
+
+    const websiteQuote = await prisma.websiteQuote.create({
+      data: {
+        quoteNo: quoteNo || `WQ-${Date.now()}`,
+        companyName,
+        contactPerson: contactPerson || null,
+        email: email || null,
+        mobile: mobile || null,
+        orderType: orderType || 'domestic',
+        gstin: gstin || null,
+        city: city || null,
+        state: state || null,
+        pincode: pincode || null,
+        billingAddress: billingAddress || null,
+        country: country || null,
+        deliveryTerms: deliveryTerms || null,
+        portOfDischarge: portOfDischarge || null,
+        address: address || null,
+        additionalRequirements: additionalRequirements || null,
+        totalPieces: totalPieces ? parseInt(totalPieces) : 0,
+        totalWeight: totalWeight || null,
+        totalCBM: totalCBM || null,
+        quoteDate: quoteDate ? new Date(quoteDate) : new Date(),
+        products: JSON.stringify(products),
+        status: 'new',
+      },
+    });
+
+    return res.status(201).json({ success: true, message: 'Quote saved', id: websiteQuote.id });
+  } catch (error) {
+    console.error('Website quote error:', error);
+    return res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+});
+
 // ─── Facebook Webhook ────────────────────────────────────────────────────────
 
 // Step 1: Meta webhook verification (GET)

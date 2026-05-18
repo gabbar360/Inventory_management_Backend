@@ -28,6 +28,10 @@ const createSalesOrder = async (data) => {
       saleType: data.saleType || 'domestic',
       totalAmount: data.totalAmount || 0,
       notes: data.notes || null,
+      reference: data.reference || null,
+      expectedShipmentDate: data.expectedShipmentDate ? new Date(data.expectedShipmentDate) : null,
+      placeOfSupply: data.placeOfSupply || null,
+      deliveryMethod: data.deliveryMethod || null,
       items: {
         create: data.items.map((item) => ({
           productId: item.productId,
@@ -83,6 +87,10 @@ const updateSalesOrder = async (id, data) => {
     saleType: data.saleType,
     totalAmount: data.totalAmount,
     notes: data.notes,
+    reference: data.reference !== undefined ? data.reference : undefined,
+    expectedShipmentDate: data.expectedShipmentDate ? new Date(data.expectedShipmentDate) : null,
+    placeOfSupply: data.placeOfSupply !== undefined ? data.placeOfSupply : undefined,
+    deliveryMethod: data.deliveryMethod !== undefined ? data.deliveryMethod : undefined,
   };
   if (data.customerId) updateData.customerId = data.customerId;
   if (data.orderDate) updateData.orderDate = new Date(data.orderDate);
@@ -129,7 +137,8 @@ const convertFromQuote = async (quoteId) => {
     status: 'confirmed',
     saleType: 'domestic',
     totalAmount,
-    notes: `Converted from Quote ${quote.quoteNo}`,
+    reference: quote.quoteNo,
+    notes: null,
     items: quote.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
