@@ -133,6 +133,14 @@ router.post('/website-quote', restrictToVegnar, async (req, res) => {
       return res.status(400).json({ success: false, message: 'Company name and products are required' });
     }
 
+    // Build prices map from products' rate field
+    const pricesMap = {};
+    products.forEach((p, i) => {
+      if (p.rate !== undefined) {
+        pricesMap[i] = { rate: p.rate, taxRate: parseFloat(p.taxRate) || 0 };
+      }
+    });
+
     const websiteQuote = await prisma.websiteQuote.create({
       data: {
         quoteNo: quoteNo || `WQ-${Date.now()}`,
@@ -156,6 +164,7 @@ router.post('/website-quote', restrictToVegnar, async (req, res) => {
         totalCBM: totalCBM || null,
         quoteDate: quoteDate ? new Date(quoteDate) : new Date(),
         products: JSON.stringify(products),
+        prices: Object.keys(pricesMap).length > 0 ? JSON.stringify(pricesMap) : null,
         status: 'new',
       },
     });
