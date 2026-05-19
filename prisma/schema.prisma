@@ -56,6 +56,7 @@ model Product {
   name        String
   grade       String?
   description String?
+  sku         String?  @unique
   categoryId  Int      @map("category_id")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

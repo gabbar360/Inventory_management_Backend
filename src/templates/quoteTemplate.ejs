@@ -213,7 +213,8 @@
         <thead>
             <tr>
                 <th class="left" style="width:4%">#</th>
-                <th class="left" style="width:28%">Item & Description</th>
+                <th class="left" style="width:8%">SKU</th>
+                <th class="left" style="width:20%">Item & Description</th>
                 <th style="width:10%">HSN/SAC</th>
                 <th style="width:6%">UOM</th>
                 <th style="width:8%">Qty</th>
@@ -234,6 +235,7 @@
             %>
             <tr>
                 <td class="sno"><%= i + 1 %></td>
+                <td><%= item.product?.sku || '-' %></td>
                 <td>
                     <div class="item-name"><%= item.product?.name || 'Product' %></div>
                     <% if (item.description) { %>
