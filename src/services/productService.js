@@ -10,6 +10,7 @@ class ProductService {
           OR: [
             { name: { contains: search, mode: 'insensitive' } },
             { grade: { contains: search, mode: 'insensitive' } },
+            { sku: { contains: search, mode: 'insensitive' } },
             { category: { name: { contains: search, mode: 'insensitive' } } },
           ],
         }
@@ -97,6 +98,7 @@ class ProductService {
     return await prisma.product.create({
       data: {
         ...data,
+        sku: data.sku || null,
         categoryId: parseInt(data.categoryId)
       },
       include: {
@@ -123,6 +125,7 @@ class ProductService {
       where: { id: parseInt(id) },
       data: {
         ...data,
+        sku: data.sku || null,
         categoryId: parseInt(data.categoryId)
       },
       include: {
