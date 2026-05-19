@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Quote - <%= quote.quoteNo %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; font-size: 10pt; color: #333; background: #fff; }
+        .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm 12mm; background: #fff; }
+        .top-container { border: 1.5px solid #bbb; margin-bottom: 0; }
+        .header { display: flex; align-items: stretch; padding: 8px 10px; border-bottom: 1.5px solid #bbb; }
+        .logo-block { width: 100px; display: flex; align-items: center; justify-content: flex-start; flex-shrink: 0; margin-right: 14px; }
+        .logo-block img { max-width: 90px; max-height: 70px; object-fit: contain; }
+        .company-block { flex: 1; }
+        .company-name { font-size: 16pt; font-weight: 700; color: #222; line-height: 1.1; }
+        .company-info { font-size: 8.5pt; color: #555; line-height: 1.5; margin-top: 3px; }
+        .invoice-title-block { width: 160px; display: flex; align-items: flex-end; justify-content: flex-end; flex-shrink: 0; }
+        .invoice-title-text { font-size: 18pt; font-weight: 700; color: #222; letter-spacing: 1px; text-align: right; }
+        .meta-row { display: flex; border-bottom: 1.5px solid #bbb; }
+        .meta-left { flex: 1; border-right: 1.5px solid #bbb; padding: 8px 10px; }
+        .meta-right { width: 260px; padding: 8px 10px; }
+        .meta-table { width: 100%; border-collapse: collapse; }
+        .meta-table td { padding: 2px 4px; font-size: 9.5pt; vertical-align: top; }
+        .meta-table td:first-child { color: #666; white-space: nowrap; }
+        .meta-table td:last-child { font-weight: 600; color: #222; }
+        .party-row { display: flex; }
+        .party-box { flex: 1; padding: 8px 10px; }
+        .party-box:first-child { border-right: 1.5px solid #bbb; }
+        .party-label { font-size: 9pt; color: #333; font-weight: 700; background: #e8e8e8; padding: 4px 10px; margin: -8px -10px 8px -10px; border-bottom: 1.5px solid #bbb; }
+        .party-name { font-size: 11pt; font-weight: 700; color: #222; margin-bottom: 2px; }
+        .party-addr { font-size: 9pt; color: #555; line-height: 1.5; }
+        .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; border: 1.5px solid #bbb; }
+        .items-table thead tr { background: #f0f0f0; }
+        .items-table th { padding: 6px 6px; font-size: 9pt; font-weight: 700; color: #444; text-align: center; border: 1px solid #bbb; }
+        .items-table th.left { text-align: left; }
+        .items-table td { padding: 5px 6px; font-size: 9.5pt; border: 1px solid #ddd; vertical-align: top; }
+        .items-table td.center { text-align: center; }
+        .items-table td.right { text-align: right; }
+        .items-table td.sno { text-align: center; color: #888; }
+        .item-name { font-weight: 500; color: #222; }
+        .bottom-section { display: flex; margin-top: 0; border: 1.5px solid #bbb; border-top: none; }
+        .bottom-left { flex: 1; padding: 10px; border-right: 1.5px solid #bbb; }
+        .bottom-right { width: 260px; padding: 10px; }
+        .section-label { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .words-text { font-size: 9.5pt; color: #222; font-style: italic; margin-bottom: 10px; }
+        .bank-row { font-size: 9pt; color: #555; line-height: 1.7; }
+        .bank-row span { font-weight: 600; color: #333; }
+        .summary-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 9.5pt; }
+        .summary-row .s-label { color: #555; }
+        .summary-row .s-value { font-weight: 500; color: #222; }
+        .summary-row.total-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
+        .summary-row.total-row .s-label { font-size: 11pt; font-weight: 700; color: #222; }
+        .summary-row.total-row .s-value { font-size: 11pt; font-weight: 700; color: #222; }
+        .terms-section { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ccc; }
+        .terms-title { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .terms-list { font-size: 9pt; color: #555; line-height: 1.7; }
+        .sig-section { margin-top: 30px; text-align: right; }
+        .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #bbb; border-top: 1px solid #ccc; padding-top: 6px; }
+        @page { size: A4; margin: 0; }
+    </style>
+</head>
+<body>
+<div class="page">
+    <%
+        function fmt(num) {
+            if (!num || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+        function numToWords(n) {
+            const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+            const teens = ['Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+            const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+            if (n === 0) return 'Zero';
+            const h = (x) => {
+                let r = '';
+                if (x >= 100) { r += ones[Math.floor(x/100)] + ' Hundred '; x %= 100; }
+                if (x >= 20) { r += tens[Math.floor(x/10)] + ' '; x %= 10; }
+                else if (x >= 10) { r += teens[x-10] + ' '; x = 0; }
+                if (x > 0) r += ones[x] + ' ';
+                return r;
+            };
+            let r = '', num = Math.floor(n);
+            const cr = Math.floor(num/10000000); if (cr) { r += h(cr)+'Crore '; num %= 10000000; }
+            const lk = Math.floor(num/100000); if (lk) { r += h(lk)+'Lakh '; num %= 100000; }
+            const th = Math.floor(num/1000); if (th) { r += h(th)+'Thousand '; num %= 1000; }
+            if (num > 0) r += h(num);
+            return 'Indian Rupee ' + r.trim() + ' Only';
+        }
+
+        let subTotal = 0, totalTax = 0;
+        let taxLines = {};
+        products.forEach((p, i) => {
+            const rate = parseFloat(prices[i]?.rate || 0);
+            const taxRate = parseFloat(prices[i]?.taxRate || 0);
+            const qty = parseFloat(p.totalPieces || p.quantity || 1);
+            const lineAmt = qty * rate;
+            const taxAmt = lineAmt * (taxRate / 100);
+            subTotal += lineAmt;
+            totalTax += taxAmt;
+            const key = taxRate + '%';
+            if (!taxLines[key]) taxLines[key] = { rate: taxRate, amt: 0 };
+            taxLines[key].amt += taxAmt;
+        });
+        const freight = parseFloat(quote.shippingCharge || 0);
+        const discount = parseFloat(quote.discount || 0);
+        const grandTotal = subTotal + totalTax + freight - discount;
+    %>
+
+    <div class="top-container">
+        <div class="header">
+            <div class="logo-block">
+                <% if (logoBase64) { %>
+                    <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+                <% } %>
+            </div>
+            <div class="company-block">
+                <div class="company-name">Vegnar Global LLP</div>
+                <div class="company-info">
+                    B-623, RK Iconic, 150 Feet Ring Road, Ayodhya Chowk<br>
+                    Rajkot Gujarat 360007, India<br>
+                    GSTIN: 24ABAFV3901A1ZV<br>
+                    sales@vegnar.com | +91 9998040482 | www.vegnar.com
+                </div>
+            </div>
+            <div class="invoice-title-block">
+                <div class="invoice-title-text">Quote</div>
+            </div>
+        </div>
+
+        <div class="meta-row">
+            <div class="meta-left">
+                <table class="meta-table">
+                    <tr><td>#</td><td><%= quote.quoteNo %></td></tr>
+                    <tr><td>Quote Date</td><td><%= fmtDate(quote.quoteDate) %></td></tr>
+                    <% if (quote.termsOfDelivery) { %><tr><td>Terms of Delivery</td><td><%= quote.termsOfDelivery %></td></tr><% } %>
+                    <% if (quote.paymentTerms) { %><tr><td>Payment Terms</td><td><%= quote.paymentTerms %></td></tr><% } %>
+                </table>
+            </div>
+            <div class="meta-right">
+                <table class="meta-table">
+                    <tr><td>Order Type</td><td><%= quote.orderType === 'international' ? 'International' : 'Domestic' %></td></tr>
+                    <% if (quote.orderType === 'international' && quote.portOfDischarge) { %>
+                    <tr><td>Port</td><td><%= quote.portOfDischarge %></td></tr>
+                    <% } %>
+                    <% if (quote.orderType === 'international' && quote.deliveryTerms) { %>
+                    <tr><td>Delivery Terms</td><td><%= quote.deliveryTerms %></td></tr>
+                    <% } %>
+                </table>
+            </div>
+        </div>
+
+        <div class="party-row">
+            <div class="party-box">
+                <div class="party-label">Bill To</div>
+                <div class="party-name"><%= quote.companyName %></div>
+                <div class="party-addr">
+                    <% if (quote.contactPerson) { %><%= quote.contactPerson %><br><% } %>
+                    <% if (quote.orderType === 'domestic') { %>
+                        <%= [quote.city, quote.state, quote.pincode].filter(Boolean).join(', ') %><br>
+                        <% if (quote.billingAddress) { %><%= quote.billingAddress %><br><% } %>
+                        <% if (quote.gstin) { %>GSTIN: <%= quote.gstin %><br><% } %>
+                    <% } else { %>
+                        <% if (quote.address) { %><%= quote.address %><br><% } %>
+                        <% if (quote.country) { %><%= quote.country %><br><% } %>
+                    <% } %>
+                    <% if (quote.mobile) { %>Phone: <%= quote.mobile %><br><% } %>
+                    <% if (quote.email) { %>Email: <%= quote.email %><% } %>
+                </div>
+            </div>
+            <div class="party-box">
+                <div class="party-label">Ship To</div>
+                <div class="party-name"><%= quote.companyName %></div>
+                <div class="party-addr">
+                    <% if (quote.orderType === 'domestic') { %>
+                        <%= [quote.city, quote.state, quote.pincode].filter(Boolean).join(', ') %><br>
+                        <% if (quote.billingAddress) { %><%= quote.billingAddress %><% } %>
+                    <% } else { %>
+                        <% if (quote.address) { %><%= quote.address %><br><% } %>
+                        <% if (quote.country) { %><%= quote.country %><% } %>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th class="left" style="width:4%">#</th>
+                <th class="left" style="width:30%">Item & Description</th>
+                <th style="width:8%">HSN/SAC</th>
+                <th style="width:6%">UOM</th>
+                <th style="width:8%">Qty</th>
+                <th style="width:10%">Rate</th>
+                <th style="width:6%">CGST%</th>
+                <th style="width:8%">CGST Amt</th>
+                <th style="width:6%">SGST%</th>
+                <th style="width:8%">SGST Amt</th>
+                <th style="width:10%">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% products.forEach((p, i) => {
+                const rate = parseFloat(prices[i]?.rate || 0);
+                const taxRate = parseFloat(prices[i]?.taxRate || 0);
+                const qty = parseFloat(p.totalPieces || p.quantity || 1);
+                const lineAmt = qty * rate;
+                const cgstRate = taxRate / 2;
+                const cgstAmt = lineAmt * (cgstRate / 100);
+            %>
+            <tr>
+                <td class="sno"><%= i + 1 %></td>
+                <td><div class="item-name"><%= p.productName %></div></td>
+                <td class="center"><%= p.hsnCode || '' %></td>
+                <td class="center"><%= p.unit || 'Nos' %></td>
+                <td class="center"><%= qty %></td>
+                <td class="right"><%= fmt(rate) %></td>
+                <td class="center"><%= cgstRate %>%</td>
+                <td class="right"><%= fmt(cgstAmt) %></td>
+                <td class="center"><%= cgstRate %>%</td>
+                <td class="right"><%= fmt(cgstAmt) %></td>
+                <td class="right"><%= fmt(lineAmt) %></td>
+            </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <div class="bottom-section">
+        <div class="bottom-left">
+            <div class="section-label">Total In Words</div>
+            <div class="words-text"><%= numToWords(grandTotal) %></div>
+
+            <div class="section-label">Bank Details</div>
+            <div class="bank-row">
+                Beneficiary Name: <span>Vegnar Global LLP</span><br>
+                Bank Name: <span><%= settings?.bankName || 'Axis Bank' %></span><br>
+                Account Number: <span><%= settings?.accountNumber || '' %></span><br>
+                IFSC Code: <span><%= settings?.ifscCode || '' %></span><br>
+                <% if (settings?.branchAddress) { %>Bank Address: <span><%= settings.branchAddress %></span><br><% } %>
+                <% if (settings?.swiftCode) { %>Swift Code: <span><%= settings.swiftCode %></span><% } %>
+            </div>
+
+            <% if (quote.notes || quote.additionalRequirements) { %>
+            <div class="terms-section">
+                <div class="terms-title">Notes</div>
+                <div class="terms-list"><%= quote.notes || quote.additionalRequirements %></div>
+            </div>
+            <% } %>
+
+            <div class="terms-section">
+                <div class="terms-title">Terms & Conditions</div>
+                <div class="terms-list">
+                    <% if (quote.termsAndConditions) { %>
+                        <%= quote.termsAndConditions %>
+                    <% } else { %>
+                        1. Prices are valid till the expiry date mentioned above.<br>
+                        2. Payment must be clear against the receipt of the invoice.<br>
+                        3. Subject to Rajkot Jurisdiction "E&OE"
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
+        <div class="bottom-right">
+            <div class="summary-row">
+                <span class="s-label">Sub Total</span>
+                <span class="s-value"><%= fmt(subTotal) %></span>
+            </div>
+            <% Object.values(taxLines).forEach(t => { %>
+            <div class="summary-row">
+                <span class="s-label">CGST (<%= t.rate/2 %>%)</span>
+                <span class="s-value"><%= fmt(t.amt / 2) %></span>
+            </div>
+            <div class="summary-row">
+                <span class="s-label">SGST (<%= t.rate/2 %>%)</span>
+                <span class="s-value"><%= fmt(t.amt / 2) %></span>
+            </div>
+            <% }) %>
+            <% if (discount > 0) { %>
+            <div class="summary-row">
+                <span class="s-label">Discount</span>
+                <span class="s-value">(<%= fmt(discount) %>)</span>
+            </div>
+            <% } %>
+            <% if (freight > 0) { %>
+            <div class="summary-row">
+                <span class="s-label">Shipping Charge</span>
+                <span class="s-value"><%= fmt(freight) %></span>
+            </div>
+            <% } %>
+            <div class="summary-row total-row">
+                <span class="s-label">Grand Total</span>
+                <span class="s-value">₹<%= fmt(grandTotal) %></span>
+            </div>
+
+            <div class="sig-section">
+                <div style="border-top: 1.5px solid #bbb; padding-top: 6px;">
+                    <div style="font-size: 9pt; color: #888;">Authorized Signature</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">Thanks for your business.</div>
+</div>
+</body>
+</html>

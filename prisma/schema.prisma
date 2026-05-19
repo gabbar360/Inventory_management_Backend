@@ -411,6 +411,14 @@ model WebsiteQuote {
   totalWeight            String?  @map("total_weight")
   totalCBM               String?  @map("total_cbm")
   products               String   // JSON string of cart items
+  prices                 String?  // JSON string of { index: { rate, taxRate } }
+  discount               Float    @default(0)
+  shippingCharge         Float    @default(0) @map("shipping_charge")
+  tax                    Float    @default(0)
+  notes                  String?
+  termsAndConditions     String?  @map("terms_and_conditions")
+  termsOfDelivery        String?  @map("terms_of_delivery")
+  paymentTerms           String?  @map("payment_terms")
   quoteDate              DateTime @default(now()) @map("quote_date")
   status                 String   @default("new") // 'new' | 'contacted' | 'converted' | 'rejected'
   remarks                String?
