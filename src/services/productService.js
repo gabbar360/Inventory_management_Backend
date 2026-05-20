@@ -11,6 +11,7 @@ class ProductService {
             { name: { contains: search, mode: 'insensitive' } },
             { grade: { contains: search, mode: 'insensitive' } },
             { sku: { contains: search, mode: 'insensitive' } },
+            { upc: { contains: search, mode: 'insensitive' } },
             { category: { name: { contains: search, mode: 'insensitive' } } },
           ],
         }
@@ -95,56 +96,82 @@ class ProductService {
   }
 
   static async create(data) {
-    return await prisma.product.create({
-      data: {
-        ...data,
-        sku: data.sku || null,
-        categoryId: parseInt(data.categoryId)
-      },
-      include: {
-        category: {
-          select: {
-            name: true,
-            hsnCode: true,
-            gstRate: true,
+    try {
+      return await prisma.product.create({
+        data: {
+          ...data,
+          sku: data.sku || null,
+          upc: data.upc || null,
+          categoryId: parseInt(data.categoryId)
+        },
+        include: {
+          category: {
+            select: {
+              name: true,
+              hsnCode: true,
+              gstRate: true,
+            },
+          },
+          _count: {
+            select: {
+              inwardItems: true,
+              outwardItems: true,
+              stockBatches: true,
+            },
           },
         },
-        _count: {
-          select: {
-            inwardItems: true,
-            outwardItems: true,
-            stockBatches: true,
-          },
-        },
-      },
-    });
+      });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0];
+        if (field === 'sku') {
+          throw new Error('This SKU number is already in use');
+        } else if (field === 'upc') {
+          throw new Error('This UPC number is already in use');
+        }
+      }
+      throw error;
+    }
   }
 
   static async update(id, data) {
-    return await prisma.product.update({
-      where: { id: parseInt(id) },
-      data: {
-        ...data,
-        sku: data.sku || null,
-        categoryId: parseInt(data.categoryId)
-      },
-      include: {
-        category: {
-          select: {
-            name: true,
-            hsnCode: true,
-            gstRate: true,
+    try {
+      return await prisma.product.update({
+        where: { id: parseInt(id) },
+        data: {
+          ...data,
+          sku: data.sku || null,
+          upc: data.upc || null,
+          categoryId: parseInt(data.categoryId)
+        },
+        include: {
+          category: {
+            select: {
+              name: true,
+              hsnCode: true,
+              gstRate: true,
+            },
+          },
+          _count: {
+            select: {
+              inwardItems: true,
+              outwardItems: true,
+              stockBatches: true,
+            },
           },
         },
-        _count: {
-          select: {
-            inwardItems: true,
-            outwardItems: true,
-            stockBatches: true,
-          },
-        },
-      },
-    });
+      });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        const field = error.meta?.target?.[0];
+        if (field === 'sku') {
+          throw new Error('This SKU number is already in use');
+        } else if (field === 'upc') {
+          throw new Error('This UPC number is already in use');
+        }
+      }
+      throw error;
+    }
   }
 
   static async delete(id) {

@@ -4,27 +4,38 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class DashboardService {
-  static async getKPIs(period = 'month') {
+  static async getKPIs(period = 'month', dateFrom = null, dateTo = null) {
     const now = new Date();
     let startDate;
     let previousStartDate;
 
-    switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        previousStartDate = new Date(now.getFullYear() - 1, 0, 1);
-        break;
+    if (dateFrom && dateTo) {
+      startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const timeDiff = endDate - startDate;
+      previousStartDate = new Date(startDate.getTime() - timeDiff);
+    } else {
+      switch (period) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          previousStartDate = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          previousStartDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          previousStartDate = new Date(now.getFullYear() - 1, 0, 1);
+          break;
+      }
     }
 
     const previousEndDate = startDate;
+    const endDate = dateTo ? new Date(dateTo) : now;
+    endDate.setHours(23, 59, 59, 999);
 
     // Calculate total stock value
     const stockBatches = await prisma.stockBatch.findMany({
@@ -40,8 +51,12 @@ class DashboardService {
       return sum + (batch.remainingPcs * batch.costPerPcs);
     }, 0);
 
-    // Calculate total revenue - removed date filter to include all invoices
-    const outwardInvoices = await prisma.outwardInvoice.findMany();
+    // Calculate total revenue
+    const outwardInvoices = await prisma.outwardInvoice.findMany({
+      where: {
+        date: { gte: startDate, lte: endDate },
+      },
+    });
 
     const previousOutwardInvoices = await prisma.outwardInvoice.findMany({
       where: {
@@ -52,8 +67,12 @@ class DashboardService {
     const totalRevenue = outwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
     const previousRevenue = previousOutwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
 
-    // Calculate total purchase - removed date filter to include all invoices
-    const inwardInvoices = await prisma.inwardInvoice.findMany();
+    // Calculate total purchase
+    const inwardInvoices = await prisma.inwardInvoice.findMany({
+      where: {
+        date: { gte: startDate, lte: endDate },
+      },
+    });
 
     const previousInwardInvoices = await prisma.inwardInvoice.findMany({
       where: {
@@ -73,8 +92,13 @@ class DashboardService {
     const previousInwardExpenses = previousInwardInvoices.reduce((sum, invoice) => sum + invoice.expense, 0);
     const previousExpenses = previousOutwardExpenses + previousInwardExpenses;
 
-    // Calculate gross profit (Revenue - Cost of Goods Sold) - removed date filter
+    // Calculate gross profit (Revenue - Cost of Goods Sold)
     const outwardItems = await prisma.outwardItem.findMany({
+      where: {
+        outwardInvoice: {
+          date: { gte: startDate, lte: endDate },
+        },
+      },
       include: {
         stockBatch: true,
       },
@@ -137,29 +161,42 @@ class DashboardService {
     };
   }
 
-  static async getRevenueChart(period = 'month') {
+  static async getRevenueChart(period = 'month', dateFrom = null, dateTo = null) {
     const now = new Date();
     let startDate;
+    let endDate;
     let groupBy;
 
-    switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        groupBy = 'day';
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        groupBy = 'day';
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        groupBy = 'month';
-        break;
+    if (dateFrom && dateTo) {
+      startDate = new Date(dateFrom);
+      endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      
+      const timeDiff = endDate - startDate;
+      groupBy = timeDiff > 365 * 24 * 60 * 60 * 1000 ? 'month' : 'day';
+    } else {
+      switch (period) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          endDate = now;
+          groupBy = 'day';
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          endDate = now;
+          groupBy = 'day';
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          endDate = now;
+          groupBy = 'month';
+          break;
+      }
     }
 
     const invoices = await prisma.outwardInvoice.findMany({
       where: {
-        date: { gte: startDate },
+        date: { gte: startDate, lte: endDate },
       },
       orderBy: { date: 'asc' },
     });
@@ -189,9 +226,20 @@ class DashboardService {
     }));
   }
 
-  static async getTopProducts(limit = 10) {
+  static async getTopProducts(limit = 10, dateFrom = null, dateTo = null) {
+    const whereClause = {};
+    if (dateFrom && dateTo) {
+      const startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      whereClause.outwardInvoice = {
+        date: { gte: startDate, lte: endDate },
+      };
+    }
+
     const result = await prisma.outwardItem.groupBy({
       by: ['productId'],
+      where: whereClause,
       _sum: {
         quantity: true,
         totalCost: true,
@@ -230,9 +278,18 @@ class DashboardService {
     return topProducts;
   }
 
-  static async getTopCustomers(limit = 10) {
+  static async getTopCustomers(limit = 10, dateFrom = null, dateTo = null) {
+    const whereClause = {};
+    if (dateFrom && dateTo) {
+      const startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+      whereClause.date = { gte: startDate, lte: endDate };
+    }
+
     const result = await prisma.outwardInvoice.groupBy({
       by: ['customerId'],
+      where: whereClause,
       _sum: {
         totalCost: true,
       },
@@ -303,20 +360,26 @@ class DashboardService {
     };
   }
 
-  static async getPerformanceMetrics(period = 'month') {
+  static async getPerformanceMetrics(period = 'month', dateFrom = null, dateTo = null) {
     const now = new Date();
     let startDate;
 
-    switch (period) {
-      case 'week':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-        break;
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1);
-        break;
+    if (dateFrom && dateTo) {
+      startDate = new Date(dateFrom);
+      const endDate = new Date(dateTo);
+      endDate.setHours(23, 59, 59, 999);
+    } else {
+      switch (period) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+      }
     }
 
     // Calculate inventory turnover
