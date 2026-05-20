@@ -16,6 +16,7 @@ class InventoryService {
         productId: inwardItem.productId,
         vendorId: inwardInvoice.vendorId,
         locationId: inwardInvoice.locationId,
+        inwardInvoiceId: inwardInvoice.id,
         inwardDate: inwardInvoice.date,
         boxes: inwardItem.boxes,
         packPerBox: inwardItem.packPerBox,

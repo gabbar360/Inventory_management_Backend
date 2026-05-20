@@ -313,38 +313,51 @@ class InwardService {
         include: { items: true },
       });
 
-      if (!existingInvoice) {
-        throw new Error('Invoice not found');
-      }
+      if (!existingInvoice) throw new Error('Invoice not found');
 
-      const soldItems = await tx.outwardItem.findMany({
-        where: {
-          stockBatch: {
-            productId: { in: existingInvoice.items.map(item => item.productId) },
-            vendorId: existingInvoice.vendorId,
-            locationId: existingInvoice.locationId,
-            inwardDate: existingInvoice.date,
-          },
-        },
+      // Identify which products have sold stock from this invoice's batches
+      const existingBatches = await tx.stockBatch.findMany({
+        where: { inwardInvoiceId: parseInt(id) },
       });
 
-      if (soldItems.length > 0) {
-        throw new Error('Cannot update invoice with sold stock');
+      const soldOutwardItems = await tx.outwardItem.findMany({
+        where: { stockBatchId: { in: existingBatches.map(b => b.id) } },
+        select: { stockBatchId: true },
+      });
+
+      const soldBatchIds = new Set(soldOutwardItems.map(i => i.stockBatchId));
+      const soldProductIds = new Set(
+        existingBatches.filter(b => soldBatchIds.has(b.id)).map(b => b.productId)
+      );
+
+      // Delete only unsold batches
+      const unsoldBatchIds = existingBatches.filter(b => !soldBatchIds.has(b.id)).map(b => b.id);
+      if (unsoldBatchIds.length > 0) {
+        await tx.stockBatch.deleteMany({ where: { id: { in: unsoldBatchIds } } });
       }
 
-      await tx.stockBatch.deleteMany({
-        where: {
-          productId: { in: existingInvoice.items.map(item => item.productId) },
-          vendorId: existingInvoice.vendorId,
-          locationId: existingInvoice.locationId,
-          inwardDate: existingInvoice.date,
-        },
-      });
-      await tx.stockMovement.deleteMany({ where: { referenceId: parseInt(id), type: 'inward' } });
-      await tx.inwardItem.deleteMany({ where: { inwardInvoiceId: parseInt(id) } });
+      // Delete inward items and stock movements for unsold products only
+      const unsoldInwardItemIds = existingInvoice.items
+        .filter(item => !soldProductIds.has(item.productId))
+        .map(item => item.id);
+      if (unsoldInwardItemIds.length > 0) {
+        await tx.inwardItem.deleteMany({ where: { id: { in: unsoldInwardItemIds } } });
+      }
+
+      const unsoldProductIds = existingInvoice.items
+        .filter(item => !soldProductIds.has(item.productId))
+        .map(item => item.productId);
+      if (unsoldProductIds.length > 0) {
+        await tx.stockMovement.deleteMany({
+          where: { referenceId: parseInt(id), type: 'inward', productId: { in: unsoldProductIds } },
+        });
+      }
+
+      // Only process/recreate items for unsold products
+      const itemsToProcess = data.items.filter(item => !soldProductIds.has(parseInt(item.productId)));
 
       const processedItems = await Promise.all(
-        data.items.map(async (item) => {
+        itemsToProcess.map(async (item) => {
           const product = await tx.product.findUnique({
             where: { id: parseInt(item.productId) },
             include: { category: true },
@@ -353,10 +366,10 @@ class InwardService {
 
           const totalPacks = item.boxes * item.packPerBox;
           const totalPcs = totalPacks * item.packPerPiece;
-          
+
           let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
           const unit = item.unit || 'box';
-          
+
           if (unit === 'box') {
             ratePerBox = item.ratePerBox;
             ratePerPack = ratePerBox / item.packPerBox;
@@ -373,7 +386,7 @@ class InwardService {
             ratePerBox = ratePerPack * item.packPerBox;
             baseAmount = totalPcs * ratePerPcs;
           }
-          
+
           const gstAmount = (baseAmount * product.category.gstRate) / 100;
           const totalCost = baseAmount + gstAmount;
 
@@ -417,21 +430,20 @@ class InwardService {
         )
       );
 
-      // Create sub-items and calculate their total
       let subItemsTotalCost = 0;
-      
+
       for (let i = 0; i < processedItems.length; i++) {
         const item = processedItems[i];
         const parentItem = items[i];
-        
+
         if (item.subItems && item.subItems.length > 0) {
           for (const subItem of item.subItems) {
             const subTotalPacks = subItem.boxes * subItem.packPerBox;
             const subTotalPcs = subTotalPacks * subItem.packPerPiece;
-            
+
             let subRatePerBox, subRatePerPack, subRatePerPcs, subBaseAmount;
             const subUnit = subItem.unit || 'box';
-            
+
             if (subUnit === 'box') {
               subRatePerBox = subItem.ratePerBox;
               subRatePerPack = subRatePerBox / subItem.packPerBox;
@@ -448,12 +460,12 @@ class InwardService {
               subRatePerBox = subRatePerPack * subItem.packPerBox;
               subBaseAmount = subTotalPcs * subRatePerPcs;
             }
-            
+
             const subProduct = await tx.product.findUnique({
               where: { id: parseInt(item.productId) },
               include: { category: true },
             });
-            
+
             const subGstAmount = (subBaseAmount * subProduct.category.gstRate) / 100;
             const subTotalCost = subBaseAmount + subGstAmount;
             subItemsTotalCost += subTotalCost;
@@ -492,7 +504,6 @@ class InwardService {
         }
       }
 
-      // Update invoice total cost with sub-items
       if (subItemsTotalCost > 0) {
         await tx.inwardInvoice.update({
           where: { id: invoice.id },
@@ -523,11 +534,7 @@ class InwardService {
             where: { parentItemId: null },
             include: {
               product: { include: { category: true } },
-              subItems: {
-                include: {
-                  product: { include: { category: true } },
-                },
-              },
+              subItems: { include: { product: { include: { category: true } } } },
             },
           },
         },
