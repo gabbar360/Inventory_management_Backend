@@ -10,8 +10,8 @@ const parseQueryParams = (query) => {
   const page = parseInt(query.page) || 1;
   const limit = Math.min(parseInt(query.limit) || 10, 10000);
   const search = query.search || '';
-  const sortBy = query.sortBy || 'createdAt';
-  const sortOrder = query.sortOrder === 'asc' ? 'asc' : 'desc';
+  const sortBy = query.sortBy || 'sku';
+  const sortOrder = query.sortOrder === 'desc' ? 'desc' : 'asc';
   const source = query.source || null;
   return { page, limit, search, sortBy, sortOrder, source };
 };
