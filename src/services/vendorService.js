@@ -18,7 +18,7 @@ class VendorService {
     const total = await prisma.vendor.count({ where });
     const { offset } = calculatePagination(page, limit, total);
 
-    const orderBy = sortBy
+    const orderBy = sortBy && ['name', 'code', 'email', 'phone', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
 

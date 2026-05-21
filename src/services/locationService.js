@@ -17,7 +17,7 @@ class LocationService {
     const total = await prisma.location.count({ where });
     const { offset } = calculatePagination(page, limit, total);
 
-    const orderBy = sortBy
+    const orderBy = sortBy && ['name', 'address', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
 
