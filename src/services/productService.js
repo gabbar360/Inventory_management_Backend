@@ -11,7 +11,6 @@ class ProductService {
             { name: { contains: search, mode: 'insensitive' } },
             { grade: { contains: search, mode: 'insensitive' } },
             { sku: { contains: search, mode: 'insensitive' } },
-            { upc: { contains: search, mode: 'insensitive' } },
             { category: { name: { contains: search, mode: 'insensitive' } } },
           ],
         }
@@ -24,7 +23,7 @@ class ProductService {
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
 
-    const products = await prisma.product.findMany({
+    let products = await prisma.product.findMany({
       where,
       skip: offset,
       take: limit,
@@ -46,6 +45,14 @@ class ProductService {
         },
       },
     });
+
+    if (sortBy === 'sku') {
+      products.sort((a, b) => {
+        const skuA = parseInt(a.sku) || 0;
+        const skuB = parseInt(b.sku) || 0;
+        return sortOrder === 'desc' ? skuB - skuA : skuA - skuB;
+      });
+    }
 
     return {
       products,
@@ -96,12 +103,14 @@ class ProductService {
   }
 
   static async create(data) {
+    if (!data.sku || data.sku.trim() === '') {
+      throw new Error('SKU number is required');
+    }
     try {
       return await prisma.product.create({
         data: {
           ...data,
-          sku: data.sku || null,
-          upc: data.upc || null,
+          sku: data.sku.trim(),
           categoryId: parseInt(data.categoryId)
         },
         include: {
@@ -126,8 +135,6 @@ class ProductService {
         const field = error.meta?.target?.[0];
         if (field === 'sku') {
           throw new Error('This SKU number is already in use');
-        } else if (field === 'upc') {
-          throw new Error('This UPC number is already in use');
         }
       }
       throw error;
@@ -135,13 +142,15 @@ class ProductService {
   }
 
   static async update(id, data) {
+    if (data.sku !== undefined && (!data.sku || data.sku.trim() === '')) {
+      throw new Error('SKU number is required');
+    }
     try {
       return await prisma.product.update({
         where: { id: parseInt(id) },
         data: {
           ...data,
-          sku: data.sku || null,
-          upc: data.upc || null,
+          sku: data.sku ? data.sku.trim() : undefined,
           categoryId: parseInt(data.categoryId)
         },
         include: {
@@ -166,8 +175,6 @@ class ProductService {
         const field = error.meta?.target?.[0];
         if (field === 'sku') {
           throw new Error('This SKU number is already in use');
-        } else if (field === 'upc') {
-          throw new Error('This UPC number is already in use');
         }
       }
       throw error;

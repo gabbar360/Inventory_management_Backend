@@ -17,7 +17,7 @@ class CategoryService {
     const total = await prisma.category.count({ where });
     const { offset } = calculatePagination(page, limit, total);
 
-    const orderBy = sortBy
+    const orderBy = sortBy && ['name', 'hsnCode', 'gstRate', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
 

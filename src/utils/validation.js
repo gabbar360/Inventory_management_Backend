@@ -22,6 +22,7 @@ const categorySchema = z.object({
 // Product schemas
 const productSchema = z.object({
   name: z.string().min(1, 'Product name is required'),
+  sku: z.string().min(1, 'SKU number is required'),
   grade: z.string().optional(),
   categoryId: z.union([z.string(), z.number()]).transform(val => String(val)),
 });
