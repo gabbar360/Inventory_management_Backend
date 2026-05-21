@@ -22,7 +22,7 @@ class SampleService {
     const total = await prisma.sample.count({ where });
     const { offset } = calculatePagination(page, limit, total);
 
-    const orderBy = sortBy
+    const orderBy = sortBy && ['sampleNo', 'customerName', 'status', 'sentDate', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
 

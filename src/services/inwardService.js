@@ -22,7 +22,7 @@ class InwardService {
       where,
       skip: offset,
       take: limit,
-      orderBy: { [sortBy]: sortOrder },
+      orderBy: { createdAt: 'desc' },
       include: {
         vendor: {
           select: { name: true, code: true },

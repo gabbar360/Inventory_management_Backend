@@ -19,7 +19,7 @@ class LeadService {
     const total = await prisma.lead.count({ where });
     const { offset } = calculatePagination(page, limit, total);
 
-    const orderBy = sortBy
+    const orderBy = sortBy && ['name', 'email', 'company', 'status', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
 
