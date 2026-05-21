@@ -207,6 +207,7 @@ model StockBatch {
   productId        Int      @map("product_id")
   vendorId         Int      @map("vendor_id")
   locationId       Int      @map("location_id")
+  inwardInvoiceId  Int?     @map("inward_invoice_id")
   inwardDate       DateTime @map("inward_date")
   boxes            Int
   packPerBox       Int      @map("pack_per_box")
