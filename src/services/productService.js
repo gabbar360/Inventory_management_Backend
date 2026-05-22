@@ -11,6 +11,7 @@ class ProductService {
             { name: { contains: search, mode: 'insensitive' } },
             { grade: { contains: search, mode: 'insensitive' } },
             { sku: { contains: search, mode: 'insensitive' } },
+            { upc: { contains: search, mode: 'insensitive' } },
             { category: { name: { contains: search, mode: 'insensitive' } } },
           ],
         }
@@ -19,11 +20,18 @@ class ProductService {
     const total = await prisma.product.count({ where });
     const { offset } = calculatePagination(page, limit, total);
 
-    const orderBy = sortBy
-      ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
-      : { createdAt: 'desc' };
+    let orderBy = {};
+    if (sortBy === 'sku') {
+      orderBy = { sku: sortOrder === 'desc' ? 'desc' : 'asc' };
+    } else if (sortBy === 'name') {
+      orderBy = { name: sortOrder === 'desc' ? 'desc' : 'asc' };
+    } else if (sortBy) {
+      orderBy = { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' };
+    } else {
+      orderBy = { sku: 'asc' };
+    }
 
-    let products = await prisma.product.findMany({
+    const products = await prisma.product.findMany({
       where,
       skip: offset,
       take: limit,
@@ -45,14 +53,6 @@ class ProductService {
         },
       },
     });
-
-    if (sortBy === 'sku') {
-      products.sort((a, b) => {
-        const skuA = parseInt(a.sku) || 0;
-        const skuB = parseInt(b.sku) || 0;
-        return sortOrder === 'desc' ? skuB - skuA : skuA - skuB;
-      });
-    }
 
     return {
       products,
@@ -103,14 +103,15 @@ class ProductService {
   }
 
   static async create(data) {
-    if (!data.sku || data.sku.trim() === '') {
-      throw new Error('SKU number is required');
+    if (!data.upc || data.upc.trim() === '') {
+      throw new Error('UPC number is required');
     }
     try {
       return await prisma.product.create({
         data: {
           ...data,
-          sku: data.sku.trim(),
+          sku: data.sku || null,
+          upc: data.upc,
           categoryId: parseInt(data.categoryId)
         },
         include: {
@@ -135,6 +136,8 @@ class ProductService {
         const field = error.meta?.target?.[0];
         if (field === 'sku') {
           throw new Error('This SKU number is already in use');
+        } else if (field === 'upc') {
+          throw new Error('This UPC number is already in use');
         }
       }
       throw error;
@@ -142,15 +145,38 @@ class ProductService {
   }
 
   static async update(id, data) {
-    if (data.sku !== undefined && (!data.sku || data.sku.trim() === '')) {
-      throw new Error('SKU number is required');
+    if (!data.upc || data.upc.trim() === '') {
+      throw new Error('UPC number is required');
     }
     try {
+      // Check if UPC is being changed and if it already exists on another product
+      if (data.upc) {
+        const existingProduct = await prisma.product.findUnique({
+          where: { upc: data.upc }
+        });
+        
+        if (existingProduct && existingProduct.id !== parseInt(id)) {
+          throw new Error('This UPC number is already in use');
+        }
+      }
+
+      // Check if SKU is being changed and if it already exists on another product
+      if (data.sku) {
+        const existingProduct = await prisma.product.findUnique({
+          where: { sku: data.sku }
+        });
+        
+        if (existingProduct && existingProduct.id !== parseInt(id)) {
+          throw new Error('This SKU number is already in use');
+        }
+      }
+
       return await prisma.product.update({
         where: { id: parseInt(id) },
         data: {
           ...data,
-          sku: data.sku ? data.sku.trim() : undefined,
+          sku: data.sku || null,
+          upc: data.upc || null,
           categoryId: parseInt(data.categoryId)
         },
         include: {
@@ -175,6 +201,8 @@ class ProductService {
         const field = error.meta?.target?.[0];
         if (field === 'sku') {
           throw new Error('This SKU number is already in use');
+        } else if (field === 'upc') {
+          throw new Error('This UPC number is already in use');
         }
       }
       throw error;
