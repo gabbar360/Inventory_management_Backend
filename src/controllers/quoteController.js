@@ -219,6 +219,15 @@ const deleteQuote = async (req, res) => {
   }
 };
 
+const convertQuoteToInvoice = async (req, res) => {
+  try {
+    const invoice = await quoteService.convertQuoteToInvoice(req.params.id, req.body.items);
+    res.status(201).json({ success: true, data: invoice });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
 module.exports = {
   createQuote,
   getQuotes,
@@ -227,4 +236,5 @@ module.exports = {
   updateQuoteItems,
   deleteQuote,
   generateQuotePDF,
+  convertQuoteToInvoice,
 };

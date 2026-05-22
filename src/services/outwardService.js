@@ -146,6 +146,7 @@ class OutwardService {
               quantity: item.quantity,
               ratePerUnit: item.ratePerUnit,
               totalCost: item.totalCost,
+              description: item.description || null,
             },
           })
         )
@@ -280,6 +281,7 @@ class OutwardService {
               quantity: item.quantity,
               ratePerUnit: item.ratePerUnit,
               totalCost: item.totalCost,
+              description: item.description || null,
             },
           })
         )

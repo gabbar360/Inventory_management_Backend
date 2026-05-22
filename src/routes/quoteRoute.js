@@ -8,6 +8,7 @@ router.post('/quotes', authenticateToken, quoteController.createQuote);
 router.get('/quotes', authenticateToken, quoteController.getQuotes);
 router.get('/quotes/:id', authenticateToken, quoteController.getQuoteById);
 router.get('/quotes/:id/pdf', authenticateToken, quoteController.generateQuotePDF);
+router.post('/quotes/:id/convert-to-invoice', authenticateToken, quoteController.convertQuoteToInvoice);
 router.get('/quotes/:id/test', authenticateToken, (req, res) => {
   res.json({ message: 'Test endpoint working', id: req.params.id });
 });

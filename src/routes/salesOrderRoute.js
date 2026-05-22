@@ -11,5 +11,6 @@ router.put('/sales-orders/:id', authenticateToken, salesOrderController.updateSa
 router.delete('/sales-orders/:id', authenticateToken, salesOrderController.deleteSalesOrder);
 router.post('/sales-orders/convert-from-quote/:quoteId', authenticateToken, salesOrderController.convertFromQuote);
 router.get('/sales-orders/:id/pdf', authenticateToken, salesOrderController.generateSalesOrderPDF);
+router.post('/sales-orders/:id/convert-to-invoice', authenticateToken, salesOrderController.convertSalesOrderToInvoice);
 
 module.exports = router;

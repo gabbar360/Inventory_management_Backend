@@ -193,6 +193,7 @@ model OutwardItem {
   quantity         Int
   ratePerUnit      Float  @map("rate_per_unit")
   totalCost        Float  @map("total_cost")
+  description      String?
 
   outwardInvoice OutwardInvoice @relation(fields: [outwardInvoiceId], references: [id], onDelete: Cascade)
   product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
