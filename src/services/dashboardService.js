@@ -4,7 +4,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class DashboardService {
-  static async getKPIs(period = 'month', dateFrom = null, dateTo = null) {
+  static async getKPIs(period = 'month', dateFrom = null, dateTo = null, location = null, category = null, vendor = null, customer = null) {
     const now = new Date();
     let startDate;
     let previousStartDate;
@@ -37,14 +37,27 @@ class DashboardService {
     const endDate = dateTo ? new Date(dateTo) : now;
     endDate.setHours(23, 59, 59, 999);
 
+    // Convert string IDs to integers
+    const locationId = location ? parseInt(location) : null;
+    const categoryId = category ? parseInt(category) : null;
+    const vendorId = vendor ? parseInt(vendor) : null;
+    const customerId = customer ? parseInt(customer) : null;
+
     // Calculate total stock value
     const stockBatches = await prisma.stockBatch.findMany({
       where: {
-        OR: [
-          { remainingBoxes: { gt: 0 } },
-          { remainingPcs: { gt: 0 } },
+        AND: [
+          {
+            OR: [
+              { remainingBoxes: { gt: 0 } },
+              { remainingPcs: { gt: 0 } },
+            ],
+          },
+          locationId ? { locationId: locationId } : {},
+          categoryId ? { product: { categoryId: categoryId } } : {},
         ],
       },
+      include: { product: true },
     });
 
     const totalStockValue = stockBatches.reduce((sum, batch) => {
@@ -54,14 +67,24 @@ class DashboardService {
     // Calculate total revenue
     const outwardInvoices = await prisma.outwardInvoice.findMany({
       where: {
-        date: { gte: startDate, lte: endDate },
+        AND: [
+          { date: { gte: startDate, lte: endDate } },
+          customerId ? { customerId: customerId } : {},
+          locationId ? { items: { some: { locationId: locationId } } } : {},
+        ],
       },
+      include: { items: { include: { stockBatch: { include: { product: true } } } } },
     });
 
     const previousOutwardInvoices = await prisma.outwardInvoice.findMany({
       where: {
-        date: { gte: previousStartDate, lt: previousEndDate },
+        AND: [
+          { date: { gte: previousStartDate, lt: previousEndDate } },
+          customerId ? { customerId: customerId } : {},
+          locationId ? { items: { some: { locationId: locationId } } } : {},
+        ],
       },
+      include: { items: { include: { stockBatch: { include: { product: true } } } } },
     });
 
     const totalRevenue = outwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
@@ -70,13 +93,21 @@ class DashboardService {
     // Calculate total purchase
     const inwardInvoices = await prisma.inwardInvoice.findMany({
       where: {
-        date: { gte: startDate, lte: endDate },
+        AND: [
+          { date: { gte: startDate, lte: endDate } },
+          locationId ? { locationId: locationId } : {},
+          vendorId ? { vendorId: vendorId } : {},
+        ],
       },
     });
 
     const previousInwardInvoices = await prisma.inwardInvoice.findMany({
       where: {
-        date: { gte: previousStartDate, lt: previousEndDate },
+        AND: [
+          { date: { gte: previousStartDate, lt: previousEndDate } },
+          locationId ? { locationId: locationId } : {},
+          vendorId ? { vendorId: vendorId } : {},
+        ],
       },
     });
 
@@ -95,9 +126,16 @@ class DashboardService {
     // Calculate gross profit (Revenue - Cost of Goods Sold)
     const outwardItems = await prisma.outwardItem.findMany({
       where: {
-        outwardInvoice: {
-          date: { gte: startDate, lte: endDate },
-        },
+        AND: [
+          {
+            outwardInvoice: {
+              date: { gte: startDate, lte: endDate },
+              ...(customerId && { customerId: customerId }),
+            },
+          },
+          locationId ? { locationId: locationId } : {},
+          categoryId ? { stockBatch: { product: { categoryId: categoryId } } } : {},
+        ],
       },
       include: {
         stockBatch: true,
@@ -106,9 +144,16 @@ class DashboardService {
 
     const previousOutwardItems = await prisma.outwardItem.findMany({
       where: {
-        outwardInvoice: {
-          date: { gte: previousStartDate, lt: previousEndDate },
-        },
+        AND: [
+          {
+            outwardInvoice: {
+              date: { gte: previousStartDate, lt: previousEndDate },
+              ...(customerId && { customerId: customerId }),
+            },
+          },
+          locationId ? { locationId: locationId } : {},
+          categoryId ? { stockBatch: { product: { categoryId: categoryId } } } : {},
+        ],
       },
       include: {
         stockBatch: true,
@@ -161,7 +206,7 @@ class DashboardService {
     };
   }
 
-  static async getRevenueChart(period = 'month', dateFrom = null, dateTo = null) {
+  static async getRevenueChart(period = 'month', dateFrom = null, dateTo = null, location = null, category = null, vendor = null, customer = null) {
     const now = new Date();
     let startDate;
     let endDate;
@@ -194,9 +239,19 @@ class DashboardService {
       }
     }
 
+    // Convert string IDs to integers
+    const locationId = location ? parseInt(location) : null;
+    const categoryId = category ? parseInt(category) : null;
+    const customerId = customer ? parseInt(customer) : null;
+
     const invoices = await prisma.outwardInvoice.findMany({
       where: {
-        date: { gte: startDate, lte: endDate },
+        AND: [
+          { date: { gte: startDate, lte: endDate } },
+          customerId ? { customerId: customerId } : {},
+          locationId ? { items: { some: { locationId: locationId } } } : {},
+          categoryId ? { items: { some: { stockBatch: { product: { categoryId: categoryId } } } } } : {},
+        ],
       },
       orderBy: { date: 'asc' },
     });
@@ -220,22 +275,32 @@ class DashboardService {
       }
     });
 
-    return Array.from(chartData.entries()).map(([date, revenue]) => ({
+    const result = Array.from(chartData.entries()).map(([date, revenue]) => ({
       date,
       revenue,
     }));
+    return result;
   }
 
-  static async getTopProducts(limit = 10, dateFrom = null, dateTo = null) {
-    const whereClause = {};
-    if (dateFrom && dateTo) {
-      const startDate = new Date(dateFrom);
-      const endDate = new Date(dateTo);
-      endDate.setHours(23, 59, 59, 999);
-      whereClause.outwardInvoice = {
-        date: { gte: startDate, lte: endDate },
-      };
-    }
+  static async getTopProducts(limit = 10, dateFrom = null, dateTo = null, location = null, category = null, vendor = null, customer = null) {
+    
+    // Convert string IDs to integers
+    const locationId = location ? parseInt(location) : null;
+    const categoryId = category ? parseInt(category) : null;
+    const customerId = customer ? parseInt(customer) : null;
+    
+    const whereClause = {
+      AND: [
+        dateFrom && dateTo ? {
+          outwardInvoice: {
+            date: { gte: new Date(dateFrom), lte: new Date(dateTo) },
+          },
+        } : {},
+        locationId ? { locationId: locationId } : {},
+        customerId ? { outwardInvoice: { customerId: customerId } } : {},
+        categoryId ? { stockBatch: { product: { categoryId: categoryId } } } : {},
+      ],
+    };
 
     const result = await prisma.outwardItem.groupBy({
       by: ['productId'],
@@ -274,18 +339,24 @@ class DashboardService {
         };
       })
     );
-
     return topProducts;
   }
 
-  static async getTopCustomers(limit = 10, dateFrom = null, dateTo = null) {
-    const whereClause = {};
-    if (dateFrom && dateTo) {
-      const startDate = new Date(dateFrom);
-      const endDate = new Date(dateTo);
-      endDate.setHours(23, 59, 59, 999);
-      whereClause.date = { gte: startDate, lte: endDate };
-    }
+  static async getTopCustomers(limit = 10, dateFrom = null, dateTo = null, location = null, category = null, vendor = null, customer = null) {
+    
+    // Convert string IDs to integers
+    const locationId = location ? parseInt(location) : null;
+    const categoryId = category ? parseInt(category) : null;
+    
+    const whereClause = {
+      AND: [
+        dateFrom && dateTo ? {
+          date: { gte: new Date(dateFrom), lte: new Date(dateTo) },
+        } : {},
+        locationId ? { items: { some: { locationId: locationId } } } : {},
+        categoryId ? { items: { some: { stockBatch: { product: { categoryId: categoryId } } } } } : {},
+      ],
+    };
 
     const result = await prisma.outwardInvoice.groupBy({
       by: ['customerId'],
@@ -319,7 +390,6 @@ class DashboardService {
         };
       })
     );
-
     return topCustomers;
   }
 
@@ -360,7 +430,7 @@ class DashboardService {
     };
   }
 
-  static async getPerformanceMetrics(period = 'month', dateFrom = null, dateTo = null) {
+  static async getPerformanceMetrics(period = 'month', dateFrom = null, dateTo = null, location = null, category = null, vendor = null, customer = null) {
     const now = new Date();
     let startDate;
 
@@ -382,15 +452,34 @@ class DashboardService {
       }
     }
 
+    // Convert string IDs to integers
+    const locationId = location ? parseInt(location) : null;
+    const categoryId = category ? parseInt(category) : null;
+    const customerId = customer ? parseInt(customer) : null;
+
     // Calculate inventory turnover
     const avgInventoryValue = await prisma.stockBatch.aggregate({
+      where: {
+        AND: [
+          { OR: [{ remainingBoxes: { gt: 0 } }, { remainingPcs: { gt: 0 } }] },
+          locationId ? { locationId: locationId } : {},
+          categoryId ? { product: { categoryId: categoryId } } : {},
+        ],
+      },
       _avg: {
         costPerBox: true,
       },
     });
 
     const totalSales = await prisma.outwardInvoice.aggregate({
-      where: { date: { gte: startDate } },
+      where: {
+        AND: [
+          { date: { gte: startDate } },
+          locationId ? { locationId: locationId } : {},
+          customerId ? { customerId: customerId } : {},
+          categoryId ? { items: { some: { stockBatch: { product: { categoryId: categoryId } } } } } : {},
+        ],
+      },
       _sum: { totalCost: true },
     });
 
@@ -398,7 +487,14 @@ class DashboardService {
 
     // Calculate average order value
     const orderStats = await prisma.outwardInvoice.aggregate({
-      where: { date: { gte: startDate } },
+      where: {
+        AND: [
+          { date: { gte: startDate } },
+          locationId ? { locationId: locationId } : {},
+          customerId ? { customerId: customerId } : {},
+          categoryId ? { items: { some: { stockBatch: { product: { categoryId: categoryId } } } } } : {},
+        ],
+      },
       _avg: { totalCost: true },
       _count: true,
     });
@@ -409,7 +505,13 @@ class DashboardService {
     const totalCustomers = await prisma.customer.count();
     const activeCustomers = await prisma.outwardInvoice.groupBy({
       by: ['customerId'],
-      where: { date: { gte: startDate } },
+      where: {
+        AND: [
+          { date: { gte: startDate } },
+          locationId ? { locationId: locationId } : {},
+          categoryId ? { items: { some: { stockBatch: { product: { categoryId: categoryId } } } } } : {},
+        ],
+      },
     });
 
     const customerRetention = (activeCustomers.length / totalCustomers) * 100;
@@ -417,7 +519,11 @@ class DashboardService {
     // Low stock count
     const lowStockCount = await prisma.stockBatch.count({
       where: {
-        remainingPcs: { lt: 10 },
+        AND: [
+          { remainingPcs: { lt: 10 } },
+          locationId ? { locationId: locationId } : {},
+          categoryId ? { product: { categoryId: categoryId } } : {},
+        ],
       },
     });
 
