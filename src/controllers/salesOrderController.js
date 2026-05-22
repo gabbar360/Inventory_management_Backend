@@ -99,4 +99,13 @@ const generateSalesOrderPDF = async (req, res) => {
   }
 };
 
-module.exports = { createSalesOrder, getSalesOrders, getSalesOrderById, updateSalesOrder, deleteSalesOrder, convertFromQuote, generateSalesOrderPDF };
+const convertSalesOrderToInvoice = async (req, res) => {
+  try {
+    const invoice = await salesOrderService.convertSalesOrderToInvoice(req.params.id, req.body.items);
+    res.status(201).json({ success: true, data: invoice });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+module.exports = { createSalesOrder, getSalesOrders, getSalesOrderById, updateSalesOrder, deleteSalesOrder, convertFromQuote, generateSalesOrderPDF, convertSalesOrderToInvoice };

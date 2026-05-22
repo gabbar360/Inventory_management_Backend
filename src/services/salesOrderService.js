@@ -155,4 +155,107 @@ const convertFromQuote = async (quoteId) => {
   return order;
 };
 
-module.exports = { createSalesOrder, getSalesOrders, getSalesOrderById, updateSalesOrder, deleteSalesOrder, convertFromQuote };
+const convertSalesOrderToInvoice = async (id, itemSelections) => {
+  // itemSelections: [{ salesOrderItemId, stockBatchId, saleUnit }]
+  const order = await prisma.salesOrder.findUnique({
+    where: { id: parseInt(id) },
+    include: { items: true },
+  });
+  if (!order) throw new Error('Sales order not found');
+
+  const lastInvoice = await prisma.outwardInvoice.findFirst({ orderBy: { id: 'desc' } });
+  const nextNum = (lastInvoice?.id || 0) + 1;
+  const invoiceNo = `INV-${String(nextNum).padStart(6, '0')}`;
+
+  return await prisma.$transaction(async (tx) => {
+    const invoice = await tx.outwardInvoice.create({
+      data: {
+        invoiceNo,
+        date: new Date(),
+        customerId: order.customerId,
+        saleType: order.saleType || 'domestic',
+        expense: 0,
+        totalCost: 0,
+      },
+    });
+
+    let totalCost = 0;
+
+    for (const sel of itemSelections) {
+      const orderItem = order.items.find(i => i.id === sel.salesOrderItemId);
+      if (!orderItem) continue;
+
+      const stockBatch = await tx.stockBatch.findUnique({ where: { id: parseInt(sel.stockBatchId) } });
+      if (!stockBatch) throw new Error(`Stock batch not found for item: ${orderItem.productId}`);
+
+      const qty = orderItem.quantity;
+      const saleUnit = sel.saleUnit || 'box';
+
+      if (saleUnit === 'box' && stockBatch.remainingBoxes < qty) throw new Error(`Insufficient box stock for product ID ${orderItem.productId}`);
+      if (saleUnit === 'pack' && stockBatch.remainingPacks < qty) throw new Error(`Insufficient pack stock for product ID ${orderItem.productId}`);
+      if (saleUnit === 'piece' && stockBatch.remainingPcs < qty) throw new Error(`Insufficient piece stock for product ID ${orderItem.productId}`);
+
+      const itemTotal = qty * orderItem.rate;
+      totalCost += itemTotal;
+
+      await tx.outwardItem.create({
+        data: {
+          outwardInvoiceId: invoice.id,
+          productId: orderItem.productId,
+          stockBatchId: stockBatch.id,
+          locationId: stockBatch.locationId,
+          saleUnit,
+          quantity: qty,
+          ratePerUnit: orderItem.rate,
+          totalCost: itemTotal,
+          description: orderItem.description || null,
+        },
+      });
+
+      let boxDecrement = 0, packDecrement = 0, pcsDecrement = 0;
+      if (saleUnit === 'box') {
+        boxDecrement = qty;
+        packDecrement = qty * stockBatch.packPerBox;
+        pcsDecrement = qty * stockBatch.packPerBox * stockBatch.packPerPiece;
+      } else if (saleUnit === 'pack') {
+        packDecrement = qty;
+        pcsDecrement = qty * stockBatch.packPerPiece;
+        boxDecrement = Math.floor(qty / stockBatch.packPerBox);
+      } else {
+        pcsDecrement = qty;
+        const packsReduced = Math.floor(qty / stockBatch.packPerPiece);
+        packDecrement = packsReduced;
+        boxDecrement = Math.floor(packsReduced / stockBatch.packPerBox);
+      }
+
+      await tx.stockBatch.update({
+        where: { id: stockBatch.id },
+        data: {
+          remainingBoxes: { decrement: boxDecrement },
+          remainingPacks: { decrement: packDecrement },
+          remainingPcs: { decrement: pcsDecrement },
+        },
+      });
+
+      await tx.stockMovement.create({
+        data: {
+          type: 'outward',
+          referenceId: invoice.id,
+          productId: orderItem.productId,
+          locationId: stockBatch.locationId,
+          quantity: -qty,
+          movementDate: new Date(),
+        },
+      });
+    }
+
+    await tx.outwardInvoice.update({ where: { id: invoice.id }, data: { totalCost } });
+
+    return await tx.outwardInvoice.findUnique({
+      where: { id: invoice.id },
+      include: { customer: true, items: { include: { product: true, location: true } } },
+    });
+  }, { timeout: 30000 });
+};
+
+module.exports = { createSalesOrder, getSalesOrders, getSalesOrderById, updateSalesOrder, deleteSalesOrder, convertFromQuote, convertSalesOrderToInvoice };
