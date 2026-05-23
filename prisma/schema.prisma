@@ -98,6 +98,7 @@ model Customer {
   phone     String?
   address   String?
   gstNumber String?  @map("gst_number")
+  state     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -174,6 +175,8 @@ model OutwardInvoice {
   expense    Float    @default(0)
   totalCost  Float    @map("total_cost")
   isIncludeInProfitLoss Boolean @default(true) @map("is_include_in_profit_loss")
+  adjustment           Float    @default(0)
+  amountReceived       Float    @default(0) @map("amount_received")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -366,6 +369,8 @@ model SalesOrder {
   expectedShipmentDate DateTime? @map("expected_shipment_date")
   placeOfSupply        String?  @map("place_of_supply")
   deliveryMethod       String?  @map("delivery_method")
+  adjustment           Float    @default(0)
+  amountReceived       Float    @default(0) @map("amount_received")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

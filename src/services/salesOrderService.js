@@ -32,6 +32,8 @@ const createSalesOrder = async (data) => {
       expectedShipmentDate: data.expectedShipmentDate ? new Date(data.expectedShipmentDate) : null,
       placeOfSupply: data.placeOfSupply || null,
       deliveryMethod: data.deliveryMethod || null,
+      adjustment: parseFloat(data.adjustment) || 0,
+      amountReceived: parseFloat(data.amountReceived) || 0,
       items: {
         create: data.items.map((item) => ({
           productId: item.productId,
@@ -91,6 +93,8 @@ const updateSalesOrder = async (id, data) => {
     expectedShipmentDate: data.expectedShipmentDate ? new Date(data.expectedShipmentDate) : null,
     placeOfSupply: data.placeOfSupply !== undefined ? data.placeOfSupply : undefined,
     deliveryMethod: data.deliveryMethod !== undefined ? data.deliveryMethod : undefined,
+    adjustment: data.adjustment !== undefined ? parseFloat(data.adjustment) : undefined,
+    amountReceived: data.amountReceived !== undefined ? parseFloat(data.amountReceived) : undefined,
   };
   if (data.customerId) updateData.customerId = data.customerId;
   if (data.orderDate) updateData.orderDate = new Date(data.orderDate);
@@ -176,6 +180,8 @@ const convertSalesOrderToInvoice = async (id, itemSelections) => {
         saleType: order.saleType || 'domestic',
         expense: 0,
         totalCost: 0,
+        adjustment: order.adjustment || 0,
+        amountReceived: order.amountReceived || 0,
       },
     });
 
