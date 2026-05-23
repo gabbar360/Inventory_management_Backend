@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Dispatch Order - <%= dispatch.dispatchNo %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; font-size: 10pt; color: #333; background: #fff; }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 10mm 12mm;
+            background: #fff;
+        }
+
+        /* ===== TOP CONTAINER ===== */
+        .top-container { border: 1.5px solid #bbb; margin-bottom: 0; }
+
+        /* ===== HEADER ===== */
+        .header { display: flex; align-items: stretch; padding: 8px 10px; border-bottom: 1.5px solid #bbb; }
+
+        .logo-block {
+            width: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            flex-shrink: 0;
+            margin-right: 14px;
+        }
+        .logo-block img { max-width: 90px; max-height: 70px; object-fit: contain; }
+
+        .company-block { flex: 1; }
+        .company-name { font-size: 16pt; font-weight: 700; color: #222; line-height: 1.1; }
+        .company-info { font-size: 8.5pt; color: #555; line-height: 1.5; margin-top: 3px; }
+
+        .invoice-title-block {
+            width: 160px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: flex-end;
+            flex-shrink: 0;
+        }
+        .invoice-title-text {
+            font-size: 18pt;
+            font-weight: 700;
+            color: #222;
+            letter-spacing: 1px;
+            text-align: right;
+        }
+
+        /* ===== META ROW ===== */
+        .meta-row { display: flex; border-bottom: 1.5px solid #bbb; }
+
+        .meta-left { flex: 1; border-right: 1.5px solid #bbb; padding: 8px 10px; }
+        .meta-right { width: 260px; padding: 8px 10px; }
+
+        .meta-table { width: 100%; border-collapse: collapse; }
+        .meta-table td { padding: 2px 4px; font-size: 9.5pt; vertical-align: top; }
+        .meta-table td:first-child { color: #666; white-space: nowrap; }
+        .meta-table td:last-child { font-weight: 600; color: #222; }
+
+        /* ===== BILL TO / SHIP TO ===== */
+        .party-row { display: flex; }
+        .party-box { flex: 1; padding: 8px 10px; }
+        .party-box:first-child { border-right: 1.5px solid #bbb; }
+        .party-label { font-size: 9pt; color: #333; font-weight: 700; background: #e8e8e8; padding: 4px 10px; margin: -8px -10px 8px -10px; border-bottom: 1.5px solid #bbb; }
+        .party-name { font-size: 11pt; font-weight: 700; color: #222; margin-bottom: 2px; }
+        .party-addr { font-size: 9pt; color: #555; line-height: 1.5; }
+
+        /* ===== ITEMS TABLE ===== */
+        .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 0; border: 1.5px solid #bbb; }
+
+        .items-table thead tr { background: #f0f0f0; }
+        .items-table th { padding: 6px 6px; font-size: 9pt; font-weight: 700; color: #444; text-align: center; border: 1px solid #bbb; }
+        .items-table th.left { text-align: left; }
+
+        .items-table td { padding: 5px 6px; font-size: 9.5pt; border: 1px solid #ddd; vertical-align: top; }
+        .items-table td.center { text-align: center; }
+        .items-table td.right { text-align: right; }
+        .items-table td.sno { text-align: center; color: #888; }
+
+        .item-name { font-weight: 500; color: #222; }
+        .item-desc { font-size: 8.5pt; color: #888; margin-top: 1px; }
+
+        /* ===== BOTTOM SECTION ===== */
+        .bottom-section { display: flex; margin-top: 0; border: 1.5px solid #bbb; border-top: none; }
+
+        .bottom-left { flex: 1; padding: 10px 10px 10px 10px; border-right: 1.5px solid #bbb; }
+        .bottom-right { width: 260px; padding: 10px 10px 10px 10px; }
+
+        .section-label { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+
+        .words-text { font-size: 9.5pt; color: #222; font-style: italic; margin-bottom: 10px; }
+
+        .bank-row { font-size: 9pt; color: #555; line-height: 1.7; }
+        .bank-row span { font-weight: 600; color: #333; }
+
+        /* Summary rows */
+        .summary-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 9.5pt; }
+        .summary-row .s-label { color: #555; }
+        .summary-row .s-value { font-weight: 500; color: #222; }
+        .summary-row.total-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
+        .summary-row.total-row .s-label { font-size: 11pt; font-weight: 700; color: #222; }
+        .summary-row.total-row .s-value { font-size: 11pt; font-weight: 700; color: #222; }
+        .summary-row.balance-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
+        .summary-row.balance-row .s-label { font-size: 12pt; font-weight: 700; color: #222; }
+        .summary-row.balance-row .s-value { font-size: 12pt; font-weight: 700; color: #222; }
+
+        /* ===== TERMS ===== */
+        .terms-section { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ccc; }
+        .terms-title { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .terms-list { font-size: 9pt; color: #555; line-height: 1.7; }
+
+        /* ===== SIGNATURE ===== */
+        .sig-section { margin-top: 10px; text-align: right; }
+        .sig-label { font-size: 9pt; color: #888; }
+
+        /* ===== FOOTER ===== */
+        .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #bbb; border-top: 1px solid #ccc; padding-top: 6px; }
+
+        /* Status Badge */
+        .status-badge { display: inline-block; padding: 2px 6px; border-radius: 2px; font-size: 8pt; font-weight: 700; }
+        .status-pending { background: #fff3cd; color: #856404; }
+        .status-dispatched { background: #d1ecf1; color: #0c5460; }
+        .status-in_transit { background: #e2e3e5; color: #383d41; }
+        .status-delivered { background: #d4edda; color: #155724; }
+        .status-cancelled { background: #f8d7da; color: #721c24; }
+
+        @page { size: A4; margin: 0; }
+        @media print {
+            body { margin: 0; }
+            .page { margin: 0; padding: 10mm 12mm; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <%
+        function fmt(num) {
+            if (!num || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        let totalAmount = 0;
+        dispatch.salesOrder?.items?.forEach(item => {
+            totalAmount += item.quantity * item.rate;
+        });
+        const totalDispatchCost = dispatch.shippingCost + dispatch.insuranceAmount;
+    %>
+
+    <!-- HEADER -->
+    <div class="top-container">
+    <div class="header">
+        <div class="logo-block">
+            <% if (logoBase64) { %>
+                <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+            <% } %>
+        </div>
+        <div class="company-block">
+            <div class="company-name">Vegnar Global LLP</div>
+            <div class="company-info">
+                B-623, RK Iconic, 150 Feet Ring Road, Ayodhya Chowk<br>
+                Rajkot Gujarat 360007, India<br>
+                GSTIN: 24ABAFV3901A1ZV<br>
+                sales@vegnar.com | +91 9998040482 | www.vegnar.com
+            </div>
+        </div>
+        <div class="invoice-title-block">
+            <div class="invoice-title-text">DISPATCH ORDER</div>
+        </div>
+    </div>
+
+    <!-- META -->
+    <div class="meta-row">
+        <div class="meta-left">
+            <table class="meta-table">
+                <tr><td>Dispatch #</td><td><%= dispatch.dispatchNo %></td></tr>
+                <tr><td>Order #</td><td><%= dispatch.salesOrder?.orderNo || '-' %></td></tr>
+                <tr><td>Dispatch Date</td><td><%= fmtDate(dispatch.dispatchDate) %></td></tr>
+                <tr><td>Status</td><td><span class="status-badge status-<%= dispatch.status %>"><%= dispatch.status.toUpperCase().replace('_', ' ') %></span></td></tr>
+            </table>
+        </div>
+        <div class="meta-right">
+            <table class="meta-table">
+                <tr><td>Shipping Method</td><td><%= dispatch.shippingMethod.toUpperCase() %></td></tr>
+                <% if (dispatch.trackingNumber) { %><tr><td>Tracking #</td><td><%= dispatch.trackingNumber %></td></tr><% } %>
+                <% if (dispatch.carrier) { %><tr><td>Carrier</td><td><%= dispatch.carrier %></td></tr><% } %>
+                <% if (dispatch.estimatedDelivery) { %><tr><td>Est. Delivery</td><td><%= fmtDate(dispatch.estimatedDelivery) %></td></tr><% } %>
+            </table>
+        </div>
+    </div>
+
+    <!-- BILL TO / SHIP TO -->
+    <% if (dispatch.toTheOrder) { %>
+    <div class="party-row">
+        <div class="party-box" style="flex: 1; display: flex; align-items: center; justify-content: center;">
+            <div style="text-align: center; font-size: 14pt; font-weight: 700; color: #222;">
+                To The Order
+            </div>
+        </div>
+    </div>
+    <% } else { %>
+    <div class="party-row">
+        <div class="party-box">
+            <div class="party-label">Bill To</div>
+            <div class="party-name"><%= dispatch.salesOrder?.customer?.name || '' %></div>
+            <div class="party-addr">
+                <%= dispatch.salesOrder?.customer?.address || '' %><br>
+                <% if (dispatch.salesOrder?.customer?.phone) { %>Phone: <%= dispatch.salesOrder.customer.phone %><br><% } %>
+                <% if (dispatch.salesOrder?.customer?.email) { %>Email: <%= dispatch.salesOrder.customer.email %><br><% } %>
+                <% if (dispatch.salesOrder?.customer?.gstNumber) { %>GSTIN: <%= dispatch.salesOrder.customer.gstNumber %><% } %>
+            </div>
+        </div>
+        <div class="party-box">
+            <div class="party-label">Ship To</div>
+            <div class="party-name"><%= dispatch.salesOrder?.customer?.name || '' %></div>
+            <div class="party-addr">
+                <%= dispatch.shippingAddress %><br>
+                <%= dispatch.shippingCity %>, <%= dispatch.shippingState %> <%= dispatch.shippingPincode %><br>
+                <%= dispatch.shippingCountry %>
+            </div>
+        </div>
+    </div>
+    <% } %>
+    </div><!-- end top-container -->
+
+    <!-- ITEMS TABLE -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th class="left" style="width:4%">#</th>
+                <th class="left" style="width:35%">Item & Description</th>
+                <th style="width:10%">HSN/SAC</th>
+                <th style="width:6%">UOM</th>
+                <th style="width:8%">Qty</th>
+                <th style="width:37%">Remarks</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% dispatch.salesOrder?.items?.forEach((item, i) => { %>
+            <tr>
+                <td class="sno"><%= i + 1 %></td>
+                <td>
+                    <div class="item-name"><%= item.product?.name || 'Product' %></div>
+                    <% if (item.description) { %>
+                    <div class="item-desc"><%= item.description %></div>
+                    <% } %>
+                </td>
+                <td class="center"><%= item.product?.category?.hsnCode || '' %></td>
+                <td class="center"><%= item.unit || 'Nos' %></td>
+                <td class="center"><%= item.quantity %></td>
+                <td class="center"></td>
+            </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <!-- BOTTOM SECTION -->
+    <div class="bottom-section">
+        <div class="bottom-left">
+            <!-- Shipping Details -->
+            <div class="section-label">Shipping Details</div>
+            <div class="bank-row">
+                Package Count: <span><%= dispatch.packageCount %></span><br>
+                <% if (dispatch.weight) { %>Weight: <span><%= dispatch.weight %> kg</span><br><% } %>
+                <% if (dispatch.actualDelivery) { %>Delivered On: <span><%= fmtDate(dispatch.actualDelivery) %></span><br><% } %>
+            </div>
+
+            <!-- Delivery Instructions -->
+            <div class="terms-section">
+                <div class="terms-title">Delivery Instructions</div>
+                <div class="terms-list">
+                    1. Please verify the package condition before accepting.<br>
+                    2. Check item count and condition as per dispatch slip.<br>
+                    3. Report any damage or discrepancy immediately.<br>
+                    4. Retain this slip for your records.<br>
+                    5. Subject to Rajkot Jurisdiction "E&OE"
+                </div>
+            </div>
+
+            <% if (dispatch.notes) { %>
+            <div class="terms-section">
+                <div class="terms-title">Notes</div>
+                <div class="terms-list"><%= dispatch.notes %></div>
+            </div>
+            <% } %>
+        </div>
+
+        <div class="bottom-right">
+            <!-- Cost Summary -->
+            <div class="summary-row">
+                <span class="s-label">Shipping Cost</span>
+                <span class="s-value">₹<%= fmt(dispatch.shippingCost) %></span>
+            </div>
+            <div class="summary-row">
+                <span class="s-label">Insurance</span>
+                <span class="s-value">₹<%= fmt(dispatch.insuranceAmount) %></span>
+            </div>
+            <div class="summary-row total-row">
+                <span class="s-label">Total Dispatch Cost</span>
+                <span class="s-value">₹<%= fmt(totalDispatchCost) %></span>
+            </div>
+
+            <!-- Signature -->
+            <div class="sig-section" style="margin-top: 30px;">
+                <div style="border-top: 1.5px solid #bbb; padding-top: 6px;">
+                    <div class="sig-label">Authorized Signature</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">
+        Dispatch Order Generated on <%= new Date().toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) %>
+        | This is a computer-generated document and does not require a signature.
+    </div>
+</div>
+</body>
+</html>
