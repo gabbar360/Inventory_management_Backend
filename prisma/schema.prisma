@@ -377,6 +377,7 @@ model SalesOrder {
   customer Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
   quote    Quote?           @relation(fields: [quoteId], references: [id], onDelete: SetNull)
   items    SalesOrderItem[]
+  dispatch OrderDispatch?
 
   @@map("sales_orders")
 }
@@ -452,6 +453,37 @@ model Lead {
   updatedAt DateTime @updatedAt
 
   @@map("leads")
+}
+
+model OrderDispatch {
+  id                   Int      @id @default(autoincrement())
+  dispatchNo           String   @unique @map("dispatch_no")
+  salesOrderId         Int      @unique @map("sales_order_id")
+  dispatchDate         DateTime @map("dispatch_date")
+  status               String   @default("pending") // 'pending', 'dispatched', 'in_transit', 'delivered', 'cancelled'
+  shippingMethod       String   @map("shipping_method") // 'courier', 'truck', 'air', 'sea'
+  trackingNumber       String?  @map("tracking_number")
+  carrier              String?  // Courier/Logistics company name
+  estimatedDelivery    DateTime? @map("estimated_delivery")
+  actualDelivery       DateTime? @map("actual_delivery")
+  shippingAddress      String   @map("shipping_address")
+  shippingCity         String   @map("shipping_city")
+  shippingState        String   @map("shipping_state")
+  shippingPincode      String   @map("shipping_pincode")
+  shippingCountry      String   @default("India") @map("shipping_country")
+  weight               Float?   // in kg
+  dimensions           String?  // JSON: {length, width, height}
+  packageCount         Int      @default(1) @map("package_count")
+  shippingCost         Float    @default(0) @map("shipping_cost")
+  insuranceAmount      Float    @default(0) @map("insurance_amount")
+  notes                String?
+  toTheOrder           Boolean  @default(false) @map("to_the_order")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+
+  @@map("order_dispatches")
 }
 
 model Settings {
