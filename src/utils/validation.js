@@ -41,6 +41,8 @@ const customerSchema = z.object({
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
+  gstNumber: z.string().optional().nullable(),
+  state: z.string().optional().nullable(),
 });
 
 // Location schemas
