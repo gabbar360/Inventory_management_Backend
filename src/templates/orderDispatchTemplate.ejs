@@ -190,14 +190,31 @@
         <div class="meta-right">
             <table class="meta-table">
                 <tr><td>Shipping Method</td><td><%= dispatch.shippingMethod.toUpperCase() %></td></tr>
-                <% if (dispatch.trackingNumber) { %><tr><td>Tracking #</td><td><%= dispatch.trackingNumber %></td></tr><% } %>
-                <% if (dispatch.carrier) { %><tr><td>Carrier</td><td><%= dispatch.carrier %></td></tr><% } %>
                 <% if (dispatch.estimatedDelivery) { %><tr><td>Est. Delivery</td><td><%= fmtDate(dispatch.estimatedDelivery) %></td></tr><% } %>
+                
+                <% if (dispatch.shippingMethod === 'courier') { %>
+                    <% if (dispatch.courierName) { %><tr><td>Courier Name</td><td><%= dispatch.courierName %></td></tr><% } %>
+                    <% if (dispatch.courierPhone) { %><tr><td>Courier Phone</td><td><%= dispatch.courierPhone %></td></tr><% } %>
+                    <% if (dispatch.trackingNumber) { %><tr><td>Tracking #</td><td><%= dispatch.trackingNumber %></td></tr><% } %>
+                    <% if (dispatch.carrier) { %><tr><td>Carrier</td><td><%= dispatch.carrier %></td></tr><% } %>
+                <% } else if (dispatch.shippingMethod === 'truck') { %>
+                    <% if (dispatch.truckNumber) { %><tr><td>Truck #</td><td><%= dispatch.truckNumber %></td></tr><% } %>
+                    <% if (dispatch.driverName) { %><tr><td>Driver Name</td><td><%= dispatch.driverName %></td></tr><% } %>
+                    <% if (dispatch.driverPhone) { %><tr><td>Driver Phone</td><td><%= dispatch.driverPhone %></td></tr><% } %>
+                <% } else if (dispatch.shippingMethod === 'air') { %>
+                    <% if (dispatch.airlineCode) { %><tr><td>Airline Code</td><td><%= dispatch.airlineCode %></td></tr><% } %>
+                    <% if (dispatch.flightNumber) { %><tr><td>Flight #</td><td><%= dispatch.flightNumber %></td></tr><% } %>
+                <% } else if (dispatch.shippingMethod === 'sea') { %>
+                    <% if (dispatch.vesselName) { %><tr><td>Vessel Name</td><td><%= dispatch.vesselName %></td></tr><% } %>
+                    <% if (dispatch.containerNumber) { %><tr><td>Container #</td><td><%= dispatch.containerNumber %></td></tr><% } %>
+                    <% if (dispatch.portOfLoading) { %><tr><td>Port of Loading</td><td><%= dispatch.portOfLoading %></td></tr><% } %>
+                    <% if (dispatch.portOfDischarge) { %><tr><td>Port of Discharge</td><td><%= dispatch.portOfDischarge %></td></tr><% } %>
+                <% } %>
             </table>
         </div>
     </div>
 
-    <!-- BILL TO / SHIP TO -->
+
     <% if (dispatch.toTheOrder) { %>
     <div class="party-row">
         <div class="party-box" style="flex: 1; display: flex; align-items: center; justify-content: center;">

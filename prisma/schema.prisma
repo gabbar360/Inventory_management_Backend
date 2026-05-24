@@ -473,6 +473,17 @@ model OrderDispatch {
   insuranceAmount      Float    @default(0) @map("insurance_amount")
   notes                String?
   toTheOrder           Boolean  @default(false) @map("to_the_order")
+  courierName          String?  @map("courier_name")
+  courierPhone         String?  @map("courier_phone")
+  truckNumber          String?  @map("truck_number")
+  driverName           String?  @map("driver_name")
+  driverPhone          String?  @map("driver_phone")
+  airlineCode          String?  @map("airline_code")
+  flightNumber         String?  @map("flight_number")
+  containerNumber      String?  @map("container_number")
+  vesselName           String?  @map("vessel_name")
+  portOfLoading        String?  @map("port_of_loading")
+  portOfDischarge      String?  @map("port_of_discharge")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
