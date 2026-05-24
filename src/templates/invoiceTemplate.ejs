@@ -16,47 +16,21 @@
             background: #fff;
         }
 
-        /* ===== TOP CONTAINER (same as bottom-section box) ===== */
-        .top-container {
-            border: 1.5px solid #bbb;
-            margin-bottom: 0;
-        }
+        .top-container { border: 1.5px solid #bbb; margin-bottom: 0; }
 
-        /* ===== HEADER ===== */
         .header { display: flex; align-items: stretch; padding: 8px 10px; border-bottom: 1.5px solid #bbb; }
 
-        .logo-block {
-            width: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: flex-start;
-            flex-shrink: 0;
-            margin-right: 14px;
-        }
+        .logo-block { width: 100px; display: flex; align-items: center; justify-content: flex-start; flex-shrink: 0; margin-right: 14px; }
         .logo-block img { max-width: 90px; max-height: 70px; object-fit: contain; }
 
         .company-block { flex: 1; }
         .company-name { font-size: 16pt; font-weight: 700; color: #222; line-height: 1.1; }
         .company-info { font-size: 8.5pt; color: #555; line-height: 1.5; margin-top: 3px; }
 
-        .invoice-title-block {
-            width: 160px;
-            display: flex;
-            align-items: flex-end;
-            justify-content: flex-end;
-            flex-shrink: 0;
-        }
-        .invoice-title-text {
-            font-size: 18pt;
-            font-weight: 700;
-            color: #222;
-            letter-spacing: 1px;
-            text-align: right;
-        }
+        .invoice-title-block { width: 160px; display: flex; align-items: flex-end; justify-content: flex-end; flex-shrink: 0; }
+        .invoice-title-text { font-size: 18pt; font-weight: 700; color: #222; letter-spacing: 1px; text-align: right; }
 
-        /* ===== META ROW ===== */
         .meta-row { display: flex; border-bottom: 1.5px solid #bbb; }
-
         .meta-left { flex: 1; border-right: 1.5px solid #bbb; padding: 8px 10px; }
         .meta-right { width: 260px; padding: 8px 10px; }
 
@@ -65,7 +39,6 @@
         .meta-table td:first-child { color: #666; white-space: nowrap; }
         .meta-table td:last-child { font-weight: 600; color: #222; }
 
-        /* ===== BILL TO / SHIP TO ===== */
         .party-row { display: flex; }
         .party-box { flex: 1; padding: 8px 10px; }
         .party-box:first-child { border-right: 1.5px solid #bbb; }
@@ -73,13 +46,10 @@
         .party-name { font-size: 11pt; font-weight: 700; color: #222; margin-bottom: 2px; }
         .party-addr { font-size: 9pt; color: #555; line-height: 1.5; }
 
-        /* ===== ITEMS TABLE ===== */
         .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 0; border: 1.5px solid #bbb; }
-
         .items-table thead tr { background: #f0f0f0; }
         .items-table th { padding: 6px 6px; font-size: 9pt; font-weight: 700; color: #444; text-align: center; border: 1px solid #bbb; }
         .items-table th.left { text-align: left; }
-
         .items-table td { padding: 5px 6px; font-size: 9.5pt; border: 1px solid #ddd; vertical-align: top; }
         .items-table td.center { text-align: center; }
         .items-table td.right { text-align: right; }
@@ -88,42 +58,101 @@
         .item-name { font-weight: 500; color: #222; }
         .item-desc { font-size: 8.5pt; color: #888; margin-top: 1px; }
 
-        /* ===== BOTTOM SECTION ===== */
-        .bottom-section { display: flex; margin-top: 0; border: 1.5px solid #bbb; border-top: none; }
+        .text-bold { font-weight: bold; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
 
-        .bottom-left { flex: 1; padding: 10px 10px 10px 10px; border-right: 1.5px solid #bbb; }
-        .bottom-right { width: 260px; padding: 10px 10px 10px 10px; }
+        .words-section {
+            padding: 6px 10px;
+            border: 1.5px solid #bbb;
+            border-top: none;
+            font-size: 9pt;
+            background-color: #fafafa;
+        }
+        .words-section span {
+            font-weight: bold;
+            font-style: normal;
+        }
 
-        .section-label { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+        .gst-table-container {
+            border: 1.5px solid #bbb;
+            border-top: none;
+        }
+        .gst-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 8.5pt;
+        }
+        .gst-table th, .gst-table td {
+            border: 1px solid #bbb;
+            padding: 4px 6px;
+            vertical-align: middle;
+        }
+        .gst-table th {
+            background-color: #f0f0f0;
+            font-weight: bold;
+            text-align: center;
+        }
+        .gst-table td.center { text-align: center; }
+        .gst-table td.right { text-align: right; }
 
-        .words-text { font-size: 9.5pt; color: #222; font-style: italic; margin-bottom: 10px; }
+        .invoice-bottom-container {
+            display: flex;
+            border: 1.5px solid #bbb;
+            border-top: none;
+        }
+        .bottom-left-panel {
+            flex: 1.2;
+            padding: 8px 10px;
+            border-right: 1.5px solid #bbb;
+            font-size: 8.5pt;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .bottom-right-panel {
+            flex: 0.8;
+            padding: 8px 10px;
+            font-size: 8.5pt;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: stretch;
+            min-height: 140px;
+        }
+        .panel-label {
+            font-size: 8.5pt;
+            font-weight: bold;
+            color: #444;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 2px;
+            margin-bottom: 4px;
+        }
+        
+        .signatory-company {
+            text-align: right;
+            font-weight: bold;
+            font-size: 9pt;
+            margin-bottom: auto;
+            padding-top: 4px;
+        }
+        .signatory-signatures {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            margin-top: auto;
+            padding-bottom: 4px;
+        }
+        .sig-col {
+            text-align: center;
+            font-size: 8pt;
+            width: 160px;
+            border-top: 1px solid #bbb;
+            padding-top: 4px;
+            margin-left: auto;
+        }
 
-        .bank-row { font-size: 9pt; color: #555; line-height: 1.7; }
-        .bank-row span { font-weight: 600; color: #333; }
-
-        /* Summary rows */
-        .summary-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 9.5pt; }
-        .summary-row .s-label { color: #555; }
-        .summary-row .s-value { font-weight: 500; color: #222; }
-        .summary-row.total-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
-        .summary-row.total-row .s-label { font-size: 11pt; font-weight: 700; color: #222; }
-        .summary-row.total-row .s-value { font-size: 11pt; font-weight: 700; color: #222; }
-        .summary-row.payment-row .s-value { color: #c0392b; }
-        .summary-row.balance-row { border-top: 1.5px solid #bbb; margin-top: 4px; padding-top: 6px; }
-        .summary-row.balance-row .s-label { font-size: 12pt; font-weight: 700; color: #222; }
-        .summary-row.balance-row .s-value { font-size: 12pt; font-weight: 700; color: #222; }
-
-        /* ===== TERMS ===== */
-        .terms-section { margin-top: 10px; padding-top: 8px; border-top: 1px solid #ccc; }
-        .terms-title { font-size: 8.5pt; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-        .terms-list { font-size: 9pt; color: #555; line-height: 1.7; }
-
-        /* ===== SIGNATURE ===== */
-        .sig-section { margin-top: 10px; text-align: right; }
-        .sig-label { font-size: 9pt; color: #888; }
-
-        /* ===== FOOTER ===== */
-        .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #bbb; border-top: 1px solid #ccc; padding-top: 6px; }
+        .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #aaa; border-top: 1px solid #ccc; padding-top: 6px; }
 
         @page { size: A4; margin: 0; }
         @media print {
@@ -136,18 +165,19 @@
 <div class="page">
     <%
         function fmt(num) {
-            if (!num || isNaN(num)) return '0.00';
+            if (num === undefined || num === null || isNaN(num)) return '0.00';
             return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
         function fmtDate(d) {
             if (!d) return '';
             return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
         }
+        
         function numToWords(n) {
             const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
             const teens = ['Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
             const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
-            if (n === 0) return 'Zero';
+            
             const h = (x) => {
                 let r = '';
                 if (x >= 100) { r += ones[Math.floor(x/100)] + ' Hundred '; x %= 100; }
@@ -156,217 +186,474 @@
                 if (x > 0) r += ones[x] + ' ';
                 return r;
             };
-            let r = '', num = Math.floor(n);
-            const cr = Math.floor(num/10000000); if (cr) { r += h(cr)+'Crore '; num %= 10000000; }
-            const lk = Math.floor(num/100000); if (lk) { r += h(lk)+'Lakh '; num %= 100000; }
-            const th = Math.floor(num/1000); if (th) { r += h(th)+'Thousand '; num %= 1000; }
-            if (num > 0) r += h(num);
-            return 'Indian Rupee ' + r.trim() + ' Only';
+            
+            const convertInt = (num) => {
+                if (num === 0) return 'Zero';
+                let r = '';
+                const cr = Math.floor(num/10000000); if (cr) { r += h(cr)+'Crore '; num %= 10000000; }
+                const lk = Math.floor(num/100000); if (lk) { r += h(lk)+'Lakh '; num %= 100000; }
+                const th = Math.floor(num/1000); if (th) { r += h(th)+'Thousand '; num %= 1000; }
+                if (num > 0) r += h(num);
+                return r.trim();
+            };
+
+            const fixedNum = parseFloat(n).toFixed(2);
+            const parts = fixedNum.split('.');
+            const rupees = parseInt(parts[0]);
+            const paise = parseInt(parts[1]);
+
+            let words = 'INR ' + convertInt(rupees);
+            if (paise > 0) {
+                words += ' and ' + convertInt(paise) + ' Paise';
+            }
+            return words + ' Only';
         }
 
-        let subTotal = 0, totalTax = 0, totalQty = 0;
-        let taxLines = {};
+        // Aggregate units dynamically
+        let units = [];
         invoice.items?.forEach(item => {
+            let u = item.saleUnit || 'Pcs';
+            u = u.charAt(0).toUpperCase() + u.slice(1);
+            if (!units.includes(u)) {
+                units.push(u);
+            }
+        });
+        let unitText = '';
+        if (units.length === 1) {
+            unitText = ' ' + units[0];
+        } else if (units.length > 1) {
+            unitText = ' ' + units.join('/');
+        }
+
+        // Determine GST taxation: CGST+SGST (Intra-state) vs IGST (Inter-state)
+        let sellerState = 'gujarat';
+        if (settings?.companyAddress && settings.companyAddress.toLowerCase().includes('gujarat')) {
+            sellerState = 'gujarat';
+        }
+        const customerState = (invoice.customer?.state || 'Gujarat').toLowerCase().trim();
+        const isLocal = customerState.includes(sellerState);
+
+        let subTotal = 0, totalQty = 0, totalTax = 0;
+        let hsnGroups = {};
+        
+        invoice.items?.forEach(item => {
+            const hsn = item.product?.category?.hsnCode || 'N/A';
             const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
             const lineAmt = item.quantity * item.ratePerUnit;
-            const taxAmt = lineAmt * (taxRate / 100);
+            const cgstRate = taxRate / 2;
+            const cgstAmt = lineAmt * (cgstRate / 100);
+            
             subTotal += lineAmt;
-            totalTax += taxAmt;
             totalQty += item.quantity;
-            const key = taxRate + '%';
-            if (!taxLines[key]) taxLines[key] = { rate: taxRate, amt: 0 };
-            taxLines[key].amt += taxAmt;
+            totalTax += (cgstAmt * 2);
+            
+            if (!hsnGroups[hsn]) {
+                hsnGroups[hsn] = {
+                    hsn: hsn,
+                    taxableValue: 0,
+                    taxRate: taxRate,
+                    cgstRate: cgstRate,
+                    cgstAmt: 0,
+                    sgstRate: cgstRate,
+                    sgstAmt: 0,
+                    igstRate: taxRate,
+                    igstAmt: 0,
+                    totalTax: 0
+                };
+            }
+            hsnGroups[hsn].taxableValue += lineAmt;
+            hsnGroups[hsn].cgstAmt += cgstAmt;
+            hsnGroups[hsn].sgstAmt += cgstAmt;
+            hsnGroups[hsn].igstAmt += (cgstAmt * 2);
+            hsnGroups[hsn].totalTax += (cgstAmt * 2);
         });
+        
         const expense = invoice.expense || 0;
-        const grandTotal = subTotal + totalTax + expense;
-        const saleType = (invoice.saleType || 'domestic').toLowerCase();
-        const isIGST = saleType === 'export' || saleType === 'interstate';
+        const adjustment = invoice.adjustment || 0;
+        const amountReceived = invoice.amountReceived || 0;
+        const shippingCharge = invoice.shippingCharge || 0;
+        const grandTotal = subTotal + totalTax + expense + shippingCharge - adjustment;
+        const balanceDue = grandTotal - amountReceived;
+        
+        // Extract GSTIN
+        const companyGstin = settings?.companyGstin || '24ABAFV3901A1ZV';
     %>
 
     <!-- HEADER -->
     <div class="top-container">
-    <div class="header">
-        <div class="logo-block">
-            <% if (logoBase64) { %>
-                <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
-            <% } %>
-        </div>
-        <div class="company-block">
-            <div class="company-name">Vegnar Global LLP</div>
-            <div class="company-info">
-                B-623, RK Iconic, 150 Feet Ring Road, Ayodhya Chowk<br>
-                Rajkot Gujarat 360007, India<br>
-                GSTIN: 24ABAFV3901A1ZV<br>
-                sales@vegnar.com | +91 9998040482 | www.vegnar.com
+        <div class="header">
+            <div class="logo-block">
+                <% if (logoBase64) { %>
+                    <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+                <% } %>
+            </div>
+            <div class="company-block">
+                <div class="company-name"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
+                <div class="company-info">
+                    <%= settings?.companyAddress || 'B-623, RK Iconic, 150 Feet Ring Road, Ayodhya Chowk\nRajkot Gujarat 360007, India' %><br>
+                    GSTIN: <%= companyGstin %><br>
+                    <%= settings?.companyEmail || 'sales@vegnar.com' %> | <%= settings?.companyPhone || '+91 9998040482' %> | <%= settings?.companyWebsite || 'www.vegnar.com' %>
+                </div>
+            </div>
+            <div class="invoice-title-block">
+                <div class="invoice-title-text">TAX INVOICE</div>
             </div>
         </div>
-        <div class="invoice-title-block">
-            <div class="invoice-title-text">TAX INVOICE</div>
-        </div>
-    </div>
 
-    <!-- META -->
-    <div class="meta-row">
-        <div class="meta-left">
-            <table class="meta-table">
-                <tr><td>#</td><td><%= invoice.invoiceNo %></td></tr>
-                <tr><td>Invoice Date</td><td><%= fmtDate(invoice.date) %></td></tr>
-                <tr><td>Terms</td><td>Due on Receipt</td></tr>
-                <tr><td>Due Date</td><td><%= fmtDate(invoice.date) %></td></tr>
-                <% if (invoice.poNumber) { %><tr><td>P.O.#</td><td><%= invoice.poNumber %></td></tr><% } %>
-                <% if (invoice.saleType) { %><tr><td>Sale Type</td><td><%= invoice.saleType.toUpperCase() %></td></tr><% } %>
-            </table>
+        <!-- META -->
+        <div class="meta-row">
+            <div class="meta-left">
+                <table class="meta-table">
+                    <tr><td>Invoice No.</td><td><%= invoice.invoiceNo %></td></tr>
+                    <tr><td>Invoice Date</td><td><%= fmtDate(invoice.date) %></td></tr>
+                    <tr><td>Due Date</td><td><%= fmtDate(invoice.date) %></td></tr>
+                    <% if (invoice.poNumber) { %><tr><td>P.O. No.</td><td><%= invoice.poNumber %></td></tr><% } %>
+                    <% if (invoice.referenceNo) { %><tr><td>Ref#</td><td><%= invoice.referenceNo %></td></tr><% } %>
+                </table>
+            </div>
+            <div class="meta-right">
+                <table class="meta-table">
+                    <tr><td>Place Of Supply</td><td><%= invoice.customer?.state || '' %></td></tr>
+                </table>
+            </div>
         </div>
-        <div class="meta-right">
-            <table class="meta-table">
-                <tr><td>Place Of Supply</td><td><%= invoice.location?.name || '' %></td></tr>
-            </table>
-        </div>
-    </div>
 
-    <!-- BILL TO / SHIP TO -->
-    <div class="party-row">
-        <div class="party-box">
-            <div class="party-label">Bill To</div>
-            <div class="party-name"><%= invoice.customer?.name || '' %></div>
-            <div class="party-addr">
-                <%= invoice.customer?.address || '' %><br>
-                <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
-                <% if (invoice.customer?.email) { %>Email: <%= invoice.customer.email %><br><% } %>
-                <% if (invoice.customer?.gstNumber) { %>GSTIN: <%= invoice.customer.gstNumber %><% } %>
+        <!-- BILL TO / SHIP TO -->
+        <div class="party-row">
+            <div class="party-box">
+                <div class="party-label">Bill To</div>
+                <div class="party-name"><%= invoice.customer?.name || '' %></div>
+                <div class="party-addr">
+                    <%= invoice.customer?.address || '' %><br>
+                    <% if (invoice.customer?.state) { %>State: <%= invoice.customer.state %><br><% } %>
+                    <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
+                    <% if (invoice.customer?.email) { %>Email: <%= invoice.customer.email %><br><% } %>
+                    <% if (invoice.customer?.gstNumber) { %>GSTIN: <%= invoice.customer.gstNumber %><% } %>
+                </div>
+            </div>
+            <div class="party-box">
+                <div class="party-label">Ship To</div>
+                <div class="party-name"><%= invoice.customer?.name || '' %></div>
+                <div class="party-addr">
+                    <%= invoice.customer?.address || '' %><br>
+                    <% if (invoice.customer?.state) { %>State: <%= invoice.customer.state %><br><% } %>
+                    <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
+                    <% if (invoice.customer?.gstNumber) { %>GSTIN: <%= invoice.customer.gstNumber %><% } %>
+                </div>
             </div>
         </div>
-        <div class="party-box">
-            <div class="party-label">Ship To</div>
-            <div class="party-name"><%= invoice.customer?.name || '' %></div>
-            <div class="party-addr">
-                <%= invoice.customer?.address || '' %><br>
-                <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
-                <% if (invoice.customer?.gstNumber) { %>GSTIN: <%= invoice.customer.gstNumber %><% } %>
-            </div>
-        </div>
-    </div>
     </div><!-- end top-container -->
 
     <!-- ITEMS TABLE -->
     <table class="items-table">
         <thead>
             <tr>
-                <th class="left" style="width:4%">#</th>
-                <th class="left" style="width:28%">Item & Description</th>
+                <th style="width:4%">SI No.</th>
+                <th style="width:7%">SKU</th>
+                <th class="left" style="width:29%">Description of Goods</th>
                 <th style="width:10%">HSN/SAC</th>
-                <th style="width:6%">UOM</th>
-                <th style="width:8%">Qty</th>
+                <th style="width:12%">Quantity</th>
                 <th style="width:10%">Rate</th>
-                <% if (isIGST) { %>
-                <th style="width:6%">IGST%</th>
-                <th style="width:10%">IGST Amt</th>
-                <% } else { %>
-                <th style="width:6%">CGST%</th>
-                <th style="width:8%">CGST Amt</th>
-                <th style="width:6%">SGST%</th>
-                <th style="width:8%">SGST Amt</th>
-                <% } %>
+                <th style="width:8%">GST %</th>
+                <th style="width:10%">GST Amt</th>
                 <th style="width:10%">Amount</th>
             </tr>
         </thead>
         <tbody>
             <% invoice.items?.forEach((item, i) => {
-                const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
                 const lineAmt = item.quantity * item.ratePerUnit;
-                const taxAmt = lineAmt * (taxRate / 100);
-                const cgstRate = taxRate / 2;
-                const cgstAmt = lineAmt * (cgstRate / 100);
+                const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
+                const lineTaxAmt = lineAmt * (taxRate / 100);
             %>
             <tr>
-                <td class="sno"><%= i + 1 %></td>
+                <td class="center"><%= i + 1 %></td>
+                <td class="center" style="white-space: nowrap;"><%= item.product?.sku || '-' %></td>
                 <td>
-                    <div class="item-name"><%= item.product?.name || 'Product' %></div>
+                    <div class="item-name" style="font-weight: bold;"><%= item.product?.name || 'Product' %></div>
                     <% if (item.product?.grade || item.saleUnit) { %>
-                    <div class="item-desc"><%= [item.product?.grade, item.saleUnit].filter(Boolean).join(' | ') %></div>
+                    <div class="item-desc" style="white-space: pre-wrap; font-style: normal; color: #555; margin-top: 3px; font-size: 8.5pt;"><%= [item.product?.grade, item.saleUnit].filter(Boolean).join(' | ') %></div>
                     <% } %>
                 </td>
-                <td class="center"><%= item.product?.category?.hsnCode || '' %></td>
-                <td class="center"><%= item.saleUnit || 'Nos' %></td>
-                <td class="center"><%= item.quantity %></td>
-                <td class="right"><%= fmt(item.ratePerUnit) %></td>
-                <% if (isIGST) { %>
-                <td class="center"><%= taxRate %>%</td>
-                <td class="right"><%= fmt(taxAmt) %></td>
-                <% } else { %>
-                <td class="center"><%= cgstRate %>%</td>
-                <td class="right"><%= fmt(cgstAmt) %></td>
-                <td class="center"><%= cgstRate %>%</td>
-                <td class="right"><%= fmt(cgstAmt) %></td>
-                <% } %>
-                <td class="right"><%= fmt(lineAmt) %></td>
+                <td class="center" style="white-space: nowrap;"><%= item.product?.category?.hsnCode || '' %></td>
+                <td class="right" style="font-weight: bold; white-space: nowrap;"><%= item.quantity.toLocaleString('en-IN') %> <%= item.saleUnit || 'Pcs' %></td>
+                <td class="right" style="white-space: nowrap;"><%= fmt(item.ratePerUnit) %></td>
+                <td class="center" style="font-weight: bold; white-space: nowrap;"><%= taxRate %>%</td>
+                <td class="right" style="font-weight: bold; white-space: nowrap;"><%= fmt(lineTaxAmt) %></td>
+                <td class="right" style="font-weight: bold; white-space: nowrap;"><%= fmt(lineAmt) %></td>
             </tr>
             <% }) %>
+
+            <!-- Sub Total row -->
+            <tr>
+                <td colspan="4" style="border-top: 1px solid #bbb; border-right: none; border-bottom: none;"></td>
+                <td colspan="4" class="right" style="font-weight: bold; border: 1px solid #bbb; border-left: none; border-bottom: none; font-size: 9.5pt; white-space: nowrap;">Sub Total</td>
+                <td class="right" style="font-weight: bold; border-top: 1.5px solid #bbb; border-bottom: none; white-space: nowrap;"><%= fmt(subTotal) %></td>
+            </tr>
+
+            <!-- GST Rows -->
+            <% 
+                // Group tax entries by rate
+                let taxRateGroups = {};
+                invoice.items?.forEach(item => {
+                    const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
+                    const lineAmt = item.quantity * item.ratePerUnit;
+                    if (taxRate > 0) {
+                        const rateKey = taxRate.toFixed(2);
+                        const taxAmt = lineAmt * (taxRate / 100);
+                        
+                        if (!taxRateGroups[rateKey]) {
+                            taxRateGroups[rateKey] = { rate: taxRate, amt: 0 };
+                        }
+                        taxRateGroups[rateKey].amt += taxAmt;
+                    }
+                });
+
+                Object.keys(taxRateGroups).forEach(rateKey => {
+                    const group = taxRateGroups[rateKey];
+                    if (isLocal) {
+                        const halfRate = (group.rate / 2).toFixed(2);
+                        const halfAmt = group.amt / 2;
+            %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
+                    CGST <%= parseFloat(halfRate).toFixed(1) %>%
+                </td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    <%= parseFloat(halfRate).toFixed(2) %>%
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    <%= fmt(halfAmt) %>
+                </td>
+            </tr>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
+                    SGST <%= parseFloat(halfRate).toFixed(1) %>%
+                </td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    <%= parseFloat(halfRate).toFixed(2) %>%
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    <%= fmt(halfAmt) %>
+                </td>
+            </tr>
+            <% 
+                    } else { 
+            %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
+                    IGST <%= parseFloat(group.rate).toFixed(1) %>%
+                </td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    <%= parseFloat(group.rate).toFixed(2) %>%
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    <%= fmt(group.amt) %>
+                </td>
+            </tr>
+            <% 
+                    }
+                }); 
+            %>
+
+            <!-- Additional Expense if exists -->
+            <% if (expense > 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    Additional Expense
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    <%= fmt(expense) %>
+                </td>
+            </tr>
+            <% } %>
+
+            <!-- Total Row -->
+            <tr style="border-top: 1.5px solid #bbb; border-bottom: 1.5px solid #bbb; background-color: #fcfcfc;">
+                <td colspan="4" class="right" style="font-weight: bold; text-align: right; border-bottom: 1.5px solid #bbb; white-space: nowrap;">Total</td>
+                <td class="right" style="font-weight: bold; border-bottom: 1.5px solid #bbb; white-space: nowrap;"><%= totalQty.toLocaleString('en-IN') %><%= unitText %></td>
+                <td colspan="3" style="border-left: none; border-right: 1px solid #bbb; border-bottom: 1.5px solid #bbb;"></td>
+                <td class="right" style="font-weight: bold; border-bottom: 1.5px solid #bbb; white-space: nowrap;">₹ <%= fmt(grandTotal) %></td>
+            </tr>
+
+            <!-- Round Off if exists -->
+            <% if (adjustment !== 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    Round Off
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    <%= adjustment > 0 ? '-' : '+' %> <%= fmt(Math.abs(adjustment)) %>
+                </td>
+            </tr>
+            <% } %>
+
+            <!-- Shipping Charge if exists -->
+            <% if (shippingCharge > 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    Shipping Charge
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    + ₹ <%= fmt(shippingCharge) %>
+                </td>
+            </tr>
+            <% } %>
+
+            <!-- Amount Received Row -->
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: 1px solid #bbb; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    Amount Received
+                </td>
+                <td class="right" style="border-top: none; border-bottom: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    ₹ <%= fmt(amountReceived) %>
+                </td>
+            </tr>
+
+            <!-- Balance Due Row -->
+            <tr style="background-color: #f9f9f9;">
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: 1.5px solid #bbb; border-left: none; border-right: 1px solid #bbb; font-weight: bold; font-size: 10pt; white-space: nowrap;">
+                    Balance Due
+                </td>
+                <td class="right" style="border-top: none; border-bottom: 1.5px solid #bbb; font-weight: bold; font-size: 10pt; color: #b91c1c; white-space: nowrap;">
+                    ₹ <%= fmt(balanceDue) %>
+                </td>
+            </tr>
         </tbody>
     </table>
 
-    <!-- BOTTOM SECTION -->
-    <div class="bottom-section">
-        <div class="bottom-left">
-            <!-- Total in Words -->
-            <div class="section-label">Total In Words</div>
-            <div class="words-text"><%= numToWords(grandTotal) %></div>
+    <!-- Amount Chargeable in words -->
+    <div class="words-section">
+        Amount Chargeable (in words): <span><%= numToWords(grandTotal) %></span>
+    </div>
 
-            <!-- Bank Details -->
-            <div class="section-label">Bank Details</div>
-            <div class="bank-row">
-                Beneficiary Name: <span>Vegnar Global LLP</span><br>
-                Bank Name: <span><%= settings?.bankName || 'Axis Bank' %></span><br>
-                Account Number: <span><%= settings?.accountNumber || '' %></span><br>
-                IFSC Code: <span><%= settings?.ifscCode || '' %></span><br>
-                <% if (settings?.branchAddress) { %>Bank Address: <span><%= settings.branchAddress %></span><br><% } %>
-                <% if (settings?.swiftCode) { %>Swift Code: <span><%= settings.swiftCode %></span><% } %>
+    <!-- HSN/SAC GST Table -->
+    <div class="gst-table-container">
+        <table class="gst-table">
+            <thead>
+                <% if (isLocal) { %>
+                <tr>
+                    <th rowspan="2" style="width: 25%;">HSN/SAC</th>
+                    <th rowspan="2" style="width: 15%;">Taxable<br>Value</th>
+                    <th colspan="2" style="width: 20%;">CGST</th>
+                    <th colspan="2" style="width: 20%;">SGST/UTGST</th>
+                    <th rowspan="2" style="width: 20%;">Total<br>Tax Amount</th>
+                </tr>
+                <tr>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                </tr>
+                <% } else { %>
+                <tr>
+                    <th rowspan="2" style="width: 30%;">HSN/SAC</th>
+                    <th rowspan="2" style="width: 20%;">Taxable<br>Value</th>
+                    <th colspan="2" style="width: 30%;">IGST</th>
+                    <th rowspan="2" style="width: 20%;">Total<br>Tax Amount</th>
+                </tr>
+                <tr>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                </tr>
+                <% } %>
+            </thead>
+            <tbody>
+                <% 
+                    let totalTaxable = 0;
+                    let totalCgst = 0;
+                    let totalSgst = 0;
+                    let totalIgst = 0;
+                    let totalTaxAmt = 0;
+                    Object.values(hsnGroups).forEach(group => {
+                        totalTaxable += group.taxableValue;
+                        totalCgst += group.cgstAmt;
+                        totalSgst += group.sgstAmt;
+                        totalIgst += group.igstAmt;
+                        totalTaxAmt += group.totalTax;
+                %>
+                <tr>
+                    <td class="center"><%= group.hsn %></td>
+                    <td class="right"><%= fmt(group.taxableValue) %></td>
+                    <% if (isLocal) { %>
+                    <td class="center"><%= group.cgstRate.toFixed(2) %>%</td>
+                    <td class="right"><%= fmt(group.cgstAmt) %></td>
+                    <td class="center"><%= group.sgstRate.toFixed(2) %>%</td>
+                    <td class="right"><%= fmt(group.sgstAmt) %></td>
+                    <% } else { %>
+                    <td class="center"><%= group.igstRate.toFixed(2) %>%</td>
+                    <td class="right"><%= fmt(group.igstAmt) %></td>
+                    <% } %>
+                    <td class="right text-bold"><%= fmt(group.totalTax) %></td>
+                </tr>
+                <% }) %>
+                <tr style="font-weight: bold; background-color: #fafafa;">
+                    <td class="right text-bold">Total</td>
+                    <td class="right text-bold"><%= fmt(totalTaxable) %></td>
+                    <% if (isLocal) { %>
+                    <td class="center"></td>
+                    <td class="right text-bold"><%= fmt(totalCgst) %></td>
+                    <td class="center"></td>
+                    <td class="right text-bold"><%= fmt(totalSgst) %></td>
+                    <% } else { %>
+                    <td class="center"></td>
+                    <td class="right text-bold"><%= fmt(totalIgst) %></td>
+                    <% } %>
+                    <td class="right text-bold"><%= fmt(totalTaxAmt) %></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Tax Amount in words -->
+    <div class="words-section" style="border-bottom: 1.5px solid #bbb;">
+        Tax Amount (in words): <span><%= numToWords(totalTaxAmt) %></span>
+    </div>
+
+    <!-- BOTTOM PANELS -->
+    <div class="invoice-bottom-container">
+        <!-- Left Panel: Bank details, Terms -->
+        <div class="bottom-left-panel">
+            <div>
+                <div class="panel-label" style="font-size: 8pt; margin-bottom: 2px;">Bank Details</div>
+                <div style="font-size: 8pt; color: #333; line-height: 1.4;">
+                    Beneficiary Name: <span class="text-bold">Vegnar Global LLP</span> | Bank Name: <span class="text-bold"><%= settings?.bankName || 'Axis Bank' %></span><br>
+                    Account Number: <span class="text-bold"><%= settings?.accountNumber || '' %></span> | IFSC Code: <span class="text-bold"><%= settings?.ifscCode || '' %></span><br>
+                    <% if (settings?.branchAddress) { %>Bank Address: <span class="text-bold"><%= settings.branchAddress %></span><% } %>
+                    <% if (settings?.swiftCode) { %> | Swift Code: <span class="text-bold"><%= settings.swiftCode %></span><% } %>
+                </div>
             </div>
 
-            <!-- Terms -->
-            <div class="terms-section">
-                <div class="terms-title">Terms & Conditions</div>
-                <div class="terms-list">
-                    1. Sold material will not be taken back after dispatch.<br>
-                    2. Shipping transit time as per actual by logistic operator.<br>
-                    3. Payment must be clear against the receipt of the invoice.<br>
-                    4. Subject to Rajkot Jurisdiction "E&OE"
+            <div style="margin-top: 4px;">
+                <div class="panel-label" style="font-size: 8pt; margin-bottom: 2px;">Terms & Conditions</div>
+                <div style="font-size: 8pt; color: #555; line-height: 1.4;">
+                    <% if (invoice.termsAndConditions) { %>
+                        <%= invoice.termsAndConditions %>
+                    <% } else { %>
+                        1. Sold material will not be taken back after dispatch.<br>
+                        2. Shipping transit time as per actual by logistic operator.<br>
+                        3. Payment must be clear against the receipt of the invoice.<br>
+                        4. Subject to Rajkot Jurisdiction "E&OE"
+                    <% } %>
                 </div>
             </div>
         </div>
 
-        <div class="bottom-right">
-            <!-- Summary -->
-            <div class="summary-row">
-                <span class="s-label">Sub Total</span>
-                <span class="s-value"><%= fmt(subTotal) %></span>
+        <!-- Right Panel: Signatures -->
+        <div class="bottom-right-panel">
+            <div class="signatory-company">
+                for VEGNAR GLOBAL LLP
             </div>
-            <% Object.values(taxLines).forEach(t => { %>
-            <div class="summary-row">
-                <span class="s-label"><%= isIGST ? 'IGST' : 'CGST+SGST' %> (<%= t.rate %>%)</span>
-                <span class="s-value"><%= fmt(t.amt) %></span>
-            </div>
-            <% }) %>
-            <% if (expense > 0) { %>
-            <div class="summary-row">
-                <span class="s-label">Additional Expense</span>
-                <span class="s-value"><%= fmt(expense) %></span>
-            </div>
-            <% } %>
-            <div class="summary-row total-row">
-                <span class="s-label">Total</span>
-                <span class="s-value">₹<%= fmt(grandTotal) %></span>
-            </div>
-            <div class="summary-row balance-row">
-                <span class="s-label">Balance Due</span>
-                <span class="s-value">₹<%= fmt(grandTotal) %></span>
-            </div>
-
-            <!-- Signature -->
-            <div class="sig-section" style="margin-top: 30px;">
-                <div style="border-top: 1.5px solid #bbb; padding-top: 6px;">
-                    <div class="sig-label">Authorized Signature</div>
-                </div>
+            
+            <div class="signatory-signatures">
+                <div class="sig-col">Authorised Signatory</div>
             </div>
         </div>
     </div>

@@ -98,6 +98,7 @@ model Customer {
   phone     String?
   address   String?
   gstNumber String?  @map("gst_number")
+  state     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -174,6 +175,10 @@ model OutwardInvoice {
   expense    Float    @default(0)
   totalCost  Float    @map("total_cost")
   isIncludeInProfitLoss Boolean @default(true) @map("is_include_in_profit_loss")
+  adjustment           Float    @default(0)
+  amountReceived       Float    @default(0) @map("amount_received")
+  referenceNo          String?  @map("reference_no")
+  shippingCharge       Float    @default(0) @map("shipping_charge")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -366,6 +371,9 @@ model SalesOrder {
   expectedShipmentDate DateTime? @map("expected_shipment_date")
   placeOfSupply        String?  @map("place_of_supply")
   deliveryMethod       String?  @map("delivery_method")
+  adjustment           Float    @default(0)
+  amountReceived       Float    @default(0) @map("amount_received")
+  shippingCharge       Float    @default(0) @map("shipping_charge")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
@@ -505,6 +513,44 @@ model Settings {
   ifscCode          String   @map("ifsc_code")
   bankAddress       String   @map("bank_address")
   swiftCode         String?  @map("swift_code")
+
+  // Number Series Settings
+  customerPrefix    String   @default("CUS") @map("customer_prefix")
+  customerMiddle    String   @default("") @map("customer_middle")
+  customerSuffix    String   @default("") @map("customer_suffix")
+  customerPadding   Int      @default(3) @map("customer_padding")
+  customerCurrent   Int      @default(0) @map("customer_current")
+
+  vendorPrefix      String   @default("VGR") @map("vendor_prefix")
+  vendorMiddle      String   @default("") @map("vendor_middle")
+  vendorSuffix      String   @default("") @map("vendor_suffix")
+  vendorPadding     Int      @default(3) @map("vendor_padding")
+  vendorCurrent     Int      @default(0) @map("vendor_current")
+
+  poPrefix          String   @default("PO") @map("po_prefix")
+  poMiddle          String   @default("-") @map("po_middle")
+  poSuffix          String   @default("") @map("po_suffix")
+  poPadding         Int      @default(6) @map("po_padding")
+  poCurrent         Int      @default(0) @map("po_current")
+
+  quotePrefix       String   @default("QT") @map("quote_prefix")
+  quoteMiddle       String   @default("-") @map("quote_middle")
+  quoteSuffix       String   @default("") @map("quote_suffix")
+  quotePadding      Int      @default(6) @map("quote_padding")
+  quoteCurrent      Int      @default(0) @map("quote_current")
+
+  salesOrderPrefix  String   @default("SO") @map("sales_order_prefix")
+  salesOrderMiddle  String   @default("-") @map("sales_order_middle")
+  salesOrderSuffix  String   @default("") @map("sales_order_suffix")
+  salesOrderPadding Int      @default(6) @map("sales_order_padding")
+  salesOrderCurrent Int      @default(0) @map("sales_order_current")
+
+  invoicePrefix     String   @default("INV") @map("invoice_prefix")
+  invoiceMiddle     String   @default("-") @map("invoice_middle")
+  invoiceSuffix     String   @default("") @map("invoice_suffix")
+  invoicePadding    Int      @default(6) @map("invoice_padding")
+  invoiceCurrent    Int      @default(0) @map("invoice_current")
+
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

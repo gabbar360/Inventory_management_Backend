@@ -1,12 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
+const { generateNextNumber } = require('./settingsService');
 const prisma = new PrismaClient();
 
 const generateQuoteNo = async () => {
-  const lastQuote = await prisma.quote.findFirst({
-    orderBy: { id: 'desc' },
-  });
-  const nextNumber = (lastQuote?.id || 0) + 1;
-  return `QT-${String(nextNumber).padStart(6, '0')}`;
+  return await generateNextNumber('quote');
 };
 
 const createQuote = async (data) => {
@@ -232,8 +229,7 @@ const convertQuoteToInvoice = async (id, itemSelections) => {
   if (!quote) throw new Error('Quote not found');
 
   const lastInvoice = await prisma.outwardInvoice.findFirst({ orderBy: { id: 'desc' } });
-  const nextNum = (lastInvoice?.id || 0) + 1;
-  const invoiceNo = `INV-${String(nextNum).padStart(6, '0')}`;
+  const invoiceNo = await generateNextNumber('invoice');
 
   return await prisma.$transaction(async (tx) => {
     const invoice = await tx.outwardInvoice.create({
@@ -244,6 +240,7 @@ const convertQuoteToInvoice = async (id, itemSelections) => {
         saleType: 'domestic',
         expense: 0,
         totalCost: 0,
+        shippingCharge: quote.shippingCharge || 0,
       },
     });
 

@@ -33,12 +33,15 @@ class InventoryService {
     });
   }
 
-  static async getAvailableStock(productId, locationId) {
+  static async getAvailableStock(productId, locationId, includeIds = []) {
+    const parsedIncludeIds = includeIds.map(id => parseInt(id)).filter(Boolean);
+
     const where = {
       productId: parseInt(productId),
       OR: [
         { remainingBoxes: { gt: 0 } },
         { remainingPcs: { gt: 0 } },
+        ...(parsedIncludeIds.length > 0 ? [{ id: { in: parsedIncludeIds } }] : []),
       ],
     };
 
