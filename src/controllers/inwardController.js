@@ -4,8 +4,8 @@ const { InwardService } = require('../services/inwardService');
 class InwardController {
   static async getAll(req, res) {
     try {
-      const { page, limit, search, sortBy, sortOrder } = parseQueryParams(req.query);
-      const result = await InwardService.getAll(page, limit, search, sortBy, sortOrder);
+      const { page, limit, search, sortBy, sortOrder, startDate, endDate } = parseQueryParams(req.query);
+      const result = await InwardService.getAll(page, limit, search, sortBy, sortOrder, startDate, endDate);
       return sendResponse(res, 200, true, result.invoices, 'Inward invoices retrieved successfully', result.pagination);
     } catch (error) {
       return sendError(res, 500, error.message);

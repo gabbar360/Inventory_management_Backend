@@ -51,7 +51,7 @@ const createSalesOrder = async (data) => {
   });
 };
 
-const getSalesOrders = async ({ page = 1, limit = 10, search, status } = {}) => {
+const getSalesOrders = async ({ page = 1, limit = 10, search, status, startDate, endDate } = {}) => {
   const where = {};
   if (status) where.status = status;
   if (search) {
@@ -60,12 +60,23 @@ const getSalesOrders = async ({ page = 1, limit = 10, search, status } = {}) => 
       { customer: { name: { contains: search, mode: 'insensitive' } } },
     ];
   }
+  if (startDate || endDate) {
+    where.orderDate = {};
+    if (startDate) {
+      where.orderDate.gte = new Date(startDate);
+    }
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      where.orderDate.lte = end;
+    }
+  }
 
   const [orders, total] = await Promise.all([
     prisma.salesOrder.findMany({
       where,
       include: includeRelations,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { orderDate: 'asc' },
       skip: (page - 1) * limit,
       take: limit,
     }),

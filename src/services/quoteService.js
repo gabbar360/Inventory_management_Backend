@@ -58,9 +58,33 @@ const getQuotes = async (filters = {}) => {
   const where = {};
   if (filters.customerId) where.customerId = parseInt(filters.customerId);
   if (filters.status) where.status = filters.status;
+  if (filters.search) {
+    where.OR = [
+      { quoteNo: { contains: filters.search, mode: 'insensitive' } },
+      { customer: { name: { contains: filters.search, mode: 'insensitive' } } },
+    ];
+  }
+  if (filters.startDate || filters.endDate) {
+    where.quoteDate = {};
+    if (filters.startDate) {
+      where.quoteDate.gte = new Date(filters.startDate);
+    }
+    if (filters.endDate) {
+      const end = new Date(filters.endDate);
+      end.setHours(23, 59, 59, 999);
+      where.quoteDate.lte = end;
+    }
+  }
 
+  const page = parseInt(filters.page) || 1;
+  const limit = Math.min(parseInt(filters.limit) || 10, 10000);
+  const offset = (page - 1) * limit;
+
+  const total = await prisma.quote.count({ where });
   const quotes = await prisma.quote.findMany({
     where,
+    skip: offset,
+    take: limit,
     include: {
       customer: true,
       items: {
@@ -73,10 +97,18 @@ const getQuotes = async (filters = {}) => {
         },
       },
     },
-    orderBy: { createdAt: 'desc' },
+    orderBy: { quoteDate: 'asc' },
   });
 
-  return quotes;
+  const pagination = {
+    page,
+    limit,
+    total,
+    totalPages: Math.ceil(total / limit),
+    offset,
+  };
+
+  return { data: quotes, pagination };
 };
 
 const getQuoteById = async (id) => {

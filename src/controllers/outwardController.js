@@ -12,8 +12,8 @@ const fs = require('fs');
 class OutwardController {
   static async getAll(req, res) {
     try {
-      const { page, limit, search, sortBy, sortOrder } = parseQueryParams(req.query);
-      const result = await OutwardService.getAll(page, limit, search, sortBy, sortOrder);
+      const { page, limit, search, sortBy, sortOrder, startDate, endDate } = parseQueryParams(req.query);
+      const result = await OutwardService.getAll(page, limit, search, sortBy, sortOrder, startDate, endDate);
       return sendResponse(res, 200, true, result.invoices, 'Outward invoices retrieved successfully', result.pagination);
     } catch (error) {
       return sendError(res, 500, error.message);

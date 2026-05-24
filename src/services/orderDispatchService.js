@@ -40,6 +40,17 @@ const createOrderDispatch = async (data) => {
       insuranceAmount: data.insuranceAmount || 0,
       notes: data.notes || null,
       toTheOrder: data.toTheOrder || false,
+      courierName: data.courierName || null,
+      courierPhone: data.courierPhone || null,
+      truckNumber: data.truckNumber || null,
+      driverName: data.driverName || null,
+      driverPhone: data.driverPhone || null,
+      airlineCode: data.airlineCode || null,
+      flightNumber: data.flightNumber || null,
+      containerNumber: data.containerNumber || null,
+      vesselName: data.vesselName || null,
+      portOfLoading: data.portOfLoading || null,
+      portOfDischarge: data.portOfDischarge || null,
     },
     include: includeRelations,
   });
@@ -106,6 +117,17 @@ const updateOrderDispatch = async (id, data) => {
   if (data.insuranceAmount !== undefined) updateData.insuranceAmount = data.insuranceAmount;
   if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.toTheOrder !== undefined) updateData.toTheOrder = data.toTheOrder;
+  if (data.courierName !== undefined) updateData.courierName = data.courierName;
+  if (data.courierPhone !== undefined) updateData.courierPhone = data.courierPhone;
+  if (data.truckNumber !== undefined) updateData.truckNumber = data.truckNumber;
+  if (data.driverName !== undefined) updateData.driverName = data.driverName;
+  if (data.driverPhone !== undefined) updateData.driverPhone = data.driverPhone;
+  if (data.airlineCode !== undefined) updateData.airlineCode = data.airlineCode;
+  if (data.flightNumber !== undefined) updateData.flightNumber = data.flightNumber;
+  if (data.containerNumber !== undefined) updateData.containerNumber = data.containerNumber;
+  if (data.vesselName !== undefined) updateData.vesselName = data.vesselName;
+  if (data.portOfLoading !== undefined) updateData.portOfLoading = data.portOfLoading;
+  if (data.portOfDischarge !== undefined) updateData.portOfDischarge = data.portOfDischarge;
 
   const updatedDispatch = await prisma.orderDispatch.update({
     where: { id: parseInt(id) },
