@@ -270,7 +270,8 @@
         
         const adjustment = order.adjustment || 0;
         const amountReceived = order.amountReceived || 0;
-        const grandTotal = subTotal + totalTax - adjustment;
+        const shippingCharge = order.shippingCharge || 0;
+        const grandTotal = subTotal + totalTax + shippingCharge - adjustment;
         const balanceDue = grandTotal - amountReceived;
         
         // Extract GSTIN
@@ -479,6 +480,19 @@
                 </td>
                 <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
                     <%= adjustment > 0 ? '-' : '+' %> <%= fmt(Math.abs(adjustment)) %>
+                </td>
+            </tr>
+            <% } %>
+
+            <!-- Shipping Charge if exists -->
+            <% if (shippingCharge > 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    Shipping Charge
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    + ₹ <%= fmt(shippingCharge) %>
                 </td>
             </tr>
             <% } %>

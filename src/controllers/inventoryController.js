@@ -16,15 +16,18 @@ class InventoryController {
 
   static async getAvailableStock(req, res) {
     try {
-      const { productId, locationId } = req.query;
+      const { productId, locationId, includeIds } = req.query;
       
       if (!productId) {
         return sendError(res, 400, 'Product ID is required');
       }
 
+      const includeIdsArray = includeIds ? (Array.isArray(includeIds) ? includeIds : [includeIds]) : [];
+
       const result = await InventoryService.getAvailableStock(
         productId,
-        locationId
+        locationId,
+        includeIdsArray
       );
       return sendResponse(res, 200, true, result, 'Available stock retrieved successfully');
     } catch (error) {
