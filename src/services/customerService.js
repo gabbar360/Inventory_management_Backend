@@ -1,5 +1,6 @@
-const { calculatePagination, generateCode } = require("../utils/helpers");
+const { calculatePagination } = require("../utils/helpers");
 const { PrismaClient } = require('@prisma/client');
+const { generateNextNumber } = require('./settingsService');
 
 const prisma = new PrismaClient();
 
@@ -72,12 +73,7 @@ class CustomerService {
   }
 
   static async create(data) {
-    const lastCustomer = await prisma.customer.findFirst({
-      orderBy: { createdAt: 'desc' },
-      select: { code: true },
-    });
-
-    const code = generateCode('CUS', lastCustomer?.code);
+    const code = await generateNextNumber('customer');
 
     return await prisma.customer.create({
       data: {

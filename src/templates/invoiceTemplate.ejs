@@ -271,7 +271,8 @@
         const expense = invoice.expense || 0;
         const adjustment = invoice.adjustment || 0;
         const amountReceived = invoice.amountReceived || 0;
-        const grandTotal = subTotal + totalTax + expense - adjustment;
+        const shippingCharge = invoice.shippingCharge || 0;
+        const grandTotal = subTotal + totalTax + expense + shippingCharge - adjustment;
         const balanceDue = grandTotal - amountReceived;
         
         // Extract GSTIN
@@ -307,7 +308,7 @@
                     <tr><td>Invoice Date</td><td><%= fmtDate(invoice.date) %></td></tr>
                     <tr><td>Due Date</td><td><%= fmtDate(invoice.date) %></td></tr>
                     <% if (invoice.poNumber) { %><tr><td>P.O. No.</td><td><%= invoice.poNumber %></td></tr><% } %>
-                    <% if (invoice.saleType) { %><tr><td>Sale Type</td><td><%= invoice.saleType.toUpperCase() %></td></tr><% } %>
+                    <% if (invoice.referenceNo) { %><tr><td>Ref#</td><td><%= invoice.referenceNo %></td></tr><% } %>
                 </table>
             </div>
             <div class="meta-right">
@@ -487,6 +488,19 @@
                 </td>
                 <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
                     <%= adjustment > 0 ? '-' : '+' %> <%= fmt(Math.abs(adjustment)) %>
+                </td>
+            </tr>
+            <% } %>
+
+            <!-- Shipping Charge if exists -->
+            <% if (shippingCharge > 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    Shipping Charge
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    + ₹ <%= fmt(shippingCharge) %>
                 </td>
             </tr>
             <% } %>

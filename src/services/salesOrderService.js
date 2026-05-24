@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { generateNextNumber } = require('./settingsService');
 const prisma = new PrismaClient();
 
 const includeRelations = {
@@ -12,8 +13,7 @@ const includeRelations = {
 };
 
 const generateOrderNo = async () => {
-  const last = await prisma.salesOrder.findFirst({ orderBy: { id: 'desc' } });
-  return `SO-${String((last?.id || 0) + 1).padStart(6, '0')}`;
+  return await generateNextNumber('salesOrder');
 };
 
 const createSalesOrder = async (data) => {
@@ -34,6 +34,7 @@ const createSalesOrder = async (data) => {
       deliveryMethod: data.deliveryMethod || null,
       adjustment: parseFloat(data.adjustment) || 0,
       amountReceived: parseFloat(data.amountReceived) || 0,
+      shippingCharge: parseFloat(data.shippingCharge) || 0,
       items: {
         create: data.items.map((item) => ({
           productId: item.productId,
@@ -95,6 +96,7 @@ const updateSalesOrder = async (id, data) => {
     deliveryMethod: data.deliveryMethod !== undefined ? data.deliveryMethod : undefined,
     adjustment: data.adjustment !== undefined ? parseFloat(data.adjustment) : undefined,
     amountReceived: data.amountReceived !== undefined ? parseFloat(data.amountReceived) : undefined,
+    shippingCharge: data.shippingCharge !== undefined ? parseFloat(data.shippingCharge) : undefined,
   };
   if (data.customerId) updateData.customerId = data.customerId;
   if (data.orderDate) updateData.orderDate = new Date(data.orderDate);
@@ -143,6 +145,7 @@ const convertFromQuote = async (quoteId) => {
     totalAmount,
     reference: quote.quoteNo,
     notes: null,
+    shippingCharge: quote.shippingCharge || 0,
     items: quote.items.map((item) => ({
       productId: item.productId,
       quantity: item.quantity,
@@ -167,9 +170,7 @@ const convertSalesOrderToInvoice = async (id, itemSelections) => {
   });
   if (!order) throw new Error('Sales order not found');
 
-  const lastInvoice = await prisma.outwardInvoice.findFirst({ orderBy: { id: 'desc' } });
-  const nextNum = (lastInvoice?.id || 0) + 1;
-  const invoiceNo = `INV-${String(nextNum).padStart(6, '0')}`;
+  const invoiceNo = await generateNextNumber('invoice');
 
   return await prisma.$transaction(async (tx) => {
     const invoice = await tx.outwardInvoice.create({
@@ -182,6 +183,8 @@ const convertSalesOrderToInvoice = async (id, itemSelections) => {
         totalCost: 0,
         adjustment: order.adjustment || 0,
         amountReceived: order.amountReceived || 0,
+        referenceNo: order.orderNo,
+        shippingCharge: order.shippingCharge || 0,
       },
     });
 
