@@ -27,7 +27,7 @@ const ITEM_INCLUDE = {
 };
 
 class OutwardService {
-  static async getAll(page, limit, search, sortBy, sortOrder) {
+  static async getAll(page, limit, search, sortBy, sortOrder, startDate, endDate) {
     const where = search
       ? {
           OR: [
@@ -37,11 +37,23 @@ class OutwardService {
         }
       : {};
 
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) {
+        where.date.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.date.lte = end;
+      }
+    }
+
     const total = await prisma.outwardInvoice.count({ where });
     const { offset } = calculatePagination(page, limit, total);
     const orderBy = sortBy && ['invoiceNo', 'date', 'customerId', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
-      : { createdAt: 'desc' };
+      : { date: 'asc' };
 
     const invoices = await prisma.outwardInvoice.findMany({
       where,

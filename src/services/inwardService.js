@@ -5,15 +5,27 @@ const { InventoryService } = require('./inventoryService');
 const prisma = new PrismaClient();
 
 class InwardService {
-  static async getAll(page, limit, search, sortBy, sortOrder) {
-    const where = search
-      ? {
-          OR: [
-            { invoiceNo: { contains: search, mode: 'insensitive' } },
-            { vendor: { name: { contains: search, mode: 'insensitive' } } },
-          ],
-        }
-      : {};
+  static async getAll(page, limit, search, sortBy, sortOrder, startDate, endDate) {
+    const where = {};
+    
+    if (search) {
+      where.OR = [
+        { invoiceNo: { contains: search, mode: 'insensitive' } },
+        { vendor: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+    
+    if (startDate || endDate) {
+      where.date = {};
+      if (startDate) {
+        where.date.gte = new Date(startDate);
+      }
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        where.date.lte = end;
+      }
+    }
 
     const total = await prisma.inwardInvoice.count({ where });
     const { offset } = calculatePagination(page, limit, total);
@@ -22,7 +34,7 @@ class InwardService {
       where,
       skip: offset,
       take: limit,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { date: 'asc' },
       include: {
         vendor: {
           select: { name: true, code: true },

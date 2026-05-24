@@ -20,8 +20,8 @@ const createSalesOrder = async (req, res) => {
 
 const getSalesOrders = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, status } = req.query;
-    const result = await salesOrderService.getSalesOrders({ page: parseInt(page), limit: parseInt(limit), search, status });
+    const { page = 1, limit = 10, search, status, startDate, endDate } = req.query;
+    const result = await salesOrderService.getSalesOrders({ page: parseInt(page), limit: parseInt(limit), search, status, startDate, endDate });
     res.json({ success: true, data: result.orders, pagination: result.pagination });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

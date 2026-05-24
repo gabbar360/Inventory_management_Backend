@@ -91,9 +91,9 @@ const createQuote = async (req, res) => {
 
 const getQuotes = async (req, res) => {
   try {
-    const { customerId, status } = req.query;
-    const quotes = await quoteService.getQuotes({ customerId, status });
-    res.json({ success: true, data: quotes });
+    const { customerId, status, page, limit, search, startDate, endDate } = req.query;
+    const quotes = await quoteService.getQuotes({ customerId, status, page, limit, search, startDate, endDate });
+    res.json({ success: true, data: quotes.data, pagination: quotes.pagination });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
   }

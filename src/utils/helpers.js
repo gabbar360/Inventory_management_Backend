@@ -13,7 +13,9 @@ const parseQueryParams = (query) => {
   const sortBy = query.sortBy || 'sku';
   const sortOrder = query.sortOrder === 'desc' ? 'desc' : 'asc';
   const source = query.source || null;
-  return { page, limit, search, sortBy, sortOrder, source };
+  const startDate = query.startDate || null;
+  const endDate = query.endDate || null;
+  return { page, limit, search, sortBy, sortOrder, source, startDate, endDate };
 };
 
 const calculatePagination = (page, limit, total) => {
