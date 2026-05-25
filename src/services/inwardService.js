@@ -34,7 +34,7 @@ class InwardService {
       where,
       skip: offset,
       take: limit,
-      orderBy: { date: 'asc' },
+      orderBy: { date: 'desc' },
       include: {
         vendor: {
           select: { name: true, code: true },
