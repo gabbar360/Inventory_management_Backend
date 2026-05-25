@@ -58,37 +58,32 @@ const updateSettings = async (settingsData) => {
 
 // Generate next number for a given type and increment the counter
 const generateNextNumber = async (type) => {
-  // Use transaction to prevent race condition
-  const result = await prisma.$transaction(async (tx) => {
-    const settings = await tx.settings.findFirst();
-    if (!settings) throw new Error('Settings not found');
+  const settings = await prisma.settings.findFirst();
+  if (!settings) throw new Error('Settings not found');
 
-    const prefixKey = `${type}Prefix`;
-    const middleKey = `${type}Middle`;
-    const suffixKey = `${type}Suffix`;
-    const paddingKey = `${type}Padding`;
-    const currentKey = `${type}Current`;
+  const prefixKey = `${type}Prefix`;
+  const middleKey = `${type}Middle`;
+  const suffixKey = `${type}Suffix`;
+  const paddingKey = `${type}Padding`;
+  const currentKey = `${type}Current`;
 
-    const prefix = settings[prefixKey] || '';
-    const middle = settings[middleKey] || '';
-    const suffix = settings[suffixKey] || '';
-    const padding = settings[paddingKey] || 6;
-    const current = settings[currentKey] || 0;
-    const next = current + 1;
+  const prefix = settings[prefixKey] || '';
+  const middle = settings[middleKey] || '';
+  const suffix = settings[suffixKey] || '';
+  const padding = settings[paddingKey] || 6;
+  const current = settings[currentKey] || 0;
+  const next = current + 1;
 
-    const number = String(next).padStart(padding, '0');
-    const generated = `${prefix}${middle}${number}${suffix}`;
+  const number = String(next).padStart(padding, '0');
+  const generated = `${prefix}${middle}${number}${suffix}`;
 
-    // Increment counter atomically
-    await tx.settings.update({
-      where: { id: settings.id },
-      data: { [currentKey]: next },
-    });
-
-    return generated;
+  // Increment counter
+  await prisma.settings.update({
+    where: { id: settings.id },
+    data: { [currentKey]: next },
   });
 
-  return result;
+  return generated;
 };
 
 // Preview next number without incrementing
