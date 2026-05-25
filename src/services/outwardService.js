@@ -9,7 +9,9 @@ const ITEM_INCLUDE = {
     select: {
       name: true,
       grade: true,
-      category: { select: { name: true, gstRate: true } },
+      description: true,
+      sku: true,
+      category: { select: { name: true, gstRate: true, hsnCode: true } },
     },
   },
   stockBatch: {
@@ -114,6 +116,9 @@ class OutwardService {
             location: true,
           },
         },
+        paymentReceipts: {
+          orderBy: { paymentDate: 'desc' }
+        }
       },
     });
 

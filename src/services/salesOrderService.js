@@ -177,7 +177,7 @@ const convertSalesOrderToInvoice = async (id, itemSelections) => {
   // itemSelections: [{ salesOrderItemId, stockBatchId, saleUnit }]
   const order = await prisma.salesOrder.findUnique({
     where: { id: parseInt(id) },
-    include: { items: true },
+    include: { items: { include: { product: { select: { description: true } } } } },
   });
   if (!order) throw new Error('Sales order not found');
 
@@ -228,7 +228,7 @@ const convertSalesOrderToInvoice = async (id, itemSelections) => {
           quantity: qty,
           ratePerUnit: orderItem.rate,
           totalCost: itemTotal,
-          description: orderItem.description || null,
+          description: orderItem.description || orderItem.product?.description || null,
         },
       });
 

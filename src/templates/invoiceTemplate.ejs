@@ -370,8 +370,8 @@
                 <td class="center" style="white-space: nowrap;"><%= item.product?.sku || '-' %></td>
                 <td>
                     <div class="item-name" style="font-weight: bold;"><%= item.product?.name || 'Product' %></div>
-                    <% if (item.product?.grade || item.saleUnit) { %>
-                    <div class="item-desc" style="white-space: pre-wrap; font-style: normal; color: #555; margin-top: 3px; font-size: 8.5pt;"><%= [item.product?.grade, item.saleUnit].filter(Boolean).join(' | ') %></div>
+                    <% if (item.description || item.product?.description) { %>
+                    <div class="item-desc" style="white-space: pre-wrap; font-style: normal; color: #555; margin-top: 3px; font-size: 8.5pt;"><%= item.description || item.product?.description %></div>
                     <% } %>
                 </td>
                 <td class="center" style="white-space: nowrap;"><%= item.product?.category?.hsnCode || '' %></td>
