@@ -12,7 +12,7 @@ const createQuote = async (data) => {
   const quote = await prisma.quote.create({
     data: {
       quoteNo,
-      customerId: data.customerId,
+      customerId: parseInt(data.customerId),
       quoteDate: new Date(data.quoteDate),
       expiryDate: new Date(data.expiryDate),
       status: 'draft',
@@ -27,12 +27,12 @@ const createQuote = async (data) => {
       shippingCharge: data.shippingCharge || 0,
       items: {
         create: data.items.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
+          productId: parseInt(item.productId),
+          quantity: parseInt(item.quantity),
           unit: item.unit,
-          rate: item.rate,
-          taxRate: item.taxRate || 0,
-          amount: item.quantity * item.rate,
+          rate: parseFloat(item.rate),
+          taxRate: parseFloat(item.taxRate) || 0,
+          amount: parseInt(item.quantity) * parseFloat(item.rate),
           description: item.description || null,
         })),
       },
@@ -147,7 +147,7 @@ const updateQuote = async (id, data) => {
   };
 
   // Add optional fields if provided
-  if (data.customerId) updateData.customerId = data.customerId;
+  if (data.customerId) updateData.customerId = parseInt(data.customerId);
   if (data.quoteDate) updateData.quoteDate = new Date(data.quoteDate);
   if (data.expiryDate) updateData.expiryDate = new Date(data.expiryDate);
 
@@ -199,12 +199,12 @@ const updateQuoteItems = async (quoteId, items) => {
     await prisma.quoteItem.update({
       where: { id: item.id },
       data: {
-        productId: item.productId,
-        quantity: item.quantity,
+        productId: parseInt(item.productId),
+        quantity: parseInt(item.quantity),
         unit: item.unit,
-        rate: item.rate,
-        taxRate: item.taxRate || 0,
-        amount: item.quantity * item.rate,
+        rate: parseFloat(item.rate),
+        taxRate: parseFloat(item.taxRate) || 0,
+        amount: parseInt(item.quantity) * parseFloat(item.rate),
         description: item.description || null,
       },
     });
@@ -215,12 +215,12 @@ const updateQuoteItems = async (quoteId, items) => {
     await prisma.quoteItem.createMany({
       data: itemsToCreate.map(item => ({
         quoteId: quoteIdInt,
-        productId: item.productId,
-        quantity: item.quantity,
+        productId: parseInt(item.productId),
+        quantity: parseInt(item.quantity),
         unit: item.unit,
-        rate: item.rate,
-        taxRate: item.taxRate || 0,
-        amount: item.quantity * item.rate,
+        rate: parseFloat(item.rate),
+        taxRate: parseFloat(item.taxRate) || 0,
+        amount: parseInt(item.quantity) * parseFloat(item.rate),
         description: item.description || null,
       })),
     });

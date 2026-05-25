@@ -584,26 +584,37 @@
     <!-- BOTTOM PANELS -->
     <div class="invoice-bottom-container">
         <!-- Left Panel: Bank details, Terms -->
-        <div class="bottom-left-panel">
-            <div>
-                <div class="panel-label" style="font-size: 8pt; margin-bottom: 2px;">Bank Details</div>
-                <div style="font-size: 8pt; color: #333; line-height: 1.4;">
-                    Beneficiary Name: <span class="text-bold">Vegnar Global LLP</span> | Bank Name: <span class="text-bold"><%= settings?.bankName || 'Axis Bank' %></span><br>
-                    Account Number: <span class="text-bold"><%= settings?.accountNumber || '' %></span> | IFSC Code: <span class="text-bold"><%= settings?.ifscCode || '' %></span><br>
-                    <% if (settings?.branchAddress) { %>Bank Address: <span class="text-bold"><%= settings.branchAddress %></span><% } %>
-                    <% if (settings?.swiftCode) { %> | Swift Code: <span class="text-bold"><%= settings.swiftCode %></span><% } %>
+        <div class="bottom-left-panel" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; gap: 15px;">
+            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+                <div>
+                    <div class="panel-label" style="font-size: 8pt; margin-bottom: 2px;">Bank Details</div>
+                    <div style="font-size: 8pt; color: #333; line-height: 1.4;">
+                        Beneficiary Name: <span class="text-bold">Vegnar Global LLP</span> | Bank Name: <span class="text-bold"><%= settings?.bankName || 'Axis Bank' %></span><br>
+                        Account Number: <span class="text-bold"><%= settings?.accountNumber || '' %></span> | IFSC Code: <span class="text-bold"><%= settings?.ifscCode || '' %></span><br>
+                        <% if (settings?.branchAddress) { %>Bank Address: <span class="text-bold"><%= settings.branchAddress %></span><% } %>
+                        <% if (settings?.swiftCode) { %> | Swift Code: <span class="text-bold"><%= settings.swiftCode %></span><% } %>
+                    </div>
+                </div>
+
+                <div style="margin-top: 4px;">
+                    <div class="panel-label" style="font-size: 8pt; margin-bottom: 2px;">Terms & Conditions</div>
+                    <div style="font-size: 7.5pt; color: #555; line-height: 1.3;">
+                        <% if (quote.termsAndConditions) { %>
+                            <%= quote.termsAndConditions %>
+                        <% } else { %>
+                            Prices are valid till the expiry date mentioned above. Payment must be clear against the receipt of the invoice. Subject to Rajkot Jurisdiction.
+                        <% } %>
+                    </div>
                 </div>
             </div>
 
-            <div style="margin-top: 4px;">
-                <div class="panel-label" style="font-size: 8pt; margin-bottom: 2px;">Terms & Conditions</div>
-                <div style="font-size: 8pt; color: #555; line-height: 1.4;">
-                    <% if (quote.termsAndConditions) { %>
-                        <%= quote.termsAndConditions %>
-                    <% } else { %>
-                        Prices are valid till the expiry date mentioned above. Payment must be clear against the receipt of the invoice. Subject to Rajkot Jurisdiction.
-                    <% } %>
-                </div>
+            <!-- Sleek, High-Premium Scan & Pay Card -->
+            <div class="upi-pay-card" style="border: 1.5px solid #0f2a24; border-radius: 8px; padding: 8px; background: #fafdfc; text-align: center; width: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                <div style="font-size: 7.5pt; font-weight: bold; color: #0f2a24; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Scan to Pay</div>
+                <img src="<%= qrCodeDataUrl %>" style="width: 85px; height: 85px; object-fit: contain; border: 1px solid #eee; padding: 2px; background: #fff; border-radius: 4px;" alt="UPI QR Code" />
+                <div style="font-size: 8pt; font-weight: 700; color: #0f2a24; margin-top: 5px; line-height: 1.1;">Vegnar Greens</div>
+                <div style="font-size: 6.5pt; color: #666; font-family: monospace; word-break: break-all; margin-top: 3px; line-height: 1.1;"><%= settings?.upiId || '7570000553-3@ybl' %></div>
+                <div style="font-size: 6.5pt; font-weight: 600; color: #444; margin-top: 2px;">+91 99980 40373</div>
             </div>
         </div>
 

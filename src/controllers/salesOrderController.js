@@ -75,8 +75,20 @@ const generateSalesOrderPDF = async (req, res) => {
       logoBase64 = fs.readFileSync(logoPath).toString('base64');
     }
 
+    // Generate dynamic UPI QR Code base64 Data URL (Vegnar Greens details)
+    const QRCode = require('qrcode');
+    const upiString = `upi://pay?pa=7570000553-3@ybl&pn=Vegnar%20Greens`;
+    const qrCodeDataUrl = await QRCode.toDataURL(upiString, {
+      margin: 1,
+      width: 150,
+      color: {
+        dark: '#0f2a24',
+        light: '#ffffff'
+      }
+    });
+
     const templatePath = path.join(__dirname, '../templates/salesOrderTemplate.ejs');
-    const html = await ejs.renderFile(templatePath, { order, logoBase64, settings });
+    const html = await ejs.renderFile(templatePath, { order, logoBase64, settings, qrCodeDataUrl });
 
     const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
     const page = await browser.newPage();
