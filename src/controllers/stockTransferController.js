@@ -28,13 +28,17 @@ const transferStock = async (req, res) => {
     const transferNo = `TRF-${Date.now()}`;
 
     await prisma.$transaction(async (tx) => {
+      const newSourcePcs = Math.max(0, stockBatch.remainingPcs - totalPcsToTransfer);
+      const newSourcePacks = Math.floor(newSourcePcs / stockBatch.packPerPiece);
+      const newSourceBoxes = Math.floor(newSourcePacks / stockBatch.packPerBox);
+
       // Deduct from source batch
       await tx.stockBatch.update({
         where: { id: stockBatch.id },
         data: {
-          remainingBoxes: stockBatch.remainingBoxes - boxes,
-          remainingPacks: (stockBatch.remainingPacks || 0) - packs,
-          remainingPcs: stockBatch.remainingPcs - totalPcsToTransfer,
+          remainingBoxes: newSourceBoxes,
+          remainingPacks: newSourcePacks,
+          remainingPcs: newSourcePcs,
         },
       });
 
@@ -50,12 +54,16 @@ const transferStock = async (req, res) => {
       });
 
       if (existingBatch) {
+        const newDestPcs = existingBatch.remainingPcs + totalPcsToTransfer;
+        const newDestPacks = Math.floor(newDestPcs / stockBatch.packPerPiece);
+        const newDestBoxes = Math.floor(newDestPacks / stockBatch.packPerBox);
+
         await tx.stockBatch.update({
           where: { id: existingBatch.id },
           data: {
-            remainingBoxes: existingBatch.remainingBoxes + boxes,
-            remainingPacks: (existingBatch.remainingPacks || 0) + packs,
-            remainingPcs: existingBatch.remainingPcs + totalPcsToTransfer,
+            remainingBoxes: newDestBoxes,
+            remainingPacks: newDestPacks,
+            remainingPcs: newDestPcs,
             boxes: existingBatch.boxes + boxes,
             totalPacks: existingBatch.totalPacks + packs,
             totalPcs: existingBatch.totalPcs + totalPcsToTransfer,
