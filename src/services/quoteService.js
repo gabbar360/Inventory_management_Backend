@@ -7,51 +7,61 @@ const generateQuoteNo = async () => {
 };
 
 const createQuote = async (data) => {
-  const quoteNo = await generateQuoteNo();
-  
-  const quote = await prisma.quote.create({
-    data: {
-      quoteNo,
-      customerId: parseInt(data.customerId),
-      quoteDate: new Date(data.quoteDate),
-      expiryDate: new Date(data.expiryDate),
-      status: 'draft',
-      totalAmount: data.totalAmount || 0,
-      discount: data.discount || 0,
-      tax: data.tax || 0,
-      notes: data.notes,
-      termsAndConditions: data.termsAndConditions,
-      termsOfDelivery: data.termsOfDelivery || null,
-      paymentTerms: data.paymentTerms || null,
-      reference: data.reference || null,
-      shippingCharge: data.shippingCharge || 0,
-      items: {
-        create: data.items.map(item => ({
-          productId: parseInt(item.productId),
-          quantity: parseInt(item.quantity),
-          unit: item.unit,
-          rate: parseFloat(item.rate),
-          taxRate: parseFloat(item.taxRate) || 0,
-          amount: parseInt(item.quantity) * parseFloat(item.rate),
-          description: item.description || null,
-        })),
-      },
-    },
-    include: {
-      customer: true,
-      items: {
-        include: { 
-          product: {
-            include: {
-              category: true
-            }
-          }
+  let retries = 3;
+  while (retries > 0) {
+    const quoteNo = await generateQuoteNo();
+    try {
+      const quote = await prisma.quote.create({
+        data: {
+          quoteNo,
+          customerId: parseInt(data.customerId),
+          quoteDate: new Date(data.quoteDate),
+          expiryDate: new Date(data.expiryDate),
+          status: 'draft',
+          totalAmount: data.totalAmount || 0,
+          discount: data.discount || 0,
+          tax: data.tax || 0,
+          notes: data.notes,
+          termsAndConditions: data.termsAndConditions,
+          termsOfDelivery: data.termsOfDelivery || null,
+          paymentTerms: data.paymentTerms || null,
+          reference: data.reference || null,
+          shippingCharge: data.shippingCharge || 0,
+          items: {
+            create: data.items.map(item => ({
+              productId: parseInt(item.productId),
+              quantity: parseInt(item.quantity),
+              unit: item.unit,
+              rate: parseFloat(item.rate),
+              taxRate: parseFloat(item.taxRate) || 0,
+              amount: parseInt(item.quantity) * parseFloat(item.rate),
+              description: item.description || null,
+            })),
+          },
         },
-      },
-    },
-  });
-
-  return quote;
+        include: {
+          customer: true,
+          items: {
+            include: { 
+              product: {
+                include: {
+                  category: true
+                }
+              }
+            },
+          },
+        },
+      });
+      return quote;
+    } catch (err) {
+      if (err.code === 'P2002' && err.meta?.target?.includes('quote_no')) {
+        retries--;
+        if (retries === 0) throw new Error('Failed to generate unique quote number. Please try again.');
+      } else {
+        throw err;
+      }
+    }
+  }
 };
 
 const getQuotes = async (filters = {}) => {

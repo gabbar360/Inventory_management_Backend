@@ -677,33 +677,26 @@ class BulkUploadController {
             },
           });
 
-          let updatedRemainingBoxes = stockBatch.remainingBoxes;
-          let updatedRemainingPacks = stockBatch.remainingPacks || 0;
           let updatedRemainingPcs = stockBatch.remainingPcs;
 
           if (saleUnit === 'box') {
-            updatedRemainingBoxes -= quantity;
-            updatedRemainingPacks -= quantity * stockBatch.packPerBox;
             updatedRemainingPcs -= quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
           } else if (saleUnit === 'pack') {
-            updatedRemainingPacks -= quantity;
             updatedRemainingPcs -= quantity * stockBatch.packPerPiece;
-            const boxesToDeduct = Math.floor(quantity / stockBatch.packPerBox);
-            updatedRemainingBoxes -= boxesToDeduct;
           } else {
             updatedRemainingPcs -= quantity;
-            const packsToDeduct = Math.floor(quantity / stockBatch.packPerPiece);
-            const boxesToDeduct = Math.floor(packsToDeduct / stockBatch.packPerBox);
-            updatedRemainingPacks -= packsToDeduct;
-            updatedRemainingBoxes -= boxesToDeduct;
           }
+
+          updatedRemainingPcs = Math.max(0, updatedRemainingPcs);
+          const updatedRemainingPacks = Math.floor(updatedRemainingPcs / stockBatch.packPerPiece);
+          const updatedRemainingBoxes = Math.floor(updatedRemainingPacks / stockBatch.packPerBox);
 
           await prisma.stockBatch.update({
             where: { id: stockBatch.id },
             data: {
-              remainingBoxes: Math.max(0, updatedRemainingBoxes),
-              remainingPacks: Math.max(0, updatedRemainingPacks),
-              remainingPcs: Math.max(0, updatedRemainingPcs),
+              remainingBoxes: updatedRemainingBoxes,
+              remainingPacks: updatedRemainingPacks,
+              remainingPcs: updatedRemainingPcs,
             },
           });
 
