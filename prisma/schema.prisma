@@ -82,6 +82,7 @@ model Product {
   sampleItems  SampleItem[]
   quoteItems   QuoteItem[]
   salesOrderItems SalesOrderItem[]
+  purchaseOrderItems PurchaseOrderItem[] @relation("PurchaseOrderItems")
 
   @@unique([name, grade])
   @@map("products")
@@ -99,6 +100,7 @@ model Vendor {
 
   inwardInvoices InwardInvoice[]
   stockBatches   StockBatch[]
+  purchaseOrders PurchaseOrder[] @relation("PurchaseOrders")
 
   @@map("vendors")
 }
@@ -569,6 +571,47 @@ model Settings {
   updatedAt         DateTime @updatedAt
 
   @@map("settings")
+}
+
+model PurchaseOrder {
+  id               Int      @id @default(autoincrement())
+  poNo             String   @unique @map("po_no")
+  vendorId         Int      @map("vendor_id")
+  poDate           DateTime @map("po_date")
+  expectedDelivery DateTime? @map("expected_delivery")
+  status           String   @default("draft") // 'draft', 'sent', 'confirmed', 'received', 'cancelled'
+  totalAmount      Float    @default(0) @map("total_amount")
+  discount         Float    @default(0)
+  tax              Float    @default(0)
+  notes            String?
+  reference        String?
+  termsAndConditions String? @map("terms_and_conditions")
+  paymentTerms     String?  @map("payment_terms")
+  deliveryTerms    String?  @map("delivery_terms")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  vendor Vendor              @relation("PurchaseOrders", fields: [vendorId], references: [id], onDelete: Cascade)
+  items  PurchaseOrderItem[]
+
+  @@map("purchase_orders")
+}
+
+model PurchaseOrderItem {
+  id              Int    @id @default(autoincrement())
+  purchaseOrderId Int    @map("purchase_order_id")
+  productId       Int    @map("product_id")
+  quantity        Int
+  unit            String // 'box', 'pack', or 'piece'
+  rate            Float
+  taxRate         Float  @default(0) @map("tax_rate")
+  amount          Float
+  description     String?
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation("PurchaseOrderItems", fields: [productId], references: [id], onDelete: Cascade)
+
+  @@map("purchase_order_items")
 }
 
 model PaymentReceipt {
