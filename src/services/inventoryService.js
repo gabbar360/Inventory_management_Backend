@@ -108,36 +108,26 @@ class InventoryService {
 
       if (!stockBatch) continue;
 
-      let updatedRemainingBoxes = stockBatch.remainingBoxes;
-      let updatedRemainingPacks = stockBatch.remainingPacks;
       let updatedRemainingPcs = stockBatch.remainingPcs;
 
       if (item.saleUnit === 'box') {
-        updatedRemainingBoxes -= item.quantity;
-        updatedRemainingPacks -= item.quantity * stockBatch.packPerBox;
         updatedRemainingPcs -= item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
       } else if (item.saleUnit === 'pack') {
-        const boxesToDeduct = Math.floor(item.quantity / stockBatch.packPerBox);
-        const packsToDeduct = item.quantity % stockBatch.packPerBox;
-        
-        updatedRemainingBoxes -= boxesToDeduct;
-        updatedRemainingPacks -= item.quantity;
         updatedRemainingPcs -= item.quantity * stockBatch.packPerPiece;
       } else {
-        const packsToDeduct = Math.floor(item.quantity / stockBatch.packPerPiece);
-        const boxesToDeduct = Math.floor(packsToDeduct / stockBatch.packPerBox);
-        
-        updatedRemainingBoxes -= boxesToDeduct;
-        updatedRemainingPacks -= packsToDeduct;
         updatedRemainingPcs -= item.quantity;
       }
+
+      updatedRemainingPcs = Math.max(0, updatedRemainingPcs);
+      const updatedRemainingPacks = Math.floor(updatedRemainingPcs / stockBatch.packPerPiece);
+      const updatedRemainingBoxes = Math.floor(updatedRemainingPacks / stockBatch.packPerBox);
 
       await prisma.stockBatch.update({
         where: { id: parseInt(item.stockBatchId) },
         data: {
-          remainingBoxes: Math.max(0, updatedRemainingBoxes),
-          remainingPacks: Math.max(0, updatedRemainingPacks),
-          remainingPcs: Math.max(0, updatedRemainingPcs),
+          remainingBoxes: updatedRemainingBoxes,
+          remainingPacks: updatedRemainingPacks,
+          remainingPcs: updatedRemainingPcs,
         },
       });
     }
