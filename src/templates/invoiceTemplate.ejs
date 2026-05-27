@@ -272,6 +272,13 @@
         const adjustment = invoice.adjustment || 0;
         const amountReceived = invoice.amountReceived || 0;
         const shippingCharge = invoice.shippingCharge || 0;
+        
+        // Shipping GST: 18% if any product has 18%, else 5% if any product has 5%, else 0
+        const allTaxRates = invoice.items?.map(item => item.taxRate || item.product?.category?.gstRate || 0) || [];
+        const shippingGstRate = allTaxRates.includes(18) ? 18 : (allTaxRates.includes(5) ? 5 : 0);
+        const shippingGstAmt = shippingCharge > 0 ? shippingCharge * (shippingGstRate / 100) : 0;
+        totalTax += shippingGstAmt;
+        
         const grandTotal = subTotal + totalTax + expense + shippingCharge - adjustment;
         const balanceDue = grandTotal - amountReceived;
         
@@ -295,7 +302,8 @@
                     <%= settings?.companyEmail || 'sales@vegnar.com' %> | <%= settings?.companyPhone || '+91 9998040482' %> | <%= settings?.companyWebsite || 'www.vegnar.com' %>
                 </div>
             </div>
-            <div class="invoice-title-block">
+            <div class="invoice-title-block" style="display: flex; flex-direction: column; align-items: flex-end; justify-content: space-between;">
+                <div style="font-size: 8pt; font-weight: 700; color: #fff; background: #444; padding: 2px 8px; border-radius: 3px; letter-spacing: 1px;">ORIGINAL</div>
                 <div class="invoice-title-text">TAX INVOICE</div>
             </div>
         </div>
@@ -417,7 +425,7 @@
             <tr>
                 <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
                 <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
-                    CGST <%= parseFloat(halfRate).toFixed(1) %>%
+                    CGST 
                 </td>
                 <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
                     <%= parseFloat(halfRate).toFixed(2) %>%
@@ -429,7 +437,7 @@
             <tr>
                 <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
                 <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
-                    SGST <%= parseFloat(halfRate).toFixed(1) %>%
+                    SGST 
                 </td>
                 <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
                     <%= parseFloat(halfRate).toFixed(2) %>%
@@ -444,7 +452,7 @@
             <tr>
                 <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
                 <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
-                    IGST <%= parseFloat(group.rate).toFixed(1) %>%
+                    IGST
                 </td>
                 <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
                     <%= parseFloat(group.rate).toFixed(2) %>%
@@ -471,13 +479,41 @@
             </tr>
             <% } %>
 
-            <!-- Total Row -->
-            <tr style="border-top: 1.5px solid #bbb; border-bottom: 1.5px solid #bbb; background-color: #fcfcfc;">
-                <td colspan="4" class="right" style="font-weight: bold; text-align: right; border-bottom: 1.5px solid #bbb; white-space: nowrap;">Total</td>
-                <td class="right" style="font-weight: bold; border-bottom: 1.5px solid #bbb; white-space: nowrap;"><%= totalQty.toLocaleString('en-IN') %><%= unitText %></td>
-                <td colspan="3" style="border-left: none; border-right: 1px solid #bbb; border-bottom: 1.5px solid #bbb;"></td>
-                <td class="right" style="font-weight: bold; border-bottom: 1.5px solid #bbb; white-space: nowrap;">₹ <%= fmt(grandTotal) %></td>
+            <!-- Shipping Charge if exists -->
+            <% if (shippingCharge > 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
+                    Shipping Charge
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
+                    + ₹ <%= fmt(shippingCharge) %>
+                </td>
             </tr>
+            <% if (shippingGstAmt > 0) { %>
+            <% if (isLocal) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">CGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= (shippingGstRate/2).toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt/2) %></td>
+            </tr>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">SGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= (shippingGstRate/2).toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt/2) %></td>
+            </tr>
+            <% } else { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">IGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= shippingGstRate.toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt) %></td>
+            </tr>
+            <% } %>
+            <% } %>
+            <% } %>
 
             <!-- Round Off if exists -->
             <% if (adjustment !== 0) { %>
@@ -492,18 +528,14 @@
             </tr>
             <% } %>
 
-            <!-- Shipping Charge if exists -->
-            <% if (shippingCharge > 0) { %>
-            <tr>
-                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
-                    Shipping Charge
-                </td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
-                    + ₹ <%= fmt(shippingCharge) %>
-                </td>
+            <!-- Total Row -->
+            <tr style="border-top: 1.5px solid #bbb; border-bottom: 1.5px solid #bbb; background-color: #fcfcfc;">
+                <td colspan="4" class="right" style="font-weight: bold; text-align: right; border-bottom: 1.5px solid #bbb; white-space: nowrap;">Total</td>
+                <td class="right" style="font-weight: bold; border-bottom: 1.5px solid #bbb; white-space: nowrap;"><%= totalQty.toLocaleString('en-IN') %><%= unitText %></td>
+                <td colspan="2" style="border-left: none; border-bottom: 1.5px solid #bbb;"></td>
+                <td class="right" style="font-weight: bold; border-bottom: 1.5px solid #bbb; border-right: 1px solid #bbb; white-space: nowrap;">Invoice Amount</td>
+                <td class="right" style="font-weight: bold; border-bottom: 1.5px solid #bbb; white-space: nowrap;">₹ <%= fmt(grandTotal) %></td>
             </tr>
-            <% } %>
 
             <!-- Amount Received Row -->
             <tr>
@@ -658,7 +690,7 @@
         </div>
     </div>
 
-    <div class="footer">Thanks for your business.</div>
+    <div class="footer">This is a computer generated invoice, signature is not required.</div>
 </div>
 </body>
 </html>
