@@ -7,61 +7,49 @@ const generateQuoteNo = async () => {
 };
 
 const createQuote = async (data) => {
-  let retries = 3;
-  while (retries > 0) {
-    const quoteNo = await generateQuoteNo();
-    try {
-      const quote = await prisma.quote.create({
-        data: {
-          quoteNo,
-          customerId: parseInt(data.customerId),
-          quoteDate: new Date(data.quoteDate),
-          expiryDate: new Date(data.expiryDate),
-          status: 'draft',
-          totalAmount: data.totalAmount || 0,
-          discount: data.discount || 0,
-          tax: data.tax || 0,
-          notes: data.notes,
-          termsAndConditions: data.termsAndConditions,
-          termsOfDelivery: data.termsOfDelivery || null,
-          paymentTerms: data.paymentTerms || null,
-          reference: data.reference || null,
-          shippingCharge: data.shippingCharge || 0,
-          items: {
-            create: data.items.map(item => ({
-              productId: parseInt(item.productId),
-              quantity: parseInt(item.quantity),
-              unit: item.unit,
-              rate: parseFloat(item.rate),
-              taxRate: parseFloat(item.taxRate) || 0,
-              amount: parseInt(item.quantity) * parseFloat(item.rate),
-              description: item.description || null,
-            })),
-          },
+  const quoteNo = await generateQuoteNo();
+  const quote = await prisma.quote.create({
+    data: {
+      quoteNo,
+      customerId: parseInt(data.customerId),
+      quoteDate: new Date(data.quoteDate),
+      expiryDate: new Date(data.expiryDate),
+      status: 'draft',
+      totalAmount: data.totalAmount || 0,
+      discount: data.discount || 0,
+      tax: data.tax || 0,
+      notes: data.notes,
+      termsAndConditions: data.termsAndConditions,
+      termsOfDelivery: data.termsOfDelivery || null,
+      paymentTerms: data.paymentTerms || null,
+      reference: data.reference || null,
+      shippingCharge: data.shippingCharge || 0,
+      items: {
+        create: data.items.map(item => ({
+          productId: parseInt(item.productId),
+          quantity: parseInt(item.quantity),
+          unit: item.unit,
+          rate: parseFloat(item.rate),
+          taxRate: parseFloat(item.taxRate) || 0,
+          amount: parseInt(item.quantity) * parseFloat(item.rate),
+          description: item.description || null,
+        })),
+      },
+    },
+    include: {
+      customer: true,
+      items: {
+        include: { 
+          product: {
+            include: {
+              category: true
+            }
+          }
         },
-        include: {
-          customer: true,
-          items: {
-            include: { 
-              product: {
-                include: {
-                  category: true
-                }
-              }
-            },
-          },
-        },
-      });
-      return quote;
-    } catch (err) {
-      if (err.code === 'P2002' && err.meta?.target?.includes('quote_no')) {
-        retries--;
-        if (retries === 0) throw new Error('Failed to generate unique quote number. Please try again.');
-      } else {
-        throw err;
-      }
-    }
-  }
+      },
+    },
+  });
+  return quote;
 };
 
 const getQuotes = async (filters = {}) => {
@@ -141,7 +129,6 @@ const updateQuote = async (id, data) => {
     shippingCharge: data.shippingCharge !== undefined ? data.shippingCharge : 0,
   };
 
-  // Add optional fields if provided
   if (data.customerId) updateData.customerId = parseInt(data.customerId);
   if (data.quoteDate) updateData.quoteDate = new Date(data.quoteDate);
   if (data.expiryDate) updateData.expiryDate = new Date(data.expiryDate);
@@ -169,17 +156,14 @@ const updateQuote = async (id, data) => {
 const updateQuoteItems = async (quoteId, items) => {
   const quoteIdInt = parseInt(quoteId);
   
-  // Get existing items
   const existingItems = await prisma.quoteItem.findMany({
     where: { quoteId: quoteIdInt },
   });
 
-  // Separate new items from existing items
   const itemsToUpdate = items.filter(item => item.id);
   const itemsToCreate = items.filter(item => !item.id);
   const existingItemIds = itemsToUpdate.map(item => item.id);
   
-  // Delete items that are no longer in the list
   const itemsToDelete = existingItems.filter(item => !existingItemIds.includes(item.id));
   if (itemsToDelete.length > 0) {
     await prisma.quoteItem.deleteMany({
@@ -189,7 +173,6 @@ const updateQuoteItems = async (quoteId, items) => {
     });
   }
 
-  // Update existing items
   for (const item of itemsToUpdate) {
     await prisma.quoteItem.update({
       where: { id: item.id },
@@ -205,7 +188,6 @@ const updateQuoteItems = async (quoteId, items) => {
     });
   }
 
-  // Create new items
   if (itemsToCreate.length > 0) {
     await prisma.quoteItem.createMany({
       data: itemsToCreate.map(item => ({
@@ -221,7 +203,6 @@ const updateQuoteItems = async (quoteId, items) => {
     });
   }
 
-  // Return updated quote
   const quote = await prisma.quote.findUnique({
     where: { id: quoteIdInt },
     include: {
@@ -248,14 +229,12 @@ const deleteQuote = async (id) => {
 };
 
 const convertQuoteToInvoice = async (id, itemSelections) => {
-  // itemSelections: [{ quoteItemId, stockBatchId, saleUnit }]
   const quote = await prisma.quote.findUnique({
     where: { id: parseInt(id) },
     include: { items: true },
   });
   if (!quote) throw new Error('Quote not found');
 
-  const lastInvoice = await prisma.outwardInvoice.findFirst({ orderBy: { id: 'desc' } });
   const invoiceNo = await generateNextNumber('invoice');
 
   return await prisma.$transaction(async (tx) => {
@@ -283,7 +262,6 @@ const convertQuoteToInvoice = async (id, itemSelections) => {
       const qty = quoteItem.quantity;
       const saleUnit = sel.saleUnit || 'box';
 
-      // Validate stock
       if (saleUnit === 'box' && stockBatch.remainingBoxes < qty) throw new Error(`Insufficient box stock for product ID ${quoteItem.productId}`);
       if (saleUnit === 'pack' && stockBatch.remainingPacks < qty) throw new Error(`Insufficient pack stock for product ID ${quoteItem.productId}`);
       if (saleUnit === 'piece' && stockBatch.remainingPcs < qty) throw new Error(`Insufficient piece stock for product ID ${quoteItem.productId}`);
@@ -305,7 +283,6 @@ const convertQuoteToInvoice = async (id, itemSelections) => {
         },
       });
 
-      // Deduct stock
       let boxDecrement = 0, packDecrement = 0, pcsDecrement = 0;
       if (saleUnit === 'box') {
         boxDecrement = qty;
