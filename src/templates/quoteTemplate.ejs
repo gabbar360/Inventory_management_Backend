@@ -271,6 +271,12 @@
         const freight = quote.shippingCharge || 0;
         const discount = quote.discount || 0;
         
+        // Shipping GST: 18% if any product has 18%, else 5% if any product has 5%, else 0
+        const allTaxRates = quote.items?.map(item => item.taxRate || item.product?.category?.gstRate || 0) || [];
+        const shippingGstRate = allTaxRates.includes(18) ? 18 : (allTaxRates.includes(5) ? 5 : 0);
+        const shippingGstAmt = freight > 0 ? freight * (shippingGstRate / 100) : 0;
+        totalTax += shippingGstAmt;
+        
         const rawGrandTotal = subTotal + totalTax + freight - discount;
         const grandTotal = rawGrandTotal;
         
@@ -468,6 +474,29 @@
                     <%= fmt(freight) %>
                 </td>
             </tr>
+            <% if (shippingGstAmt > 0) { %>
+            <% if (isLocal) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">CGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= (shippingGstRate/2).toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt/2) %></td>
+            </tr>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">SGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= (shippingGstRate/2).toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt/2) %></td>
+            </tr>
+            <% } else { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">IGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= shippingGstRate.toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt) %></td>
+            </tr>
+            <% } %>
+            <% } %>
             <% } %>
 
             <!-- Discount if exists -->
