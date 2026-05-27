@@ -76,15 +76,8 @@ const getQuotes = async (filters = {}) => {
     }
   }
 
-  const page = parseInt(filters.page) || 1;
-  const limit = Math.min(parseInt(filters.limit) || 10, 10000);
-  const offset = (page - 1) * limit;
-
-  const total = await prisma.quote.count({ where });
   const quotes = await prisma.quote.findMany({
     where,
-    skip: offset,
-    take: limit,
     include: {
       customer: true,
       items: {
@@ -97,18 +90,10 @@ const getQuotes = async (filters = {}) => {
         },
       },
     },
-    orderBy: { quoteDate: 'asc' },
+    orderBy: { createdAt: 'desc' },
   });
 
-  const pagination = {
-    page,
-    limit,
-    total,
-    totalPages: Math.ceil(total / limit),
-    offset,
-  };
-
-  return { data: quotes, pagination };
+  return { data: quotes };
 };
 
 const getQuoteById = async (id) => {
