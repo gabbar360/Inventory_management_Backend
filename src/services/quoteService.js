@@ -1,55 +1,66 @@
 const { PrismaClient } = require('@prisma/client');
-const { generateNextNumber } = require('./settingsService');
 const prisma = new PrismaClient();
 
-const generateQuoteNo = async () => {
-  return await generateNextNumber('quote');
-};
-
 const createQuote = async (data) => {
-  const quoteNo = await generateQuoteNo();
-  const quote = await prisma.quote.create({
-    data: {
-      quoteNo,
-      customerId: parseInt(data.customerId),
-      quoteDate: new Date(data.quoteDate),
-      expiryDate: new Date(data.expiryDate),
-      status: 'draft',
-      totalAmount: data.totalAmount || 0,
-      discount: data.discount || 0,
-      tax: data.tax || 0,
-      notes: data.notes,
-      termsAndConditions: data.termsAndConditions,
-      termsOfDelivery: data.termsOfDelivery || null,
-      paymentTerms: data.paymentTerms || null,
-      reference: data.reference || null,
-      shippingCharge: data.shippingCharge || 0,
-      items: {
-        create: data.items.map(item => ({
-          productId: parseInt(item.productId),
-          quantity: parseInt(item.quantity),
-          unit: item.unit,
-          rate: parseFloat(item.rate),
-          taxRate: parseFloat(item.taxRate) || 0,
-          amount: parseInt(item.quantity) * parseFloat(item.rate),
-          description: item.description || null,
-        })),
-      },
-    },
-    include: {
-      customer: true,
-      items: {
-        include: { 
-          product: {
-            include: {
-              category: true
-            }
-          }
+  return await prisma.$transaction(async (tx) => {
+    // Get current settings and increment counter atomically
+    const settings = await tx.settings.findFirst();
+    if (!settings) throw new Error('Settings not found');
+
+    const next = (settings.quoteCurrent || 0) + 1;
+    const quoteNo = `${settings.quotePrefix}${settings.quoteMiddle}${String(next).padStart(settings.quotePadding, '0')}${settings.quoteSuffix}`;
+
+    // Update counter
+    await tx.settings.update({
+      where: { id: settings.id },
+      data: { quoteCurrent: next },
+    });
+
+    // Create quote
+    const quote = await tx.quote.create({
+      data: {
+        quoteNo,
+        customerId: parseInt(data.customerId),
+        quoteDate: new Date(data.quoteDate),
+        expiryDate: new Date(data.expiryDate),
+        status: 'draft',
+        totalAmount: data.totalAmount || 0,
+        discount: data.discount || 0,
+        tax: data.tax || 0,
+        notes: data.notes,
+        termsAndConditions: data.termsAndConditions,
+        termsOfDelivery: data.termsOfDelivery || null,
+        paymentTerms: data.paymentTerms || null,
+        reference: data.reference || null,
+        shippingCharge: data.shippingCharge || 0,
+        items: {
+          create: data.items.map(item => ({
+            productId: parseInt(item.productId),
+            quantity: parseInt(item.quantity),
+            unit: item.unit,
+            rate: parseFloat(item.rate),
+            taxRate: parseFloat(item.taxRate) || 0,
+            amount: parseInt(item.quantity) * parseFloat(item.rate),
+            description: item.description || null,
+          })),
         },
       },
-    },
+      include: {
+        customer: true,
+        items: {
+          include: { 
+            product: {
+              include: {
+                category: true
+              }
+            }
+          },
+        },
+      },
+    });
+
+    return quote;
   });
-  return quote;
 };
 
 const getQuotes = async (filters = {}) => {
@@ -235,9 +246,19 @@ const convertQuoteToInvoice = async (id, itemSelections) => {
   });
   if (!quote) throw new Error('Quote not found');
 
-  const invoiceNo = await generateNextNumber('invoice');
-
   return await prisma.$transaction(async (tx) => {
+    // Generate invoice number
+    const settings = await tx.settings.findFirst();
+    if (!settings) throw new Error('Settings not found');
+
+    const nextInvoice = (settings.invoiceCurrent || 0) + 1;
+    const invoiceNo = `${settings.invoicePrefix}${settings.invoiceMiddle}${String(nextInvoice).padStart(settings.invoicePadding, '0')}${settings.invoiceSuffix}`;
+
+    await tx.settings.update({
+      where: { id: settings.id },
+      data: { invoiceCurrent: nextInvoice },
+    });
+
     const invoice = await tx.outwardInvoice.create({
       data: {
         invoiceNo,
