@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Purchase Order - <%= po.poNo %></title>
+    <style type="text/css">
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #333; background: #fff; }
+        
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 15mm;
+            background: #fff;
+        }
+
+        /* Header with Logo and Company Info */
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #333;
+            padding-bottom: 15px;
+        }
+
+        .logo-block {
+            width: 100px;
+            flex-shrink: 0;
+        }
+
+        .logo-block img {
+            max-width: 100px;
+            max-height: 70px;
+            object-fit: contain;
+        }
+
+        .company-info-block {
+            flex: 1;
+            margin-left: 20px;
+        }
+
+        .company-name {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .company-details {
+            font-size: 9px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        .po-title-block {
+            text-align: right;
+            flex-shrink: 0;
+        }
+
+        .po-title {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            line-height: 1;
+            letter-spacing: 2px;
+        }
+
+        .po-subtitle {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+            line-height: 1;
+        }
+
+        /* Meta Information Section */
+        .meta-section {
+            display: flex;
+            gap: 40px;
+            margin-bottom: 15px;
+        }
+
+        .meta-left {
+            flex: 1;
+        }
+
+        .meta-right {
+            width: 250px;
+        }
+
+        .meta-row {
+            display: flex;
+            margin-bottom: 5px;
+            font-size: 10px;
+        }
+
+        .meta-label {
+            font-weight: bold;
+            color: #333;
+            width: 140px;
+        }
+
+        .meta-value {
+            color: #555;
+            flex: 1;
+        }
+
+        /* Party Information */
+        .parties-section {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 15px;
+        }
+
+        .party-box {
+            flex: 1;
+        }
+
+        .party-label {
+            font-size: 10px;
+            font-weight: bold;
+            color: #333;
+            background: #e8e8e8;
+            padding: 4px 8px;
+            margin-bottom: 6px;
+        }
+
+        .party-name {
+            font-size: 11px;
+            font-weight: bold;
+            color: #222;
+            margin-bottom: 3px;
+        }
+
+        .party-details {
+            font-size: 9px;
+            color: #555;
+            line-height: 1.5;
+        }
+
+        /* Items Table */
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0;
+            border: 1px solid #999;
+            font-size: 10px;
+        }
+
+        .items-table thead {
+            background: #d3d3d3;
+        }
+
+        .items-table th {
+            padding: 8px 6px;
+            font-size: 10px;
+            font-weight: bold;
+            color: #333;
+            text-align: center;
+            border: 1px solid #999;
+            vertical-align: middle;
+        }
+
+        .items-table th.left {
+            text-align: left;
+        }
+
+        .items-table td {
+            padding: 6px 6px;
+            font-size: 10px;
+            border: 1px solid #999;
+            vertical-align: top;
+        }
+
+        .items-table td.center {
+            text-align: center;
+        }
+
+        .items-table td.right {
+            text-align: right;
+        }
+
+        .item-name {
+            font-weight: bold;
+            color: #222;
+            margin-bottom: 2px;
+        }
+
+        .item-desc {
+            font-size: 9px;
+            color: #666;
+            margin-top: 2px;
+        }
+
+        /* Totals Section */
+        .totals-box {
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .total-row {
+            display: flex;
+            font-size: 10px;
+            margin-bottom: 0;
+            border: 1px solid #999;
+            border-top: none;
+        }
+
+        .total-row:first-child {
+            border-top: 1px solid #999;
+        }
+
+        .total-label {
+            flex: 1;
+            text-align: right;
+            padding: 6px 8px;
+            font-weight: bold;
+            background: #f5f5f5;
+        }
+
+        .total-value {
+            width: 120px;
+            text-align: right;
+            padding: 6px 8px;
+            font-weight: bold;
+            background: #f5f5f5;
+            border-left: 1px solid #999;
+        }
+
+        .total-row.grand .total-label,
+        .total-row.grand .total-value {
+            font-size: 12px;
+            font-weight: bold;
+            background: #fff;
+            border-top: 2px solid #333;
+            border-bottom: 2px solid #333;
+            padding: 8px;
+        }
+
+        /* Words Section */
+        .words-section {
+            font-size: 10px;
+            margin-top: 10px;
+            padding: 8px;
+            border: 1px solid #999;
+            background: #fafafa;
+        }
+
+        .words-label {
+            font-weight: bold;
+        }
+
+        /* Notes Section */
+        .notes-section {
+            font-size: 9px;
+            margin-top: 10px;
+            padding: 8px;
+            border: 1px solid #999;
+            line-height: 1.4;
+        }
+
+        .notes-title {
+            font-weight: bold;
+            margin-bottom: 4px;
+            font-size: 10px;
+        }
+
+        .notes-content {
+            color: #555;
+        }
+
+        /* Footer Section */
+        .footer-section {
+            display: flex;
+            gap: 30px;
+            margin-top: 15px;
+        }
+
+        .footer-left {
+            flex: 1;
+            font-size: 9px;
+        }
+
+        .footer-right {
+            width: 200px;
+            text-align: right;
+            font-size: 9px;
+        }
+
+        .footer-title {
+            font-weight: bold;
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .footer-text {
+            color: #555;
+            line-height: 1.4;
+        }
+
+        .signature-line {
+            border-top: 1px solid #333;
+            margin-top: 30px;
+            padding-top: 4px;
+            text-align: center;
+            font-size: 9px;
+            font-weight: bold;
+        }
+
+        .footer {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 8px;
+            color: #999;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        @media print {
+            body { margin: 0; }
+            .page { margin: 0; padding: 15mm; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <%
+        function fmt(num) {
+            if (num === undefined || num === null || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function fmtDate(d) {
+            if (!d) return '';
+            const date = new Date(d);
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+        }
+
+        function numToWords(n) {
+            const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+            const teens = ['Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+            const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+            
+            const h = (x) => {
+                let r = '';
+                if (x >= 100) { r += ones[Math.floor(x/100)] + ' Hundred '; x %= 100; }
+                if (x >= 20) { r += tens[Math.floor(x/10)] + ' '; x %= 10; }
+                else if (x >= 10) { r += teens[x-10] + ' '; x = 0; }
+                if (x > 0) r += ones[x] + ' ';
+                return r;
+            };
+            
+            const convertInt = (num) => {
+                if (num === 0) return 'Zero';
+                let r = '';
+                const cr = Math.floor(num/10000000); if (cr) { r += h(cr)+'Crore '; num %= 10000000; }
+                const lk = Math.floor(num/100000); if (lk) { r += h(lk)+'Lakh '; num %= 100000; }
+                const th = Math.floor(num/1000); if (th) { r += h(th)+'Thousand '; num %= 1000; }
+                if (num > 0) r += h(num);
+                return r.trim();
+            };
+
+            const fixedNum = parseFloat(n).toFixed(2);
+            const parts = fixedNum.split('.');
+            const rupees = parseInt(parts[0]);
+            const paise = parseInt(parts[1]);
+
+            let words = 'INR ' + convertInt(rupees);
+            if (paise > 0) {
+                words += ' and ' + convertInt(paise) + ' Paise';
+            }
+            return words + ' Only';
+        }
+
+        let subTotal = 0, totalQty = 0, totalTax = 0;
+        let gstRates = new Set();
+        
+        po.items?.forEach(item => {
+            const lineAmt = item.quantity * item.rate;
+            const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
+            const lineTaxAmt = lineAmt * (taxRate / 100);
+            
+            subTotal += lineAmt;
+            totalQty += item.quantity;
+            totalTax += lineTaxAmt;
+            gstRates.add(taxRate);
+        });
+        
+        const gstRateArray = Array.from(gstRates).sort((a, b) => a - b);
+        const gstLabel = gstRateArray.length > 0 ? gstRateArray.map(r => r + '%').join('/') : '0%';
+        
+        const freight = po.shippingCharge || 0;
+        const discount = po.discount || 0;
+        const grandTotal = subTotal + totalTax + freight - discount;
+        const companyGstin = settings?.companyGstin || '24ABAFV3901A1ZV';
+    %>
+
+    <!-- HEADER -->
+    <div class="header-top">
+        <div class="logo-block">
+            <% if (logoBase64) { %>
+                <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+            <% } %>
+        </div>
+        <div class="company-info-block">
+            <div class="company-name"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
+            <div class="company-details">
+                <%= settings?.companyAddress || 'B-623, RK Iconic, 150 Feet Ring Road, Ayodhya Chowk, Rajkot Gujarat 360007, India' %><br>
+                GSTIN: <%= companyGstin %><br>
+                <%= settings?.companyEmail || 'sales@vegnar.com' %> | <%= settings?.companyPhone || '+91 9998040482' %><br>
+                <%= settings?.companyWebsite || 'www.vegnar.com' %>
+            </div>
+        </div>
+        <div class="po-title-block">
+            <div class="po-title">PURCHASE</div>
+            <div class="po-subtitle">ORDER</div>
+        </div>
+    </div>
+
+    <!-- META INFORMATION -->
+    <div class="meta-section">
+        <div class="meta-left">
+            <div class="meta-row">
+                <div class="meta-label">Purchase Order#</div>
+                <div class="meta-value"><strong>: <%= po.poNo %></strong></div>
+            </div>
+            <div class="meta-row">
+                <div class="meta-label">Date</div>
+                <div class="meta-value"><strong>: <%= fmtDate(po.poDate) %></strong></div>
+            </div>
+            <div class="meta-row">
+                <div class="meta-label">Delivery Date</div>
+                <div class="meta-value"><strong>: <%= fmtDate(po.expectedDelivery) %></strong></div>
+            </div>
+        </div>
+        <div class="meta-right">
+            <div class="meta-row">
+                <div class="meta-label">Shipment preference</div>
+                <div class="meta-value"><strong>: <%= po.deliveryTerms || 'FOR - SHIPPING' %></strong></div>
+            </div>
+            <div class="meta-row">
+                <div class="meta-label">Place Of Supply</div>
+                <div class="meta-value"><strong>: Gujarat (24)</strong></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VENDOR & DELIVERY -->
+    <div class="parties-section">
+        <div class="party-box">
+            <div class="party-label">Vendor Address</div>
+            <div class="party-name"><%= po.vendor?.name || '' %></div>
+            <div class="party-details">
+                <%= po.vendor?.address || '' %><br>
+                <% if (po.vendor?.phone) { %>Phone: <%= po.vendor.phone %><br><% } %>
+                <% if (po.vendor?.email) { %>Email: <%= po.vendor.email %><br><% } %>
+                <% if (po.vendor?.gstin) { %>GSTIN: <%= po.vendor.gstin %><br><% } %>
+            </div>
+        </div>
+        <div class="party-box">
+            <div class="party-label">Deliver To</div>
+            <div class="party-name"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
+            <div class="party-details">
+                <%= settings?.companyAddress || '' %><br>
+                <% if (settings?.companyPhone) { %>Phone: <%= settings.companyPhone %><br><% } %>
+                <% if (settings?.companyEmail) { %>Email: <%= settings.companyEmail %><br><% } %>
+                GSTIN: <%= companyGstin %>
+            </div>
+        </div>
+    </div>
+
+    <!-- ITEMS TABLE -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width:5%">#</th>
+                <th style="width:10%">SKU</th>
+                <th class="left" style="width:20%">Item & Description</th>
+                <th style="width:8%">HSN/SAC</th>
+                <th style="width:10%">Qty</th>
+                <th style="width:8%">Rate</th>
+                <th style="width:8%">Tax %</th>
+                <th style="width:13%">Amount</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% po.items?.forEach((item, i) => {
+                const lineAmt = item.quantity * item.rate;
+                const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
+                const taxAmt = lineAmt * (taxRate / 100);
+            %>
+            <tr>
+                <td class="center"><%= i + 1 %></td>
+                <td class="center"><%= item.product?.sku || '' %></td>
+                <td>
+                    <div class="item-name"><%= item.product?.name || 'Product' %></div>
+                    <% if (item.description || item.product?.description) { %>
+                    <div class="item-desc"><%= item.description || item.product?.description %></div>
+                    <% } %>
+                </td>
+                <td class="center"><%= item.product?.category?.hsnCode || '' %></td>
+                <td class="right"><strong><%= item.quantity.toLocaleString('en-IN') %></strong> <%= item.unit || 'Pcs' %></td>
+                <td class="right"><%= fmt(item.rate) %></td>
+                <td class="center"><%= taxRate %>%</td>
+                <td class="right"><strong><%= fmt(lineAmt + taxAmt) %></strong></td>
+            </tr>
+            <% }) %>
+        </tbody>
+    </table>
+
+    <!-- TOTALS -->
+    <div class="totals-box">
+        <div class="total-row">
+            <div class="total-label">Sub Total</div>
+            <div class="total-value"><%= fmt(subTotal) %></div>
+        </div>
+        <div class="total-row">
+            <div class="total-label">CGST/SGST (<%= gstLabel %>)</div>
+            <div class="total-value"><%= fmt(totalTax) %></div>
+        </div>
+        <div class="total-row grand">
+            <div class="total-label">Total</div>
+            <div class="total-value">₹<%= fmt(po.totalAmount || grandTotal) %></div>
+        </div>
+    </div>
+
+    <!-- AMOUNT IN WORDS -->
+    <div class="words-section">
+        <span class="words-label">Amount Chargeable (in words):</span> <%= numToWords(grandTotal) %>
+    </div>
+
+    <!-- TERMS & CONDITIONS -->
+    <div class="notes-section">
+        <div class="notes-title">Terms & Conditions</div>
+        <div class="notes-content">
+            <%= po.notes || '1. Goods/Services that must be meet agreed Quality / Specifications, will be replace, reject & return to supplier at their expenses.<br>2. Any liabilities arises under GST Act due to mismatch of GST credit related to you will be charged on with Interest and Penalty.<br>3. We\'ll execute the particular work, process, inspection or testing followed by our service providers at our premises as per decided terms & conditions regarding quality, environment & health safety.<br>4. Supplier has to make sure the all material must have the branding of "Vegnar". Any other branding on product or on packing details will not be accepted.<br>5. Payment terms will be against the delivery of the consignment to shipping address.<br>6. Subject to Rajkot Jurisdiction "E&OE"' %>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer-section">
+        <div class="footer-left">
+            <div class="footer-title">Bank Details</div>
+            <div class="footer-text">
+                Beneficiary Name: <strong><%= settings?.companyName || 'Vegnar Global LLP' %></strong><br>
+                Bank Name: <strong><%= settings?.bankName || 'Axis Bank' %></strong><br>
+                Account Number: <strong><%= settings?.accountNumber || '' %></strong><br>
+                IFSC Code: <strong><%= settings?.ifscCode || '' %></strong>
+            </div>
+        </div>
+        <div class="footer-right">
+            <div class="footer-title">Authorized Signature</div>
+            <div class="signature-line">for <%= settings?.companyName || 'Vegnar Global LLP' %></div>
+        </div>
+    </div>
+
+    <div class="footer">This is a Computer Generated Purchase Order</div>
+</div>
+</body>
+</html>
