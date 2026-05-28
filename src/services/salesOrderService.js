@@ -1,5 +1,4 @@
 const { PrismaClient } = require('@prisma/client');
-const { generateNextNumber } = require('./settingsService');
 const prisma = new PrismaClient();
 
 const includeRelations = {
@@ -13,7 +12,8 @@ const includeRelations = {
 };
 
 const generateOrderNo = async () => {
-  return await generateNextNumber('salesOrder');
+  const count = await prisma.salesOrder.count();
+  return `SO-${String(count + 1).padStart(5, '0')}`;
 };
 
 const createSalesOrder = async (data) => {
@@ -181,7 +181,7 @@ const convertSalesOrderToInvoice = async (id, itemSelections) => {
   });
   if (!order) throw new Error('Sales order not found');
 
-  const invoiceNo = await generateNextNumber('invoice');
+  const invoiceNo = `INV-${String(await prisma.outwardInvoice.count() + 1).padStart(5, '0')}`;
 
   return await prisma.$transaction(async (tx) => {
     const invoice = await tx.outwardInvoice.create({

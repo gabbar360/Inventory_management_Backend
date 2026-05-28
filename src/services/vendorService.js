@@ -1,6 +1,5 @@
 const { calculatePagination } = require("../utils/helpers");
 const { PrismaClient } = require('@prisma/client');
-const { generateNextNumber } = require('./settingsService');
 
 const prisma = new PrismaClient();
 
@@ -73,7 +72,8 @@ class VendorService {
   }
 
   static async create(data) {
-    const code = await generateNextNumber('vendor');
+    const count = await prisma.vendor.count();
+    const code = data.code || `VEND-${String(count + 1).padStart(4, '0')}`;
 
     return await prisma.vendor.create({
       data: {
