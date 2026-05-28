@@ -1,6 +1,5 @@
 const { calculatePagination } = require("../utils/helpers");
 const { PrismaClient } = require('@prisma/client');
-const { generateNextNumber } = require('./settingsService');
 
 const prisma = new PrismaClient();
 
@@ -73,7 +72,9 @@ class CustomerService {
   }
 
   static async create(data) {
-    const code = await generateNextNumber('customer');
+    // Generate a temporary customer to get the auto-incremented id for code
+    const count = await prisma.customer.count();
+    const code = data.code || `CUST-${String(count + 1).padStart(4, '0')}`;
 
     return await prisma.customer.create({
       data: {

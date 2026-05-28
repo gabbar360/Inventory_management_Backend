@@ -1,26 +1,13 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
-const generatePONumber = async (settings) => {
-  const prefix = settings.poPrefix || 'PO';
-  const middle = settings.poMiddle || '-';
-  const suffix = settings.poSuffix || '';
-  const padding = settings.poPadding || 6;
-
-  const nextNum = settings.poCurrent + 1;
-  const paddedNum = String(nextNum).padStart(padding, '0');
-
-  await prisma.settings.update({
-    where: { id: settings.id },
-    data: { poCurrent: nextNum }
-  });
-
-  return `${prefix}${middle}${paddedNum}${suffix}`;
+const generatePONumber = async () => {
+  const count = await prisma.purchaseOrder.count();
+  return `PO-${String(count + 1).padStart(5, '0')}`;
 };
 
 const createPurchaseOrder = async (data) => {
-  const settings = await prisma.settings.findFirst();
-  const poNo = await generatePONumber(settings);
+  const poNo = await generatePONumber();
 
   const items = data.items || [];
   let totalAmount = 0;

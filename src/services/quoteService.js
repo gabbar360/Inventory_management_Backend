@@ -3,18 +3,8 @@ const prisma = new PrismaClient();
 
 const createQuote = async (data) => {
   return await prisma.$transaction(async (tx) => {
-    // Get current settings and increment counter atomically
-    const settings = await tx.settings.findFirst();
-    if (!settings) throw new Error('Settings not found');
-
-    const next = (settings.quoteCurrent || 0) + 1;
-    const quoteNo = `${settings.quotePrefix}${settings.quoteMiddle}${String(next).padStart(settings.quotePadding, '0')}${settings.quoteSuffix}`;
-
-    // Update counter
-    await tx.settings.update({
-      where: { id: settings.id },
-      data: { quoteCurrent: next },
-    });
+    const count = await tx.quote.count();
+    const quoteNo = `QT-${String(count + 1).padStart(5, '0')}`;
 
     // Create quote
     const quote = await tx.quote.create({
@@ -248,16 +238,8 @@ const convertQuoteToInvoice = async (id, itemSelections) => {
 
   return await prisma.$transaction(async (tx) => {
     // Generate invoice number
-    const settings = await tx.settings.findFirst();
-    if (!settings) throw new Error('Settings not found');
-
-    const nextInvoice = (settings.invoiceCurrent || 0) + 1;
-    const invoiceNo = `${settings.invoicePrefix}${settings.invoiceMiddle}${String(nextInvoice).padStart(settings.invoicePadding, '0')}${settings.invoiceSuffix}`;
-
-    await tx.settings.update({
-      where: { id: settings.id },
-      data: { invoiceCurrent: nextInvoice },
-    });
+    const invoiceCount = await tx.outwardInvoice.count();
+    const invoiceNo = `INV-${String(invoiceCount + 1).padStart(5, '0')}`;
 
     const invoice = await tx.outwardInvoice.create({
       data: {
