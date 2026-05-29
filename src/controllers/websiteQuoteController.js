@@ -6,6 +6,7 @@ const path = require('path');
 const fs = require('fs');
 const settingsService = require('../services/settingsService');
 const quoteService = require('../services/quoteService');
+const { createSalesOrder } = require('../services/salesOrderService');
 
 const getWebsiteQuotes = async (req, res) => {
   try {
@@ -228,4 +229,55 @@ const convertWebsiteQuoteToQuote = async (req, res) => {
   }
 };
 
-module.exports = { getWebsiteQuotes, updateWebsiteQuoteStatus, deleteWebsiteQuote, updateWebsiteQuote, updateWebsiteQuotePrices, generateWebsiteQuotePDF, convertWebsiteQuoteToQuote };
+const convertWebsiteQuoteToSalesOrder = async (req, res) => {
+  try {
+    const { customerId, orderDate, saleType, notes, reference } = req.body;
+    if (!customerId || !orderDate) return res.status(400).json({ success: false, error: 'customerId and orderDate are required' });
+
+    const websiteQuote = await prisma.websiteQuote.findUnique({ where: { id: parseInt(req.params.id) } });
+    if (!websiteQuote) return res.status(404).json({ success: false, error: 'Website quote not found' });
+
+    let products = [];
+    try { products = JSON.parse(websiteQuote.products); } catch {}
+    let prices = {};
+    try { prices = JSON.parse(websiteQuote.prices || '{}'); } catch {}
+
+    const items = products.map((p, i) => ({
+      productId: parseInt(p.productId || p.itemCode),
+      quantity: p.quantity || 1,
+      unit: p.unit || 'box',
+      rate: prices[i]?.rate || 0,
+      taxRate: prices[i]?.taxRate || 0,
+      description: p.productName || '',
+    })).filter(item => item.productId && !isNaN(item.productId));
+
+    const subtotal = items.reduce((s, i) => s + i.quantity * i.rate, 0);
+    const totalTax = items.reduce((s, i) => s + i.quantity * i.rate * (i.taxRate / 100), 0);
+    const totalAmount = subtotal + totalTax + (websiteQuote.shippingCharge || 0) - (websiteQuote.discount || 0);
+
+    const order = await createSalesOrder({
+      customerId: parseInt(customerId),
+      orderDate,
+      status: 'confirmed',
+      saleType: saleType || websiteQuote.orderType || 'domestic',
+      totalAmount,
+      reference: reference || websiteQuote.quoteNo,
+      notes: notes || websiteQuote.additionalRequirements || null,
+      shippingCharge: websiteQuote.shippingCharge || 0,
+      discount: websiteQuote.discount || 0,
+      items,
+    });
+
+    await prisma.websiteQuote.update({
+      where: { id: parseInt(req.params.id) },
+      data: { status: 'converted' },
+    });
+
+    res.json({ success: true, data: order });
+  } catch (error) {
+    console.error('Convert Website Quote to Sales Order Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+module.exports = { getWebsiteQuotes, updateWebsiteQuoteStatus, deleteWebsiteQuote, updateWebsiteQuote, updateWebsiteQuotePrices, generateWebsiteQuotePDF, convertWebsiteQuoteToQuote, convertWebsiteQuoteToSalesOrder };
