@@ -35,6 +35,7 @@ const createSalesOrder = async (data) => {
       adjustment: parseFloat(data.adjustment) || 0,
       amountReceived: parseFloat(data.amountReceived) || 0,
       shippingCharge: parseFloat(data.shippingCharge) || 0,
+      discount: parseFloat(data.discount) || 0,
       items: {
         create: data.items.map((item) => ({
           productId: item.productId,
@@ -108,6 +109,7 @@ const updateSalesOrder = async (id, data) => {
     adjustment: data.adjustment !== undefined ? parseFloat(data.adjustment) : undefined,
     amountReceived: data.amountReceived !== undefined ? parseFloat(data.amountReceived) : undefined,
     shippingCharge: data.shippingCharge !== undefined ? parseFloat(data.shippingCharge) : undefined,
+    discount: data.discount !== undefined ? parseFloat(data.discount) : undefined,
   };
   if (data.customerId) updateData.customerId = data.customerId;
   if (data.orderDate) updateData.orderDate = new Date(data.orderDate);

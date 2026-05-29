@@ -1,5 +1,5 @@
 const express = require('express');
-const { getWebsiteQuotes, updateWebsiteQuoteStatus, deleteWebsiteQuote, updateWebsiteQuote, updateWebsiteQuotePrices, generateWebsiteQuotePDF, convertWebsiteQuoteToQuote } = require('../controllers/websiteQuoteController');
+const { getWebsiteQuotes, updateWebsiteQuoteStatus, deleteWebsiteQuote, updateWebsiteQuote, updateWebsiteQuotePrices, generateWebsiteQuotePDF, convertWebsiteQuoteToQuote, convertWebsiteQuoteToSalesOrder } = require('../controllers/websiteQuoteController');
 const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -10,6 +10,7 @@ router.put('/website-quotes/:id/status', authenticateToken, updateWebsiteQuoteSt
 router.put('/website-quotes/:id/prices', authenticateToken, updateWebsiteQuotePrices);
 router.get('/website-quotes/:id/pdf', authenticateToken, generateWebsiteQuotePDF);
 router.post('/website-quotes/:id/convert', authenticateToken, convertWebsiteQuoteToQuote);
+router.post('/website-quotes/:id/convert-to-sales-order', authenticateToken, convertWebsiteQuoteToSalesOrder);
 router.delete('/website-quotes/:id', authenticateToken, deleteWebsiteQuote);
 
 module.exports = router;
