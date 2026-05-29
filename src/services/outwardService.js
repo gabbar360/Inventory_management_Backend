@@ -152,6 +152,7 @@ class OutwardService {
           amountReceived: data.amountReceived !== undefined ? parseFloat(data.amountReceived) : 0,
           referenceNo: data.referenceNo || null,
           shippingCharge: data.shippingCharge !== undefined ? parseFloat(data.shippingCharge) : 0,
+          discount: data.discount !== undefined ? parseFloat(data.discount) : 0,
         },
       });
 
@@ -278,6 +279,7 @@ class OutwardService {
           amountReceived: data.amountReceived !== undefined ? parseFloat(data.amountReceived) : undefined,
           referenceNo: data.referenceNo !== undefined ? data.referenceNo : undefined,
           shippingCharge: data.shippingCharge !== undefined ? parseFloat(data.shippingCharge) : undefined,
+          discount: data.discount !== undefined ? parseFloat(data.discount) : undefined,
         },
       });
 

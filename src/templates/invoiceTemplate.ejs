@@ -272,6 +272,7 @@
         const adjustment = invoice.adjustment || 0;
         const amountReceived = invoice.amountReceived || 0;
         const shippingCharge = invoice.shippingCharge || 0;
+        const discount = invoice.discount || 0;
         
         // Shipping GST: 18% if any product has 18%, else 5% if any product has 5%, else 0
         const allTaxRates = invoice.items?.map(item => item.taxRate || item.product?.category?.gstRate || 0) || [];
@@ -279,7 +280,7 @@
         const shippingGstAmt = shippingCharge > 0 ? shippingCharge * (shippingGstRate / 100) : 0;
         totalTax += shippingGstAmt;
         
-        const grandTotal = subTotal + totalTax + expense + shippingCharge - adjustment;
+        const grandTotal = subTotal + totalTax + expense + shippingCharge - adjustment - discount;
         const balanceDue = grandTotal - amountReceived;
         
         // Extract GSTIN
@@ -524,6 +525,19 @@
                 </td>
                 <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
                     <%= adjustment > 0 ? '-' : '+' %> <%= fmt(Math.abs(adjustment)) %>
+                </td>
+            </tr>
+            <% } %>
+
+            <!-- Discount if exists -->
+            <% if (discount > 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; color: #b91c1c; white-space: nowrap;">
+                    Discount
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; color: #b91c1c; white-space: nowrap;">
+                    - ₹ <%= fmt(discount) %>
                 </td>
             </tr>
             <% } %>

@@ -194,6 +194,7 @@ model OutwardInvoice {
   amountReceived       Float    @default(0) @map("amount_received")
   referenceNo          String?  @map("reference_no")
   shippingCharge       Float    @default(0) @map("shipping_charge")
+  discount             Float    @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
