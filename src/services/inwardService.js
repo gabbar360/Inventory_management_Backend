@@ -153,6 +153,15 @@ class InwardService {
       );
 
       const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
+      const expense = data.expense || 0;
+      const totalInvoicePcs = processedItems.reduce((sum, item) => sum + item.totalPcs, 0);
+
+      // Distribute expense proportionally by pcs across items
+      const processedItemsWithExpense = processedItems.map((item) => {
+        const expenseShare = totalInvoicePcs > 0 ? (item.totalPcs / totalInvoicePcs) * expense : 0;
+        const totalCostWithExpense = item.totalCost + expenseShare;
+        return { ...item, totalCost: totalCostWithExpense };
+      });
 
       const invoice = await tx.inwardInvoice.create({
         data: {
@@ -160,13 +169,13 @@ class InwardService {
           date: new Date(data.date),
           vendorId: parseInt(data.vendorId),
           locationId: parseInt(data.locationId),
-          expense: data.expense || 0,
-          totalCost: totalInvoiceCost,
+          expense,
+          totalCost: totalInvoiceCost + expense,
         },
       });
 
       const items = await Promise.all(
-        processedItems.map((item) =>
+        processedItemsWithExpense.map((item) =>
           tx.inwardItem.create({
             data: {
               inwardInvoiceId: invoice.id,
@@ -266,7 +275,7 @@ class InwardService {
       if (subItemsTotalCost > 0) {
         await tx.inwardInvoice.update({
           where: { id: invoice.id },
-          data: { totalCost: totalInvoiceCost + subItemsTotalCost },
+          data: { totalCost: totalInvoiceCost + expense + subItemsTotalCost },
         });
       }
 
@@ -407,6 +416,15 @@ class InwardService {
       );
 
       const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
+      const expense = data.expense || 0;
+      const totalInvoicePcs = processedItems.reduce((sum, item) => sum + item.totalPcs, 0);
+
+      // Distribute expense proportionally by pcs across items
+      const processedItemsWithExpense = processedItems.map((item) => {
+        const expenseShare = totalInvoicePcs > 0 ? (item.totalPcs / totalInvoicePcs) * expense : 0;
+        const totalCostWithExpense = item.totalCost + expenseShare;
+        return { ...item, totalCost: totalCostWithExpense };
+      });
 
       const invoice = await tx.inwardInvoice.update({
         where: { id: parseInt(id) },
@@ -415,13 +433,13 @@ class InwardService {
           date: new Date(data.date),
           vendorId: parseInt(data.vendorId),
           locationId: parseInt(data.locationId),
-          expense: data.expense || 0,
-          totalCost: totalInvoiceCost,
+          expense,
+          totalCost: totalInvoiceCost + expense,
         },
       });
 
       const items = await Promise.all(
-        processedItems.map((item) =>
+        processedItemsWithExpense.map((item) =>
           tx.inwardItem.create({
             data: {
               inwardInvoiceId: invoice.id,
@@ -519,7 +537,7 @@ class InwardService {
       if (subItemsTotalCost > 0) {
         await tx.inwardInvoice.update({
           where: { id: invoice.id },
-          data: { totalCost: totalInvoiceCost + subItemsTotalCost },
+          data: { totalCost: totalInvoiceCost + expense + subItemsTotalCost },
         });
       }
 
