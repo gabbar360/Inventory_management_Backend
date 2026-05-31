@@ -467,19 +467,6 @@
                 }); 
             %>
 
-            <!-- Additional Expense if exists -->
-            <% if (expense > 0) { %>
-            <tr>
-                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
-                    Additional Expense
-                </td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
-                    <%= fmt(expense) %>
-                </td>
-            </tr>
-            <% } %>
-
             <!-- Shipping Charge if exists -->
             <% if (shippingCharge > 0) { %>
             <tr>
