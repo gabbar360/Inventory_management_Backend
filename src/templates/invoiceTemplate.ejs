@@ -280,7 +280,7 @@
         const shippingGstAmt = shippingCharge > 0 ? shippingCharge * (shippingGstRate / 100) : 0;
         totalTax += shippingGstAmt;
         
-        const grandTotal = subTotal + totalTax + expense + shippingCharge - adjustment - discount;
+        const grandTotal = subTotal + totalTax + shippingCharge - adjustment - discount;
         const balanceDue = grandTotal - amountReceived;
         
         // Extract GSTIN
