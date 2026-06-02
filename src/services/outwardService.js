@@ -127,6 +127,9 @@ class OutwardService {
   }
 
   static async create(data) {
+    if (!data.customerId || isNaN(parseInt(data.customerId))) {
+      throw new Error('Valid customer ID is required');
+    }
     return await prisma.$transaction(async (tx) => {
       const existingInvoice = await tx.outwardInvoice.findFirst({
         where: { invoiceNo: data.invoiceNo },
@@ -220,6 +223,9 @@ class OutwardService {
   }
 
   static async update(id, data) {
+    if (!data.customerId || isNaN(parseInt(data.customerId))) {
+      throw new Error('Valid customer ID is required');
+    }
     return await prisma.$transaction(async (tx) => {
       const existingInvoice = await tx.outwardInvoice.findUnique({
         where: { id: parseInt(id) },
