@@ -6,9 +6,16 @@ const { InventoryService } = require('../services/inventoryService');
 class InventoryController {
   static async getStockSummary(req, res) {
     try {
-      const { locationId, search } = req.query;
-      const result = await InventoryService.getStockSummary(locationId, search);
-      return sendResponse(res, 200, true, result, 'Stock summary retrieved successfully');
+      const { page, limit, locationId, search } = parseQueryParams(req.query);
+      const result = await InventoryService.getStockSummary(page, limit, locationId, search);
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+        lowStockItems: result.lowStockItems,
+        globalStats: result.globalStats,
+        pagination: result.pagination,
+        message: 'Stock summary retrieved successfully'
+      });
     } catch (error) {
       return sendError(res, 500, error.message);
     }

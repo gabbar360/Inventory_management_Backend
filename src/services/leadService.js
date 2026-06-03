@@ -4,19 +4,35 @@ const { calculatePagination } = require('../utils/helpers');
 const prisma = new PrismaClient();
 
 class LeadService {
-  static async getAll(page, limit, search, sortBy, sortOrder) {
-    const where = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-            { company: { contains: search, mode: 'insensitive' } },
-            { formType: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {};
+  static async getAll(page, limit, search, sortBy, sortOrder, source) {
+    const where = {
+      NOT: {
+        source: 'website',
+        formType: 'QuoteCartForm',
+      },
+    };
 
-    const total = await prisma.lead.count({ where });
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { company: { contains: search, mode: 'insensitive' } },
+        { formType: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    if (source && source !== 'all') {
+      where.source = source;
+    }
+
+    const [total, newCount, contactedCount, convertedCount, rejectedCount] = await Promise.all([
+      prisma.lead.count({ where }),
+      prisma.lead.count({ where: { ...where, status: 'new' } }),
+      prisma.lead.count({ where: { ...where, status: 'contacted' } }),
+      prisma.lead.count({ where: { ...where, status: 'converted' } }),
+      prisma.lead.count({ where: { ...where, status: 'rejected' } }),
+    ]);
+
     const { offset } = calculatePagination(page, limit, total);
 
     const orderBy = sortBy && ['name', 'email', 'company', 'status', 'createdAt'].includes(sortBy)
@@ -30,7 +46,16 @@ class LeadService {
       orderBy,
     });
 
-    return { leads, pagination: calculatePagination(page, limit, total) };
+    const pagData = calculatePagination(page, limit, total);
+    pagData.stats = {
+      total,
+      new: newCount,
+      contacted: contactedCount,
+      converted: convertedCount,
+      rejected: rejectedCount
+    };
+
+    return { leads, pagination: pagData };
   }
 
   static async getById(id) {
