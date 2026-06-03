@@ -487,7 +487,7 @@
                     Round Off
                 </td>
                 <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
-                    <%= adjustment > 0 ? '-' : '+' %> <%= fmt(Math.abs(adjustment)) %>
+                    <%= adjustment < 0 ? '+' : '-' %> ₹ <%= fmt(Math.abs(adjustment)) %>
                 </td>
             </tr>
             <% } %>
