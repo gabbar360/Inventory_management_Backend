@@ -23,6 +23,7 @@ const createQuote = async (data) => {
         paymentTerms: data.paymentTerms || null,
         reference: data.reference || null,
         shippingCharge: data.shippingCharge || 0,
+        adjustment: data.adjustment || 0,
         items: {
           create: data.items.map(item => ({
             productId: parseInt(item.productId),
@@ -146,6 +147,7 @@ const updateQuote = async (id, data) => {
     paymentTerms: data.paymentTerms !== undefined ? data.paymentTerms : null,
     reference: data.reference !== undefined ? data.reference : null,
     shippingCharge: data.shippingCharge !== undefined ? data.shippingCharge : 0,
+    adjustment: data.adjustment !== undefined ? data.adjustment : 0,
   };
 
   if (data.customerId) updateData.customerId = parseInt(data.customerId);

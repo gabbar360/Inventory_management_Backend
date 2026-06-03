@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "quotes" ADD COLUMN     "adjustment" DOUBLE PRECISION NOT NULL DEFAULT 0;
