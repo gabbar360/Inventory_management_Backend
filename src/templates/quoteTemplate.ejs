@@ -276,6 +276,32 @@
         const shippingGstRate = allTaxRates.includes(18) ? 18 : (allTaxRates.includes(5) ? 5 : 0);
         const shippingGstAmt = freight > 0 ? freight * (shippingGstRate / 100) : 0;
         totalTax += shippingGstAmt;
+
+        // Add Freight/Shipping (SAC 996511) to HSN summary table if freight > 0
+        if (freight > 0 && shippingGstRate > 0) {
+            const sacKey = '996511';
+            const freightCgstRate = shippingGstRate / 2;
+            const freightCgstAmt = shippingGstAmt / 2;
+            if (!hsnGroups[sacKey]) {
+                hsnGroups[sacKey] = {
+                    hsn: sacKey,
+                    taxableValue: 0,
+                    taxRate: shippingGstRate,
+                    cgstRate: freightCgstRate,
+                    cgstAmt: 0,
+                    sgstRate: freightCgstRate,
+                    sgstAmt: 0,
+                    igstRate: shippingGstRate,
+                    igstAmt: 0,
+                    totalTax: 0
+                };
+            }
+            hsnGroups[sacKey].taxableValue += freight;
+            hsnGroups[sacKey].cgstAmt += freightCgstAmt;
+            hsnGroups[sacKey].sgstAmt += freightCgstAmt;
+            hsnGroups[sacKey].igstAmt += shippingGstAmt;
+            hsnGroups[sacKey].totalTax += shippingGstAmt;
+        }
         
         const rawGrandTotal = subTotal + totalTax + freight - discount;
         const grandTotal = rawGrandTotal;
@@ -572,8 +598,14 @@
                         totalIgst += group.igstAmt;
                         totalTaxAmt += group.totalTax;
                 %>
+                <% /* Show SAC label for freight row */ %>
                 <tr>
-                    <td class="center"><%= group.hsn %></td>
+                    <td class="center">
+                        <%= group.hsn %>
+                        <% if (group.hsn === '996511') { %>
+                        <br><span style="font-size:7pt; color:#888; font-weight:normal;">(Freight/Shipping)</span>
+                        <% } %>
+                    </td>
                     <td class="right"><%= fmt(group.taxableValue) %></td>
                     <% if (isLocal) { %>
                     <td class="center"><%= group.cgstRate.toFixed(2) %>%</td>
@@ -607,7 +639,7 @@
 
     <!-- Tax Amount in words -->
     <div class="words-section" style="border-bottom: 1.5px solid #bbb;">
-        Tax Amount (in words): <span><%= numToWords(totalTaxAmt) %></span>
+        Tax Amount (in words): <span><%= numToWords(totalTax) %></span>
     </div>
 
     <!-- BOTTOM PANELS -->
