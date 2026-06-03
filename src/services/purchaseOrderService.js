@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { calculatePagination } = require("../utils/helpers");
 const prisma = new PrismaClient();
 
 const generatePONumber = async () => {
@@ -75,11 +76,25 @@ const createPurchaseOrder = async (data) => {
 };
 
 const getPurchaseOrders = async (filters = {}) => {
+  const page = parseInt(filters.page) || 1;
+  const limit = parseInt(filters.limit) || 10;
+  const search = filters.search || '';
+
   const where = {};
 
   if (filters.vendorId) where.vendorId = parseInt(filters.vendorId);
   if (filters.status) where.status = filters.status;
-  if (filters.poNo) where.poNo = { contains: filters.poNo, mode: 'insensitive' };
+  if (filters.poNo) {
+    where.poNo = { contains: filters.poNo, mode: 'insensitive' };
+  } else if (search) {
+    where.OR = [
+      { poNo: { contains: search, mode: 'insensitive' } },
+      { vendor: { name: { contains: search, mode: 'insensitive' } } },
+    ];
+  }
+
+  const total = await prisma.purchaseOrder.count({ where });
+  const { offset } = calculatePagination(page, limit, total);
 
   const pos = await prisma.purchaseOrder.findMany({
     where,
@@ -95,10 +110,12 @@ const getPurchaseOrders = async (filters = {}) => {
         }
       }
     },
-    orderBy: { createdAt: 'desc' }
+    orderBy: { createdAt: 'desc' },
+    skip: offset,
+    take: limit,
   });
 
-  return pos.map(po => ({
+  const orders = pos.map(po => ({
     ...po,
     id: String(po.id),
     vendorId: String(po.vendorId),
@@ -110,6 +127,11 @@ const getPurchaseOrders = async (filters = {}) => {
       productId: String(item.productId)
     }))
   }));
+
+  return {
+    orders,
+    pagination: calculatePagination(page, limit, total)
+  };
 };
 
 const getPurchaseOrderById = async (id) => {
