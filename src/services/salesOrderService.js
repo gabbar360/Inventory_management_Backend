@@ -77,7 +77,7 @@ const getSalesOrders = async ({ page = 1, limit = 10, search, status, startDate,
     prisma.salesOrder.findMany({
       where,
       include: includeRelations,
-      orderBy: { orderDate: 'asc' },
+      orderBy: { createdAt: 'desc' },
       skip: (page - 1) * limit,
       take: limit,
     }),
