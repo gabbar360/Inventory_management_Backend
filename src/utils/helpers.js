@@ -15,7 +15,8 @@ const parseQueryParams = (query) => {
   const source = query.source || null;
   const startDate = query.startDate || null;
   const endDate = query.endDate || null;
-  return { page, limit, search, sortBy, sortOrder, source, startDate, endDate };
+  const locationId = query.locationId || null;
+  return { page, limit, search, sortBy, sortOrder, source, startDate, endDate, locationId };
 };
 
 const calculatePagination = (page, limit, total) => {
