@@ -1,5 +1,6 @@
 const purchaseOrderService = require('../services/purchaseOrderService');
 const { PrismaClient } = require('@prisma/client');
+const { sendResponse, sendError, parseQueryParams } = require("../utils/helpers");
 const prisma = new PrismaClient();
 const ejs = require('ejs');
 const path = require('path');
@@ -17,10 +18,11 @@ const createPurchaseOrder = async (req, res) => {
 
 const getPurchaseOrders = async (req, res) => {
   try {
-    const pos = await purchaseOrderService.getPurchaseOrders(req.query);
-    res.status(200).json({ success: true, data: pos });
+    const { page, limit, search } = parseQueryParams(req.query);
+    const result = await purchaseOrderService.getPurchaseOrders({ page, limit, search });
+    return sendResponse(res, 200, true, result.orders, 'Purchase orders retrieved successfully', result.pagination);
   } catch (error) {
-    res.status(400).json({ success: false, message: error.message });
+    return sendError(res, 500, error.message);
   }
 };
 

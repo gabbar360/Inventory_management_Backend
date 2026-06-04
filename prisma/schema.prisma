@@ -347,6 +347,7 @@ model Quote {
   paymentTerms         String?  @map("payment_terms")
   reference            String?
   shippingCharge       Float    @default(0) @map("shipping_charge")
+  adjustment           Float    @default(0)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

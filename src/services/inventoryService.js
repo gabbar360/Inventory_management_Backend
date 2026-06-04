@@ -133,7 +133,7 @@ class InventoryService {
     }
   }
 
-  static async getStockSummary(locationId, search) {
+  static async getStockSummary(page, limit, locationId, search) {
     const where = {
       OR: [
         { remainingBoxes: { gt: 0 } },
@@ -219,7 +219,34 @@ class InventoryService {
       }
     });
 
-    return Array.from(summary.values());
+    const allSummaryItems = Array.from(summary.values());
+
+    const totalStockValue = allSummaryItems.reduce((sum, item) => sum + item.totalValue, 0);
+    const totalProducts = allSummaryItems.length;
+    const lowStockItems = allSummaryItems.filter(item => item.totalPcs < 100);
+
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 10;
+    const offset = (pageNum - 1) * limitNum;
+
+    const paginatedItems = allSummaryItems.slice(offset, offset + limitNum);
+    const totalPages = Math.ceil(allSummaryItems.length / limitNum);
+
+    return {
+      data: paginatedItems,
+      lowStockItems,
+      globalStats: {
+        totalStockValue,
+        totalProducts,
+        lowStockItemsCount: lowStockItems.length,
+      },
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total: allSummaryItems.length,
+        totalPages,
+      }
+    };
   }
 
   static async calculateCOGS(outwardItems) {

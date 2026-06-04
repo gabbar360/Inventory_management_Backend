@@ -4,8 +4,8 @@ const { LeadService } = require('../services/leadService');
 class LeadController {
   static async getAll(req, res) {
     try {
-      const { page, limit, search, sortBy, sortOrder } = parseQueryParams(req.query);
-      const result = await LeadService.getAll(page, limit, search, sortBy, sortOrder);
+      const { page, limit, search, sortBy, sortOrder, source } = parseQueryParams(req.query);
+      const result = await LeadService.getAll(page, limit, search, sortBy, sortOrder, source);
       return sendResponse(res, 200, true, result.leads, 'Leads retrieved successfully', result.pagination);
     } catch (error) {
       return sendError(res, 500, error.message);
