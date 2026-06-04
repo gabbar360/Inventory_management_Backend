@@ -348,6 +348,8 @@ model Quote {
   reference            String?
   shippingCharge       Float    @default(0) @map("shipping_charge")
   adjustment           Float    @default(0)
+  billToDetails        String?  @map("bill_to_details")
+  shipToDetails        String?  @map("ship_to_details")
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 

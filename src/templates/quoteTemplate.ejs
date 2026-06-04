@@ -354,24 +354,32 @@
         <div class="party-row">
             <div class="party-box">
                 <div class="party-label">Bill To</div>
-                <div class="party-name"><%= quote.customer?.name || '' %></div>
-                <div class="party-addr">
-                    <%= quote.customer?.address || '' %><br>
-                    <% if (quote.customer?.state) { %>State: <%= quote.customer.state %><br><% } %>
-                    <% if (quote.customer?.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
-                    <% if (quote.customer?.email) { %>Email: <%= quote.customer.email %><br><% } %>
-                    <% if (quote.customer?.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %>
-                </div>
+                <% if (quote.billToDetails) { %>
+                    <div class="party-name" style="white-space: pre-wrap; font-weight: normal;"><%= quote.billToDetails %></div>
+                <% } else { %>
+                    <div class="party-name"><%= quote.customer?.name || '' %></div>
+                    <div class="party-addr">
+                        <%= quote.customer?.address || '' %><br>
+                        <% if (quote.customer?.state) { %>State: <%= quote.customer.state %><br><% } %>
+                        <% if (quote.customer?.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
+                        <% if (quote.customer?.email) { %>Email: <%= quote.customer.email %><br><% } %>
+                        <% if (quote.customer?.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %>
+                    </div>
+                <% } %>
             </div>
             <div class="party-box">
                 <div class="party-label">Ship To</div>
-                <div class="party-name"><%= quote.customer?.name || '' %></div>
-                <div class="party-addr">
-                    <%= quote.customer?.address || '' %><br>
-                    <% if (quote.customer?.state) { %>State: <%= quote.customer.state %><br><% } %>
-                    <% if (quote.customer?.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
-                    <% if (quote.customer?.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %>
-                </div>
+                <% if (quote.shipToDetails) { %>
+                    <div class="party-name" style="white-space: pre-wrap; font-weight: normal;"><%= quote.shipToDetails %></div>
+                <% } else { %>
+                    <div class="party-name"><%= quote.customer?.name || '' %></div>
+                    <div class="party-addr">
+                        <%= quote.customer?.address || '' %><br>
+                        <% if (quote.customer?.state) { %>State: <%= quote.customer.state %><br><% } %>
+                        <% if (quote.customer?.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
+                        <% if (quote.customer?.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %>
+                    </div>
+                <% } %>
             </div>
         </div>
     </div><!-- end top-container -->
