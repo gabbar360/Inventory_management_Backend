@@ -304,7 +304,8 @@
         }
         
         const rawGrandTotal = subTotal + totalTax + freight - discount;
-        const grandTotal = rawGrandTotal;
+        const adjustment = quote.adjustment || 0;
+        const grandTotal = Math.round(rawGrandTotal);
         
         // Extract GSTIN
         const companyGstin = settings?.companyGstin || '24ABAFV3901A1ZV';
@@ -534,6 +535,19 @@
                 </td>
                 <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; color: red; white-space: nowrap;">
                     -<%= fmt(discount) %>
+                </td>
+            </tr>
+            <% } %>
+
+            <!-- Round Off if exists -->
+            <% if (adjustment !== 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; color: #666; white-space: nowrap;">
+                    Round Off
+                </td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; color: #666; white-space: nowrap;">
+                    <%= adjustment < 0 ? '+' : '-' %><%= fmt(Math.abs(adjustment)) %>
                 </td>
             </tr>
             <% } %>

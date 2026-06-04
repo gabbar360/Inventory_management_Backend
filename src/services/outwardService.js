@@ -55,7 +55,7 @@ class OutwardService {
     const { offset } = calculatePagination(page, limit, total);
     const orderBy = sortBy && ['invoiceNo', 'date', 'customerId', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
-      : { date: 'asc' };
+      : { createdAt: 'desc' };
 
     const invoices = await prisma.outwardInvoice.findMany({
       where,
