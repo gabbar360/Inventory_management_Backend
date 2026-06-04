@@ -386,6 +386,7 @@ model SalesOrder {
   totalAmount          Float    @default(0) @map("total_amount")
   notes                String?
   reference            String?
+  referenceBy          String?  @map("reference_by")
   expectedShipmentDate DateTime? @map("expected_shipment_date")
   placeOfSupply        String?  @map("place_of_supply")
   deliveryMethod       String?  @map("delivery_method")

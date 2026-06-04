@@ -7,11 +7,11 @@ const fs = require('fs');
 
 const createSalesOrder = async (req, res) => {
   try {
-    const { customerId, orderDate, items, saleType, status, totalAmount, notes, reference, expectedShipmentDate, placeOfSupply, deliveryMethod, adjustment, amountReceived } = req.body;
+    const { customerId, orderDate, items, saleType, status, totalAmount, notes, reference, referenceBy, expectedShipmentDate, placeOfSupply, deliveryMethod, adjustment, amountReceived } = req.body;
     if (!customerId || !orderDate || !items || items.length === 0)
       return res.status(400).json({ success: false, error: 'Missing required fields' });
 
-    const order = await salesOrderService.createSalesOrder({ customerId, orderDate, items, saleType, status, totalAmount, notes, reference, expectedShipmentDate, placeOfSupply, deliveryMethod, adjustment, amountReceived });
+    const order = await salesOrderService.createSalesOrder({ customerId, orderDate, items, saleType, status, totalAmount, notes, reference, referenceBy, expectedShipmentDate, placeOfSupply, deliveryMethod, adjustment, amountReceived });
     res.status(201).json({ success: true, data: order });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
