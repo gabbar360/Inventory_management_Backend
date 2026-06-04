@@ -59,7 +59,7 @@ const numberToWords = (num) => {
 
 const createQuote = async (req, res) => {
   try {
-    const { customerId, quoteDate, expiryDate, items, discount, tax, notes, termsAndConditions, termsOfDelivery, paymentTerms, reference, shippingCharge, adjustment, totalAmount: bodyTotal } = req.body;
+    const { customerId, quoteDate, expiryDate, items, discount, tax, notes, termsAndConditions, termsOfDelivery, paymentTerms, reference, shippingCharge, adjustment, totalAmount: bodyTotal, billToDetails, shipToDetails } = req.body;
 
     if (!customerId || !quoteDate || !expiryDate || !items || items.length === 0) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
@@ -82,6 +82,8 @@ const createQuote = async (req, res) => {
       reference: reference || null,
       shippingCharge: shippingCharge || 0,
       adjustment: adjustment || 0,
+      billToDetails: billToDetails || null,
+      shipToDetails: shipToDetails || null,
     });
 
     res.status(201).json({ success: true, data: quote });
@@ -111,7 +113,7 @@ const getQuoteById = async (req, res) => {
 
 const updateQuote = async (req, res) => {
   try {
-    const { customerId, quoteDate, expiryDate, status, discount, tax, totalAmount, notes, termsAndConditions, termsOfDelivery, paymentTerms, reference, items, shippingCharge, adjustment } = req.body;
+    const { customerId, quoteDate, expiryDate, status, discount, tax, totalAmount, notes, termsAndConditions, termsOfDelivery, paymentTerms, reference, items, shippingCharge, adjustment, billToDetails, shipToDetails } = req.body;
     
     let quote;
     if (items && items.length > 0) {
@@ -133,6 +135,8 @@ const updateQuote = async (req, res) => {
       reference: reference !== undefined ? reference : null,
       shippingCharge: shippingCharge !== undefined ? shippingCharge : 0,
       adjustment: adjustment !== undefined ? adjustment : 0,
+      billToDetails: billToDetails !== undefined ? billToDetails : null,
+      shipToDetails: shipToDetails !== undefined ? shipToDetails : null,
     });
     
     res.json({ success: true, data: quote });
