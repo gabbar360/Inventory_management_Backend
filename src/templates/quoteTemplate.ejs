@@ -374,7 +374,7 @@
                 <% } else { %>
                     <div class="party-name"><%= quote.customer?.name || '' %></div>
                     <div class="party-addr">
-                        <%= quote.customer?.address || '' %><br>
+                        <%= quote.customer?.shippingAddress || quote.customer?.address || '' %><br>
                         <% if (quote.customer?.state) { %>State: <%= quote.customer.state %><br><% } %>
                         <% if (quote.customer?.phone) { %>Phone: <%= quote.customer.phone %><br><% } %>
                         <% if (quote.customer?.gstNumber) { %>GSTIN: <%= quote.customer.gstNumber %><% } %>
