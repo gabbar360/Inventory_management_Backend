@@ -3,8 +3,9 @@ const prisma = new PrismaClient();
 
 const createQuote = async (data) => {
   return await prisma.$transaction(async (tx) => {
-    const count = await tx.quote.count();
-    const quoteNo = `QT-${String(count + 1).padStart(5, '0')}`;
+    const last = await tx.quote.findFirst({ orderBy: { id: 'desc' }, select: { quoteNo: true } });
+    const lastNum = last ? parseInt(last.quoteNo.replace('QT-', '')) : 0;
+    const quoteNo = `QT-${String(lastNum + 1).padStart(5, '0')}`;
 
     // Create quote
     const quote = await tx.quote.create({
@@ -262,8 +263,9 @@ const convertQuoteToInvoice = async (id, itemSelections) => {
 
   return await prisma.$transaction(async (tx) => {
     // Generate invoice number
-    const invoiceCount = await tx.outwardInvoice.count();
-    const invoiceNo = `INV-${String(invoiceCount + 1).padStart(5, '0')}`;
+    const lastInvoice = await tx.outwardInvoice.findFirst({ orderBy: { id: 'desc' }, select: { invoiceNo: true } });
+    const lastInvoiceNum = lastInvoice ? parseInt(lastInvoice.invoiceNo.replace('INV-', '')) : 0;
+    const invoiceNo = `INV-${String(lastInvoiceNum + 1).padStart(5, '0')}`;
 
     const invoice = await tx.outwardInvoice.create({
       data: {

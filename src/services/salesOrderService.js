@@ -12,8 +12,9 @@ const includeRelations = {
 };
 
 const generateOrderNo = async () => {
-  const count = await prisma.salesOrder.count();
-  return `SO-${String(count + 1).padStart(5, '0')}`;
+  const last = await prisma.salesOrder.findFirst({ orderBy: { id: 'desc' }, select: { orderNo: true } });
+  const lastNum = last ? parseInt(last.orderNo.replace('SO-', '')) : 0;
+  return `SO-${String(lastNum + 1).padStart(5, '0')}`;
 };
 
 const createSalesOrder = async (data) => {
@@ -185,7 +186,9 @@ const convertSalesOrderToInvoice = async (id, itemSelections) => {
   });
   if (!order) throw new Error('Sales order not found');
 
-  const invoiceNo = `INV-${String(await prisma.outwardInvoice.count() + 1).padStart(5, '0')}`;
+  const lastInvoice = await prisma.outwardInvoice.findFirst({ orderBy: { id: 'desc' }, select: { invoiceNo: true } });
+  const lastInvoiceNum = lastInvoice ? parseInt(lastInvoice.invoiceNo.replace('INV-', '')) : 0;
+  const invoiceNo = `INV-${String(lastInvoiceNum + 1).padStart(5, '0')}`;
 
   return await prisma.$transaction(async (tx) => {
     const invoice = await tx.outwardInvoice.create({
