@@ -437,9 +437,17 @@
                 <td class="right" style="font-weight: bold; border-top: 1.5px solid #bbb; border-bottom: none; white-space: nowrap;"><%= fmt(subTotal) %></td>
             </tr>
 
-            <!-- GST Rows -->
+            <!-- Shipping / Freight if exists -->
+            <% if (shippingCharge > 0) { %>
+            <tr>
+                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
+                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">Freight / Shipping</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingCharge) %></td>
+            </tr>
+            <% } %>
+
+            <!-- GST Rows (items + freight merged by rate) -->
             <% 
-                // Group tax entries by rate
                 let taxRateGroups = {};
                 order.items?.forEach(item => {
                     const taxRate = item.taxRate || item.product?.category?.gstRate || 0;
@@ -447,14 +455,15 @@
                     if (taxRate > 0) {
                         const rateKey = taxRate.toFixed(2);
                         const taxAmt = lineAmt * (taxRate / 100);
-                        
-                        if (!taxRateGroups[rateKey]) {
-                            taxRateGroups[rateKey] = { rate: taxRate, amt: 0 };
-                        }
+                        if (!taxRateGroups[rateKey]) taxRateGroups[rateKey] = { rate: taxRate, amt: 0 };
                         taxRateGroups[rateKey].amt += taxAmt;
                     }
                 });
-
+                if (shippingCharge > 0 && shippingGstAmt > 0) {
+                    const rateKey = shippingGstRate.toFixed(2);
+                    if (!taxRateGroups[rateKey]) taxRateGroups[rateKey] = { rate: shippingGstRate, amt: 0 };
+                    taxRateGroups[rateKey].amt += shippingGstAmt;
+                }
                 Object.keys(taxRateGroups).forEach(rateKey => {
                     const group = taxRateGroups[rateKey];
                     if (isLocal) {
@@ -463,42 +472,24 @@
             %>
             <tr>
                 <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
-                    CGST <%= parseFloat(halfRate).toFixed(1) %>%
-                </td>
-                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
-                    <%= parseFloat(halfRate).toFixed(2) %>%
-                </td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
-                    <%= fmt(halfAmt) %>
-                </td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">CGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= parseFloat(halfRate).toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(halfAmt) %></td>
             </tr>
             <tr>
                 <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
-                    SGST <%= parseFloat(halfRate).toFixed(1) %>%
-                </td>
-                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
-                    <%= parseFloat(halfRate).toFixed(2) %>%
-                </td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
-                    <%= fmt(halfAmt) %>
-                </td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">SGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= parseFloat(halfRate).toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(halfAmt) %></td>
             </tr>
             <% 
-                    } else { 
+                    } else {
             %>
             <tr>
                 <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">
-                    IGST <%= parseFloat(group.rate).toFixed(1) %>%
-                </td>
-                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
-                    <%= parseFloat(group.rate).toFixed(2) %>%
-                </td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
-                    <%= fmt(group.amt) %>
-                </td>
+                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">IGST</td>
+                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= parseFloat(group.rate).toFixed(2) %>%</td>
+                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(group.amt) %></td>
             </tr>
             <% 
                     }
@@ -529,42 +520,6 @@
                     - ₹ <%= fmt(discount) %>
                 </td>
             </tr>
-            <% } %>
-
-            <!-- Shipping Charge if exists -->
-            <% if (shippingCharge > 0) { %>
-            <tr>
-                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="4" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;">
-                    Shipping Charge
-                </td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;">
-                    + ₹ <%= fmt(shippingCharge) %>
-                </td>
-            </tr>
-            <% if (shippingGstAmt > 0) { %>
-            <% if (isLocal) { %>
-            <tr>
-                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">CGST</td>
-                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= (shippingGstRate/2).toFixed(2) %>%</td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt/2) %></td>
-            </tr>
-            <tr>
-                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">SGST</td>
-                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= (shippingGstRate/2).toFixed(2) %>%</td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt/2) %></td>
-            </tr>
-            <% } else { %>
-            <tr>
-                <td colspan="4" style="border-top: none; border-bottom: none; border-right: none;"></td>
-                <td colspan="3" class="right" style="border-top: none; border-bottom: none; border-left: none; border-right: none; font-weight: bold; white-space: nowrap;">IGST</td>
-                <td class="center" style="border-top: none; border-bottom: none; border-left: none; border-right: 1px solid #bbb; font-weight: bold; white-space: nowrap;"><%= shippingGstRate.toFixed(2) %>%</td>
-                <td class="right" style="border-top: none; border-bottom: none; font-weight: bold; white-space: nowrap;"><%= fmt(shippingGstAmt) %></td>
-            </tr>
-            <% } %>
-            <% } %>
             <% } %>
 
             <!-- Total Row -->
@@ -650,12 +605,7 @@
                         totalTaxAmt += group.totalTax;
                 %>
                 <tr>
-                    <td class="center">
-                        <%= group.hsn %>
-                        <% if (group.hsn === '996511') { %>
-                        <br><span style="font-size:7pt; color:#888; font-weight:normal;">(Freight/Shipping)</span>
-                        <% } %>
-                    </td>
+                    <td class="center"><%= group.hsn %></td>
                     <td class="right"><%= fmt(group.taxableValue) %></td>
                     <% if (isLocal) { %>
                     <td class="center"><%= group.cgstRate.toFixed(2) %>%</td>
