@@ -22,7 +22,8 @@ const getAllowedOrigins = () => {
   const origins = [];
 
   if (process.env.FRONTEND_URL) {
-    origins.push(process.env.FRONTEND_URL);
+    const frontendUrls = process.env.FRONTEND_URL.split(',').map((o) => o.trim());
+    origins.push(...frontendUrls);
   }
 
   if (process.env.ALLOWED_ORIGINS) {

@@ -54,6 +54,7 @@ router.post('/lead', restrictToVegnar, async (req, res) => {
         country: country || null,
         message: message || null,
         formType: formType || 'Unknown',
+        source: 'website',
         status: 'new',
       },
     });
