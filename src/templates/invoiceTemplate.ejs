@@ -370,7 +370,7 @@
                 <div class="party-label">Ship To</div>
                 <div class="party-name"><%= invoice.customer?.name || '' %></div>
                 <div class="party-addr">
-                    <%= invoice.customer?.address || '' %><br>
+                    <%= invoice.customer?.shippingAddress || invoice.customer?.address || '' %><br>
                     <% if (invoice.customer?.state) { %>State: <%= invoice.customer.state %><br><% } %>
                     <% if (invoice.customer?.phone) { %>Phone: <%= invoice.customer.phone %><br><% } %>
                     <% if (invoice.customer?.gstNumber) { %>GSTIN: <%= invoice.customer.gstNumber %><% } %>

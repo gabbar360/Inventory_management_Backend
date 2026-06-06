@@ -382,7 +382,7 @@
                 <div class="party-label">Ship To</div>
                 <div class="party-name"><%= order.customer?.name || '' %></div>
                 <div class="party-addr">
-                    <%= order.customer?.address || '' %><br>
+                    <%= order.customer?.shippingAddress || order.customer?.address || '' %><br>
                     <% if (order.customer?.state) { %>State: <%= order.customer.state %><br><% } %>
                     <% if (order.customer?.phone) { %>Phone: <%= order.customer.phone %><br><% } %>
                     <% if (order.customer?.gstNumber) { %>GSTIN: <%= order.customer.gstNumber %><% } %>
