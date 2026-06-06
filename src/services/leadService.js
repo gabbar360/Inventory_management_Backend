@@ -6,10 +6,9 @@ const prisma = new PrismaClient();
 class LeadService {
   static async getAll(page, limit, search, sortBy, sortOrder, source) {
     const where = {
-      NOT: {
-        source: 'website',
-        formType: 'QuoteCartForm',
-      },
+      NOT: [
+        { source: 'website', formType: 'QuoteCartForm' },
+      ],
     };
 
     if (search) {
