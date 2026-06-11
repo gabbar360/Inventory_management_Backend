@@ -12,6 +12,7 @@ const createPurchaseOrder = async (req, res) => {
     const po = await purchaseOrderService.createPurchaseOrder(req.body);
     res.status(201).json({ success: true, data: po });
   } catch (error) {
+    console.error('Create PO Error:', error);
     res.status(400).json({ success: false, message: error.message });
   }
 };
