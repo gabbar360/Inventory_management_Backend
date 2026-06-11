@@ -29,6 +29,8 @@ class InventoryService {
         costPerBox,
         costPerPack,
         costPerPcs,
+        batchCode: inwardItem.batchCode,
+        mfgDate: inwardItem.mfgDate,
       },
     });
   }

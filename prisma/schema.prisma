@@ -8,17 +8,16 @@ datasource db {
 }
 
 model User {
-  id               Int            @id @default(autoincrement())
   email            String         @unique
   password         String
   name             String
-  role             String         @default("admin")
-  isActive         Boolean        @default(true) @map("is_active")
-  resetToken       String?        @map("reset_token")
-  resetTokenExpiry DateTime?      @map("reset_token_expiry")
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
-
+  id               Int            @id @default(autoincrement())
+  resetToken       String?        @map("reset_token")
+  resetTokenExpiry DateTime?      @map("reset_token_expiry")
+  isActive         Boolean        @default(true) @map("is_active")
+  role             String         @default("admin")
   refreshTokens    RefreshToken[]
 
   @@map("users")
@@ -26,25 +25,24 @@ model User {
 
 model Role {
   id          Int      @id @default(autoincrement())
-  name        String   @unique // 'super_admin', 'admin'
+  name        String   @unique
   description String?
-  isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  isActive    Boolean  @default(true) @map("is_active")
 
   @@map("roles")
 }
 
 model RefreshToken {
-  id           Int      @id @default(autoincrement())
-  token        String   @unique
-  userId       Int      @map("user_id")
-  deviceInfo   String?  @map("device_info")
-  ipAddress    String?  @map("ip_address")
-  expiresAt    DateTime @map("expires_at")
-  createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id         Int      @id @default(autoincrement())
+  token      String   @unique
+  userId     Int      @map("user_id")
+  deviceInfo String?  @map("device_info")
+  ipAddress  String?  @map("ip_address")
+  expiresAt  DateTime @map("expires_at")
+  createdAt  DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([token])
@@ -52,72 +50,71 @@ model RefreshToken {
 }
 
 model Category {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  hsnCode   String   @unique @map("hsn_code")
-  gstRate   Float    @map("gst_rate")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  products Product[]
+  name      String    @unique
+  hsnCode   String    @unique @map("hsn_code")
+  gstRate   Float     @map("gst_rate")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  id        Int       @id @default(autoincrement())
+  products  Product[]
 
   @@map("categories")
 }
 
 model Product {
-  id          Int      @id @default(autoincrement())
-  name        String
-  grade       String?
-  description String?
-  sku         String?  @unique
-  upc         String?  @unique
-  categoryId  Int      @map("category_id")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  category     Category       @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  inwardItems  InwardItem[]
-  outwardItems OutwardItem[]
-  stockBatches StockBatch[]
-  sampleItems  SampleItem[]
-  quoteItems   QuoteItem[]
-  salesOrderItems SalesOrderItem[]
+  name               String
+  grade              String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  id                 Int                 @id @default(autoincrement())
+  categoryId         Int                 @map("category_id")
+  description        String?
+  sku                String?             @unique
+  upc                String?             @unique
+  brand              String?
+  color              String?
+  boxDetails         BoxDetail[]
+  inwardItems        InwardItem[]
+  outwardItems       OutwardItem[]
+  category           Category            @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   purchaseOrderItems PurchaseOrderItem[] @relation("PurchaseOrderItems")
+  quoteItems         QuoteItem[]
+  salesOrderItems    SalesOrderItem[]
+  sampleItems        SampleItem[]
+  stockBatches       StockBatch[]
 
   @@unique([name, grade])
   @@map("products")
 }
 
 model Vendor {
-  id        Int      @id @default(autoincrement())
-  code      String   @unique
-  name      String
-  email     String?
-  phone     String?
-  address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  code           String          @unique
+  name           String
+  email          String?
+  phone          String?
+  address        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  id             Int             @id @default(autoincrement())
   inwardInvoices InwardInvoice[]
-  stockBatches   StockBatch[]
   purchaseOrders PurchaseOrder[] @relation("PurchaseOrders")
+  stockBatches   StockBatch[]
 
   @@map("vendors")
 }
 
 model Customer {
-  id              Int      @id @default(autoincrement())
-  code            String   @unique
+  code            String           @unique
   name            String
   email           String?
   phone           String?
   address         String?
-  shippingAddress String?  @map("shipping_address")
-  gstNumber       String?  @map("gst_number")
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  id              Int              @id @default(autoincrement())
+  gstNumber       String?          @map("gst_number")
   state           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
+  shippingAddress String?          @map("shipping_address")
   outwardInvoices OutwardInvoice[]
   quotes          Quote[]
   salesOrders     SalesOrder[]
@@ -126,235 +123,235 @@ model Customer {
 }
 
 model Location {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  address   String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  inwardInvoices  InwardInvoice[]
-  outwardItems    OutwardItem[]
-  stockBatches    StockBatch[]
+  name           String          @unique
+  address        String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  id             Int             @id @default(autoincrement())
+  inwardInvoices InwardInvoice[]
+  outwardItems   OutwardItem[]
+  stockBatches   StockBatch[]
 
   @@map("locations")
 }
 
 model InwardInvoice {
-  id         Int      @id @default(autoincrement())
-  invoiceNo  String   @unique @map("invoice_no")
+  invoiceNo  String       @unique @map("invoice_no")
   date       DateTime
-  vendorId   Int      @map("vendor_id")
-  locationId Int      @map("location_id")
-  expense    Float    @default(0)
-  totalCost  Float    @map("total_cost")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  vendor   Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  location Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  items    InwardItem[]
+  totalCost  Float        @map("total_cost")
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  id         Int          @id @default(autoincrement())
+  vendorId   Int          @map("vendor_id")
+  locationId Int          @map("location_id")
+  expense    Float        @default(0)
+  boxDetails BoxDetail[]
+  location   Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  vendor     Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  items      InwardItem[]
 
   @@map("inward_invoices")
 }
 
 model InwardItem {
-  id              Int    @id @default(autoincrement())
-  inwardInvoiceId Int    @map("inward_invoice_id")
-  productId       Int    @map("product_id")
-  parentItemId    Int?   @map("parent_item_id")
   boxes           Int
-  packPerBox      Int    @map("pack_per_box")
-  packPerPiece    Int    @map("pack_per_piece")
-  totalPacks      Int    @map("total_packs")
-  totalPcs        Int    @map("total_pcs")
-  unit            String @default("box") // 'box', 'pack', or 'piece'
-  ratePerBox      Float  @map("rate_per_box")
-  ratePerPack     Float  @map("rate_per_pack")
-  ratePerPcs      Float  @map("rate_per_pcs")
-  gstAmount       Float  @map("gst_amount")
-  totalCost       Float  @map("total_cost")
-
-  inwardInvoice InwardInvoice @relation(fields: [inwardInvoiceId], references: [id], onDelete: Cascade)
-  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  parentItem    InwardItem?   @relation("SubItems", fields: [parentItemId], references: [id], onDelete: Cascade)
-  subItems      InwardItem[]  @relation("SubItems")
+  totalPcs        Int           @map("total_pcs")
+  ratePerBox      Float         @map("rate_per_box")
+  ratePerPcs      Float         @map("rate_per_pcs")
+  gstAmount       Float         @map("gst_amount")
+  totalCost       Float         @map("total_cost")
+  packPerBox      Int           @map("pack_per_box")
+  packPerPiece    Int           @map("pack_per_piece")
+  ratePerPack     Float         @map("rate_per_pack")
+  totalPacks      Int           @map("total_packs")
+  id              Int           @id @default(autoincrement())
+  inwardInvoiceId Int           @map("inward_invoice_id")
+  productId       Int           @map("product_id")
+  unit            String        @default("box")
+  parentItemId    Int?          @map("parent_item_id")
+  batchCode       String?       @map("batch_code")
+  mfgDate         DateTime?     @map("mfg_date")
+  color           String?
+  brand           String?
+  inwardInvoice   InwardInvoice @relation(fields: [inwardInvoiceId], references: [id], onDelete: Cascade)
+  parentItem      InwardItem?   @relation("SubItems", fields: [parentItemId], references: [id], onDelete: Cascade)
+  subItems        InwardItem[]  @relation("SubItems")
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@map("inward_items")
 }
 
 model OutwardInvoice {
-  id         Int      @id @default(autoincrement())
-  invoiceNo  String   @unique @map("invoice_no")
-  date       DateTime
-  customerId Int      @map("customer_id")
-  saleType   String   @map("sale_type") // 'export' or 'domestic'
-  expense    Float    @default(0)
-  totalCost  Float    @map("total_cost")
-  isIncludeInProfitLoss Boolean @default(true) @map("is_include_in_profit_loss")
-  adjustment           Float    @default(0)
-  amountReceived       Float    @default(0) @map("amount_received")
-  referenceNo          String?  @map("reference_no")
-  shippingCharge       Float    @default(0) @map("shipping_charge")
-  discount             Float    @default(0)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-
-  customer        Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  items           OutwardItem[]
-  paymentReceipts PaymentReceipt[]
+  invoiceNo             String           @unique @map("invoice_no")
+  date                  DateTime
+  saleType              String           @map("sale_type")
+  expense               Float            @default(0)
+  totalCost             Float            @map("total_cost")
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  id                    Int              @id @default(autoincrement())
+  customerId            Int              @map("customer_id")
+  isIncludeInProfitLoss Boolean          @default(true) @map("is_include_in_profit_loss")
+  adjustment            Float            @default(0)
+  amountReceived        Float            @default(0) @map("amount_received")
+  referenceNo           String?          @map("reference_no")
+  shippingCharge        Float            @default(0) @map("shipping_charge")
+  discount              Float            @default(0)
+  boxDetails            BoxDetail[]
+  customer              Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  items                 OutwardItem[]
+  paymentReceipts       PaymentReceipt[]
 
   @@map("outward_invoices")
 }
 
 model OutwardItem {
-  id               Int    @id @default(autoincrement())
-  outwardInvoiceId Int    @map("outward_invoice_id")
-  productId        Int    @map("product_id")
-  stockBatchId     Int    @map("stock_batch_id")
-  locationId       Int    @map("location_id")
-  saleUnit         String @map("sale_unit") // 'box', 'pack' or 'piece'
+  saleUnit         String         @map("sale_unit")
   quantity         Int
-  ratePerUnit      Float  @map("rate_per_unit")
-  totalCost        Float  @map("total_cost")
+  ratePerUnit      Float          @map("rate_per_unit")
+  totalCost        Float          @map("total_cost")
+  id               Int            @id @default(autoincrement())
+  outwardInvoiceId Int            @map("outward_invoice_id")
+  productId        Int            @map("product_id")
+  stockBatchId     Int            @map("stock_batch_id")
+  locationId       Int            @map("location_id")
   description      String?
-
-  outwardInvoice OutwardInvoice @relation(fields: [outwardInvoiceId], references: [id], onDelete: Cascade)
-  product        Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
-  stockBatch     StockBatch     @relation(fields: [stockBatchId], references: [id], onDelete: Cascade)
-  location       Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  location         Location       @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  outwardInvoice   OutwardInvoice @relation(fields: [outwardInvoiceId], references: [id], onDelete: Cascade)
+  product          Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  stockBatch       StockBatch     @relation(fields: [stockBatchId], references: [id], onDelete: Cascade)
 
   @@map("outward_items")
 }
 
 model StockBatch {
-  id               Int      @id @default(autoincrement())
-  productId        Int      @map("product_id")
-  vendorId         Int      @map("vendor_id")
-  locationId       Int      @map("location_id")
-  inwardInvoiceId  Int?     @map("inward_invoice_id")
-  inwardDate       DateTime @map("inward_date")
-  boxes            Int
-  packPerBox       Int      @map("pack_per_box")
-  packPerPiece     Int      @map("pack_per_piece")
-  totalPacks       Int      @map("total_packs")
-  totalPcs         Int      @map("total_pcs")
-  remainingBoxes   Int      @map("remaining_boxes")
-  remainingPacks   Int      @map("remaining_packs")
-  remainingPcs     Int      @map("remaining_pcs")
-  costPerBox       Float    @map("cost_per_box")
-  costPerPack      Float    @map("cost_per_pack")
-  costPerPcs       Float    @map("cost_per_pcs")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  product      Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
-  vendor       Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  location     Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  outwardItems OutwardItem[]
+  inwardDate      DateTime      @map("inward_date")
+  boxes           Int
+  totalPcs        Int           @map("total_pcs")
+  remainingBoxes  Int           @map("remaining_boxes")
+  remainingPcs    Int           @map("remaining_pcs")
+  costPerBox      Float         @map("cost_per_box")
+  costPerPcs      Float         @map("cost_per_pcs")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  costPerPack     Float         @map("cost_per_pack")
+  packPerBox      Int           @map("pack_per_box")
+  packPerPiece    Int           @map("pack_per_piece")
+  remainingPacks  Int           @map("remaining_packs")
+  totalPacks      Int           @map("total_packs")
+  id              Int           @id @default(autoincrement())
+  productId       Int           @map("product_id")
+  vendorId        Int           @map("vendor_id")
+  locationId      Int           @map("location_id")
+  inwardInvoiceId Int?          @map("inward_invoice_id")
+  batchCode       String?       @map("batch_code")
+  mfgDate         DateTime?     @map("mfg_date")
+  boxDetails      BoxDetail[]
+  outwardItems    OutwardItem[]
+  location        Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  vendor          Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   @@map("stock_batches")
 }
 
 model StockMovement {
-  id            Int      @id @default(autoincrement())
-  type          String   // 'inward' or 'outward'
-  referenceId   Int      @map("reference_id") // InwardInvoice or OutwardInvoice ID
-  productId     Int      @map("product_id")
-  locationId    Int      @map("location_id")
-  quantity      Int
-  movementDate  DateTime @map("movement_date")
-  createdAt     DateTime @default(now())
+  type         String
+  quantity     Int
+  movementDate DateTime @map("movement_date")
+  createdAt    DateTime @default(now())
+  id           Int      @id @default(autoincrement())
+  referenceId  Int      @map("reference_id")
+  productId    Int      @map("product_id")
+  locationId   Int      @map("location_id")
 
   @@map("stock_movements")
 }
 
 model StockTransfer {
-  id                Int      @id @default(autoincrement())
-  transferNo        String   @unique @map("transfer_no")
-  stockBatchId      Int      @map("stock_batch_id")
-  fromLocationId    Int      @map("from_location_id")
-  toLocationId      Int      @map("to_location_id")
-  boxes             Int
-  packs             Int      @default(0)
-  pieces            Int      @default(0)
-  transferDate      DateTime @map("transfer_date")
-  remarks           String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  transferNo     String   @unique @map("transfer_no")
+  stockBatchId   Int      @map("stock_batch_id")
+  fromLocationId Int      @map("from_location_id")
+  toLocationId   Int      @map("to_location_id")
+  boxes          Int
+  packs          Int      @default(0)
+  pieces         Int      @default(0)
+  transferDate   DateTime @map("transfer_date")
+  remarks        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("stock_transfers")
 }
 
 model Sample {
-  id              Int      @id @default(autoincrement())
-  sampleNo        String   @unique @map("sample_no")
-  customerName    String   @map("customer_name")
-  customerEmail   String?  @map("customer_email")
-  customerPhone   String?  @map("customer_phone")
-  customerAddress String?  @map("customer_address")
-  state           String?  @map("state")
-  userType        String?  @map("user_type") // 'company' or 'customer'
-  gstNumber       String?  @map("gst_number")
-  panNumber       String?  @map("pan_number")
-  paymentId       String?  @map("payment_id")
-  orderId         String?  @map("order_id")
-  invoiceNumber   String?  @map("invoice_number")
-  source          String   @default("manual") @map("source") // 'manual' or 'website'
-  sentBy          String?  @map("sent_by")
-  sampleType      String   @default("domestic") @map("sample_type")
-  kitPrice        Float    @map("kit_price") @default(0)
-  subtotal        Float?   @map("subtotal")
-  tax             Float?   @map("tax")
-  trackingNumber  String?  @map("tracking_number")
-  dispatchMethod  String   @default("courier") @map("dispatch_method")
-  sentDate        DateTime @default(now()) @map("sent_date")
-  status          String   @default("pending")
+  id              Int          @id @default(autoincrement())
+  sampleNo        String       @unique @map("sample_no")
+  sentDate        DateTime     @default(now()) @map("sent_date")
+  status          String       @default("pending")
   remarks         String?
-  products        String?  @map("products")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  items SampleItem[]
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  customerAddress String?      @map("customer_address")
+  customerEmail   String?      @map("customer_email")
+  customerName    String       @map("customer_name")
+  customerPhone   String?      @map("customer_phone")
+  dispatchMethod  String       @default("courier") @map("dispatch_method")
+  kitPrice        Float        @default(0) @map("kit_price")
+  sampleType      String       @default("domestic") @map("sample_type")
+  sentBy          String?      @map("sent_by")
+  trackingNumber  String?      @map("tracking_number")
+  gstNumber       String?      @map("gst_number")
+  invoiceNumber   String?      @map("invoice_number")
+  orderId         String?      @map("order_id")
+  panNumber       String?      @map("pan_number")
+  paymentId       String?      @map("payment_id")
+  products        String?      @map("products")
+  source          String       @default("manual") @map("source")
+  state           String?      @map("state")
+  subtotal        Float?       @map("subtotal")
+  tax             Float?       @map("tax")
+  userType        String?      @map("user_type")
+  items           SampleItem[]
 
   @@map("samples")
 }
 
 model SampleItem {
-  id        Int    @id @default(autoincrement())
-  sampleId  Int    @map("sample_id")
-  productId Int    @map("product_id")
+  id        Int     @id @default(autoincrement())
+  sampleId  Int     @map("sample_id")
+  productId Int     @map("product_id")
   quantity  Int
-  unit      String // 'box', 'pack', or 'piece'
-
-  sample  Sample  @relation(fields: [sampleId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  unit      String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sample    Sample  @relation(fields: [sampleId], references: [id], onDelete: Cascade)
 
   @@map("sample_items")
 }
 
 model Quote {
-  id                   Int      @id @default(autoincrement())
-  quoteNo              String   @unique @map("quote_no")
-  customerId           Int      @map("customer_id")
-  quoteDate            DateTime @map("quote_date")
-  expiryDate           DateTime @map("expiry_date")
-  status               String   @default("draft") // 'draft', 'sent', 'accepted', 'rejected', 'expired'
-  totalAmount          Float    @map("total_amount")
-  discount             Float    @default(0)
-  tax                  Float    @default(0)
-  notes                String?
-  termsAndConditions   String?  @map("terms_and_conditions")
-  termsOfDelivery      String?  @map("terms_of_delivery")
-  paymentTerms         String?  @map("payment_terms")
-  reference            String?
-  shippingCharge       Float    @default(0) @map("shipping_charge")
-  adjustment           Float    @default(0)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  customer Customer    @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  items    QuoteItem[]
-  salesOrders SalesOrder[]
+  id                 Int          @id @default(autoincrement())
+  quoteNo            String       @unique @map("quote_no")
+  customerId         Int          @map("customer_id")
+  quoteDate          DateTime     @map("quote_date")
+  expiryDate         DateTime     @map("expiry_date")
+  status             String       @default("draft")
+  totalAmount        Float        @map("total_amount")
+  discount           Float        @default(0)
+  tax                Float        @default(0)
+  notes              String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
+  termsAndConditions String?      @map("terms_and_conditions")
+  paymentTerms       String?      @map("payment_terms")
+  reference          String?
+  termsOfDelivery    String?      @map("terms_of_delivery")
+  shippingCharge     Float        @default(0) @map("shipping_charge")
+  adjustment         Float        @default(0)
+  items              QuoteItem[]
+  customer           Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  salesOrders        SalesOrder[]
 
   @@map("quotes")
 }
@@ -364,61 +361,58 @@ model QuoteItem {
   quoteId     Int     @map("quote_id")
   productId   Int     @map("product_id")
   quantity    Int
-  unit        String  // 'box', 'pack', or 'piece'
+  unit        String
   rate        Float
-  taxRate     Float   @default(0) @map("tax_rate")
   amount      Float
   description String?
-
-  quote   Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  taxRate     Float   @default(0) @map("tax_rate")
+  product     Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quote       Quote   @relation(fields: [quoteId], references: [id], onDelete: Cascade)
 
   @@map("quote_items")
 }
 
 model SalesOrder {
-  id                   Int      @id @default(autoincrement())
-  orderNo              String   @unique @map("order_no")
-  quoteId              Int?     @map("quote_id")
-  customerId           Int      @map("customer_id")
-  orderDate            DateTime @map("order_date")
-  status               String   @default("pending") // 'pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'
-  saleType             String   @default("domestic") @map("sale_type")
-  totalAmount          Float    @default(0) @map("total_amount")
+  id                   Int              @id @default(autoincrement())
+  orderNo              String           @unique @map("order_no")
+  quoteId              Int?             @map("quote_id")
+  customerId           Int              @map("customer_id")
+  orderDate            DateTime         @map("order_date")
+  status               String           @default("pending")
+  saleType             String           @default("domestic") @map("sale_type")
+  totalAmount          Float            @default(0) @map("total_amount")
   notes                String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  deliveryMethod       String?          @map("delivery_method")
+  expectedShipmentDate DateTime?        @map("expected_shipment_date")
+  placeOfSupply        String?          @map("place_of_supply")
   reference            String?
-  referenceBy          String?  @map("reference_by")
-  expectedShipmentDate DateTime? @map("expected_shipment_date")
-  placeOfSupply        String?  @map("place_of_supply")
-  deliveryMethod       String?  @map("delivery_method")
-  adjustment           Float    @default(0)
-  amountReceived       Float    @default(0) @map("amount_received")
-  shippingCharge       Float    @default(0) @map("shipping_charge")
-  discount             Float    @default(0)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  customer Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  quote    Quote?           @relation(fields: [quoteId], references: [id], onDelete: SetNull)
-  items    SalesOrderItem[]
-  dispatch OrderDispatch?
+  adjustment           Float            @default(0)
+  amountReceived       Float            @default(0) @map("amount_received")
+  shippingCharge       Float            @default(0) @map("shipping_charge")
+  discount             Float            @default(0)
+  referenceBy          String?          @map("reference_by")
+  dispatch             OrderDispatch?
+  items                SalesOrderItem[]
+  customer             Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  quote                Quote?           @relation(fields: [quoteId], references: [id])
 
   @@map("sales_orders")
 }
 
 model SalesOrderItem {
-  id           Int    @id @default(autoincrement())
-  salesOrderId Int    @map("sales_order_id")
-  productId    Int    @map("product_id")
+  id           Int        @id @default(autoincrement())
+  salesOrderId Int        @map("sales_order_id")
+  productId    Int        @map("product_id")
   quantity     Int
   unit         String
   rate         Float
-  taxRate      Float  @default(0) @map("tax_rate")
+  taxRate      Float      @default(0) @map("tax_rate")
   amount       Float
   description  String?
-
-  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
-  product    Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
 
   @@map("sales_order_items")
 }
@@ -430,7 +424,7 @@ model WebsiteQuote {
   contactPerson          String?  @map("contact_person")
   email                  String?
   mobile                 String?
-  orderType              String   @default("domestic") @map("order_type") // 'domestic' | 'international'
+  orderType              String   @default("domestic") @map("order_type")
   gstin                  String?
   city                   String?
   state                  String?
@@ -444,20 +438,20 @@ model WebsiteQuote {
   totalPieces            Int      @default(0) @map("total_pieces")
   totalWeight            String?  @map("total_weight")
   totalCBM               String?  @map("total_cbm")
-  products               String   // JSON string of cart items
-  prices                 String?  // JSON string of { index: { rate, taxRate } }
-  discount               Float    @default(0)
-  shippingCharge         Float    @default(0) @map("shipping_charge")
-  tax                    Float    @default(0)
-  notes                  String?
-  termsAndConditions     String?  @map("terms_and_conditions")
-  termsOfDelivery        String?  @map("terms_of_delivery")
-  paymentTerms           String?  @map("payment_terms")
+  products               String
   quoteDate              DateTime @default(now()) @map("quote_date")
-  status                 String   @default("new") // 'new' | 'contacted' | 'converted' | 'rejected'
+  status                 String   @default("new")
   remarks                String?
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
+  discount               Float    @default(0)
+  notes                  String?
+  paymentTerms           String?  @map("payment_terms")
+  prices                 String?
+  shippingCharge         Float    @default(0) @map("shipping_charge")
+  tax                    Float    @default(0)
+  termsAndConditions     String?  @map("terms_and_conditions")
+  termsOfDelivery        String?  @map("terms_of_delivery")
 
   @@map("website_quotes")
 }
@@ -470,116 +464,130 @@ model Lead {
   company   String?
   country   String?
   message   String?
-  formType  String   @map("form_type") // 'ContactForm', 'PartnerForm', 'QuoteCartForm', 'Manual'
-  source    String   @default("website") // 'website' | 'manual'
-  status    String   @default("new") // 'new', 'contacted', 'converted', 'rejected'
+  formType  String   @map("form_type")
+  status    String   @default("new")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  source    String   @default("website")
 
   @@map("leads")
 }
 
 model OrderDispatch {
-  id                   Int      @id @default(autoincrement())
-  dispatchNo           String   @unique @map("dispatch_no")
-  salesOrderId         Int      @unique @map("sales_order_id")
-  dispatchDate         DateTime @map("dispatch_date")
-  status               String   @default("pending") // 'pending', 'dispatched', 'in_transit', 'delivered', 'cancelled'
-  shippingMethod       String   @map("shipping_method") // 'courier', 'truck', 'air', 'sea'
-  trackingNumber       String?  @map("tracking_number")
-  carrier              String?  // Courier/Logistics company name
-  estimatedDelivery    DateTime? @map("estimated_delivery")
-  actualDelivery       DateTime? @map("actual_delivery")
-  shippingAddress      String   @map("shipping_address")
-  shippingCity         String   @map("shipping_city")
-  shippingState        String   @map("shipping_state")
-  shippingPincode      String   @map("shipping_pincode")
-  shippingCountry      String   @default("India") @map("shipping_country")
-  weight               Float?   // in kg
-  dimensions           String?  // JSON: {length, width, height}
-  packageCount         Int      @default(1) @map("package_count")
-  shippingCost         Float    @default(0) @map("shipping_cost")
-  insuranceAmount      Float    @default(0) @map("insurance_amount")
-  notes                String?
-  toTheOrder           Boolean  @default(false) @map("to_the_order")
-  courierName          String?  @map("courier_name")
-  courierPhone         String?  @map("courier_phone")
-  truckNumber          String?  @map("truck_number")
-  driverName           String?  @map("driver_name")
-  driverPhone          String?  @map("driver_phone")
-  airlineCode          String?  @map("airline_code")
-  flightNumber         String?  @map("flight_number")
-  containerNumber      String?  @map("container_number")
-  vesselName           String?  @map("vessel_name")
-  portOfLoading        String?  @map("port_of_loading")
-  portOfDischarge      String?  @map("port_of_discharge")
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  salesOrder SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  id                Int        @id @default(autoincrement())
+  dispatchNo        String     @unique @map("dispatch_no")
+  salesOrderId      Int        @unique @map("sales_order_id")
+  dispatchDate      DateTime   @map("dispatch_date")
+  status            String     @default("pending")
+  shippingMethod    String     @map("shipping_method")
+  trackingNumber    String?    @map("tracking_number")
+  carrier           String?
+  estimatedDelivery DateTime?  @map("estimated_delivery")
+  actualDelivery    DateTime?  @map("actual_delivery")
+  shippingAddress   String     @map("shipping_address")
+  shippingCity      String     @map("shipping_city")
+  shippingState     String     @map("shipping_state")
+  shippingPincode   String     @map("shipping_pincode")
+  shippingCountry   String     @default("India") @map("shipping_country")
+  weight            Float?
+  dimensions        String?
+  packageCount      Int        @default(1) @map("package_count")
+  shippingCost      Float      @default(0) @map("shipping_cost")
+  insuranceAmount   Float      @default(0) @map("insurance_amount")
+  notes             String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  toTheOrder        Boolean    @default(false) @map("to_the_order")
+  airlineCode       String?    @map("airline_code")
+  containerNumber   String?    @map("container_number")
+  courierName       String?    @map("courier_name")
+  courierPhone      String?    @map("courier_phone")
+  driverName        String?    @map("driver_name")
+  driverPhone       String?    @map("driver_phone")
+  flightNumber      String?    @map("flight_number")
+  portOfDischarge   String?    @map("port_of_discharge")
+  portOfLoading     String?    @map("port_of_loading")
+  truckNumber       String?    @map("truck_number")
+  vesselName        String?    @map("vessel_name")
+  salesOrder        SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
 
   @@map("order_dispatches")
 }
 
 model Settings {
-  id                Int      @id @default(autoincrement())
-  companyName       String   @map("company_name")
-  companyAddress    String   @map("company_address")
-  companyPhone      String   @map("company_phone")
-  companyEmail      String   @map("company_email")
-  companyWebsite    String?  @map("company_website")
-  companyGstin      String   @map("company_gstin")
-  bankName          String   @map("bank_name")
-  accountNumber     String   @map("account_number")
-  ifscCode          String   @map("ifsc_code")
-  bankAddress       String   @map("bank_address")
-  swiftCode         String?  @map("swift_code")
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id             Int      @id @default(autoincrement())
+  companyName    String   @map("company_name")
+  companyAddress String   @map("company_address")
+  companyPhone   String   @map("company_phone")
+  companyEmail   String   @map("company_email")
+  companyWebsite String?  @map("company_website")
+  companyGstin   String   @map("company_gstin")
+  bankName       String   @map("bank_name")
+  accountNumber  String   @map("account_number")
+  ifscCode       String   @map("ifsc_code")
+  bankAddress    String   @map("bank_address")
+  swiftCode      String?  @map("swift_code")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
   @@map("settings")
 }
 
 model PurchaseOrder {
-  id               Int      @id @default(autoincrement())
-  poNo             String   @unique @map("po_no")
-  vendorId         Int      @map("vendor_id")
-  poDate           DateTime @map("po_date")
-  expectedDelivery DateTime? @map("expected_delivery")
-  status           String   @default("draft") // 'draft', 'sent', 'confirmed', 'received', 'cancelled'
-  totalAmount      Float    @default(0) @map("total_amount")
-  discount         Float    @default(0)
-  tax              Float    @default(0)
-  notes            String?
-  reference        String?
-  termsAndConditions String? @map("terms_and_conditions")
-  paymentTerms     String?  @map("payment_terms")
-  deliveryTerms    String?  @map("delivery_terms")
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-
-  vendor Vendor              @relation("PurchaseOrders", fields: [vendorId], references: [id], onDelete: Cascade)
-  items  PurchaseOrderItem[]
+  id                 Int                 @id @default(autoincrement())
+  poNo               String              @unique @map("po_no")
+  vendorId           Int                 @map("vendor_id")
+  poDate             DateTime            @map("po_date")
+  expectedDelivery   DateTime?           @map("expected_delivery")
+  status             String              @default("draft")
+  totalAmount        Float               @default(0) @map("total_amount")
+  discount           Float               @default(0)
+  tax                Float               @default(0)
+  notes              String?
+  termsAndConditions String?             @map("terms_and_conditions")
+  paymentTerms       String?             @map("payment_terms")
+  deliveryTerms      String?             @map("delivery_terms")
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  reference          String?
+  boxDetails         BoxDetail[]
+  items              PurchaseOrderItem[]
+  vendor             Vendor              @relation("PurchaseOrders", fields: [vendorId], references: [id], onDelete: Cascade)
 
   @@map("purchase_orders")
 }
 
 model PurchaseOrderItem {
-  id              Int    @id @default(autoincrement())
-  purchaseOrderId Int    @map("purchase_order_id")
-  productId       Int    @map("product_id")
+  id              Int                  @id @default(autoincrement())
+  purchaseOrderId Int                  @map("purchase_order_id")
+  productId       Int                  @map("product_id")
   quantity        Int
-  unit            String // 'box', 'pack', or 'piece'
+  unit            String
   rate            Float
-  taxRate         Float  @default(0) @map("tax_rate")
+  taxRate         Float                @default(0) @map("tax_rate")
   amount          Float
   description     String?
-
-  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
-  product       Product       @relation("PurchaseOrderItems", fields: [productId], references: [id], onDelete: Cascade)
+  boxes           Int                  @default(1)
+  packPerBox      Int                  @default(28)
+  packPerPiece    Int                  @default(25)
+  totalPacks      Int                  @default(28)
+  totalPcs        Int                  @default(700)
+  ratePerBox      Float                @default(0)
+  ratePerPack     Float                @default(0)
+  ratePerPcs      Float                @default(0)
+  batchCode       String?
+  mfgDate         DateTime?
+  color           String?
+  brand           String?
+  parentItemId    Int?                 @map("parent_item_id")
+  parentItem      PurchaseOrderItem?   @relation("PurchaseOrderSubItems", fields: [parentItemId], references: [id], onDelete: Cascade)
+  subItems        PurchaseOrderItem[]  @relation("PurchaseOrderSubItems")
+  product         Product              @relation("PurchaseOrderItems", fields: [productId], references: [id], onDelete: Cascade)
+  purchaseOrder   PurchaseOrder        @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
 
   @@map("purchase_order_items")
 }
+
 
 model PaymentReceipt {
   id               Int            @id @default(autoincrement())
@@ -587,13 +595,41 @@ model PaymentReceipt {
   outwardInvoiceId Int            @map("outward_invoice_id")
   amount           Float
   paymentDate      DateTime       @default(now()) @map("payment_date")
-  paymentMethod    String         @default("UPI") @map("payment_method") // 'UPI', 'Cash', 'Bank Transfer', 'Cheque'
+  paymentMethod    String         @default("UPI") @map("payment_method")
   transactionId    String?        @map("transaction_id")
   notes            String?
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
-
   outwardInvoice   OutwardInvoice @relation(fields: [outwardInvoiceId], references: [id], onDelete: Cascade)
 
   @@map("payment_receipts")
+}
+
+model BoxDetail {
+  id               Int             @id @default(autoincrement())
+  barcode          String          @unique
+  productId        Int             @map("product_id")
+  stockBatchId     Int?            @map("stock_batch_id")
+  purchaseOrderId  Int?            @map("purchase_order_id")
+  inwardInvoiceId  Int?            @map("inward_invoice_id")
+  outwardInvoiceId Int?            @map("outward_invoice_id")
+  boxIndex         Int             @map("box_index")
+  totalBoxes       Int             @map("total_boxes")
+  packPerBox       Int             @map("pack_per_box")
+  packPerPiece     Int             @map("pack_per_piece")
+  totalPcs         Int             @map("total_pcs")
+  status           String          @default("expected")
+  batchCode        String?         @map("batch_code")
+  mfgDate          DateTime?       @map("mfg_date")
+  color            String?
+  brand            String?
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  inwardInvoice    InwardInvoice?  @relation(fields: [inwardInvoiceId], references: [id])
+  outwardInvoice   OutwardInvoice? @relation(fields: [outwardInvoiceId], references: [id])
+  product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  purchaseOrder    PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
+  stockBatch       StockBatch?     @relation(fields: [stockBatchId], references: [id])
+
+  @@map("box_details")
 }

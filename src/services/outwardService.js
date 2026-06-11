@@ -210,6 +210,46 @@ class OutwardService {
             movementDate: new Date(data.date),
           },
         });
+
+        // Deduct specific BoxDetail records
+        if (item.saleUnit === 'box') {
+          const boxesToDeduct = item.quantity;
+          let boxesToUpdate = [];
+
+          if (data.scannedBarcodes && data.scannedBarcodes.length > 0) {
+            boxesToUpdate = await tx.boxDetail.findMany({
+              where: {
+                barcode: { in: data.scannedBarcodes },
+                stockBatchId: item.stockBatchId,
+                status: 'inwarded'
+              },
+              take: boxesToDeduct
+            });
+          }
+
+          if (boxesToUpdate.length < boxesToDeduct) {
+            const extraNeeded = boxesToDeduct - boxesToUpdate.length;
+            const extraBoxes = await tx.boxDetail.findMany({
+              where: {
+                stockBatchId: item.stockBatchId,
+                status: 'inwarded',
+                id: { notIn: boxesToUpdate.map(b => b.id) }
+              },
+              take: extraNeeded
+            });
+            boxesToUpdate = [...boxesToUpdate, ...extraBoxes];
+          }
+
+          for (const box of boxesToUpdate) {
+            await tx.boxDetail.update({
+              where: { id: box.id },
+              data: {
+                status: 'outwarded',
+                outwardInvoiceId: invoice.id
+              }
+            });
+          }
+        }
       }
 
       return await tx.outwardInvoice.findUnique({
@@ -258,6 +298,14 @@ class OutwardService {
           await tx.stockBatch.update({
             where: { id: item.stockBatchId },
             data: { remainingBoxes: restoredBoxes, remainingPacks: restoredPacks, remainingPcs: restoredPcs },
+          });
+
+          await tx.boxDetail.updateMany({
+            where: { stockBatchId: item.stockBatchId, outwardInvoiceId: existingInvoice.id },
+            data: {
+              status: 'inwarded',
+              outwardInvoiceId: null
+            }
           });
         }
       }
@@ -340,6 +388,46 @@ class OutwardService {
             movementDate: new Date(data.date),
           },
         });
+
+        // Deduct specific BoxDetail records
+        if (item.saleUnit === 'box') {
+          const boxesToDeduct = item.quantity;
+          let boxesToUpdate = [];
+
+          if (data.scannedBarcodes && data.scannedBarcodes.length > 0) {
+            boxesToUpdate = await tx.boxDetail.findMany({
+              where: {
+                barcode: { in: data.scannedBarcodes },
+                stockBatchId: item.stockBatchId,
+                status: 'inwarded'
+              },
+              take: boxesToDeduct
+            });
+          }
+
+          if (boxesToUpdate.length < boxesToDeduct) {
+            const extraNeeded = boxesToDeduct - boxesToUpdate.length;
+            const extraBoxes = await tx.boxDetail.findMany({
+              where: {
+                stockBatchId: item.stockBatchId,
+                status: 'inwarded',
+                id: { notIn: boxesToUpdate.map(b => b.id) }
+              },
+              take: extraNeeded
+            });
+            boxesToUpdate = [...boxesToUpdate, ...extraBoxes];
+          }
+
+          for (const box of boxesToUpdate) {
+            await tx.boxDetail.update({
+              where: { id: box.id },
+              data: {
+                status: 'outwarded',
+                outwardInvoiceId: invoice.id
+              }
+            });
+          }
+        }
       }
 
       return await tx.outwardInvoice.findUnique({
@@ -379,6 +467,14 @@ class OutwardService {
           await tx.stockBatch.update({
             where: { id: item.stockBatchId },
             data: { remainingBoxes: restoredBoxes, remainingPacks: restoredPacks, remainingPcs: restoredPcs },
+          });
+
+          await tx.boxDetail.updateMany({
+            where: { stockBatchId: item.stockBatchId, outwardInvoiceId: invoice.id },
+            data: {
+              status: 'inwarded',
+              outwardInvoiceId: null
+            }
           });
         }
       }
