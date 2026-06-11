@@ -191,6 +191,10 @@ class InwardService {
               ratePerPcs: item.ratePerPcs,
               gstAmount: item.gstAmount,
               totalCost: item.totalCost,
+              batchCode: item.batchCode || null,
+              mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+              color: item.color || null,
+              brand: item.brand || null,
             },
           })
         )
@@ -253,6 +257,10 @@ class InwardService {
                 ratePerPcs: subRatePerPcs,
                 gstAmount: subGstAmount,
                 totalCost: subTotalCost,
+                batchCode: subItem.batchCode || null,
+                mfgDate: subItem.mfgDate ? new Date(subItem.mfgDate) : null,
+                color: subItem.color || null,
+                brand: subItem.brand || null,
               },
             });
 
@@ -297,6 +305,45 @@ class InwardService {
           })
         )
       );
+
+      const { BarcodeService } = require('./barcodeService');
+      const stockBatches = await tx.stockBatch.findMany({
+        where: { inwardInvoiceId: invoice.id }
+      });
+      if (data.scannedBarcodes && data.scannedBarcodes.length > 0) {
+        const boxes = await tx.boxDetail.findMany({
+          where: { barcode: { in: data.scannedBarcodes } }
+        });
+        for (const box of boxes) {
+          const matchingBatch = stockBatches.find(sb => sb.productId === box.productId);
+          await tx.boxDetail.update({
+            where: { id: box.id },
+            data: {
+              status: 'inwarded',
+              inwardInvoiceId: invoice.id,
+              stockBatchId: matchingBatch ? matchingBatch.id : null
+            }
+          });
+        }
+      } else if (data.purchaseOrderId) {
+        const poId = parseInt(data.purchaseOrderId);
+        const expectedBoxes = await tx.boxDetail.findMany({
+          where: { purchaseOrderId: poId, status: 'expected' }
+        });
+        for (const box of expectedBoxes) {
+          const matchingBatch = stockBatches.find(sb => sb.productId === box.productId);
+          await tx.boxDetail.update({
+            where: { id: box.id },
+            data: {
+              status: 'inwarded',
+              inwardInvoiceId: invoice.id,
+              stockBatchId: matchingBatch ? matchingBatch.id : null
+            }
+          });
+        }
+      } else {
+        await BarcodeService.generateInwardedBoxesForInvoice(invoice.id, tx);
+      }
 
       return await tx.inwardInvoice.findUnique({
         where: { id: invoice.id },
@@ -455,6 +502,10 @@ class InwardService {
               ratePerPcs: item.ratePerPcs,
               gstAmount: item.gstAmount,
               totalCost: item.totalCost,
+              batchCode: item.batchCode || null,
+              mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+              color: item.color || null,
+              brand: item.brand || null,
             },
           })
         )
@@ -516,6 +567,10 @@ class InwardService {
                 ratePerPcs: subRatePerPcs,
                 gstAmount: subGstAmount,
                 totalCost: subTotalCost,
+                batchCode: subItem.batchCode || null,
+                mfgDate: subItem.mfgDate ? new Date(subItem.mfgDate) : null,
+                color: subItem.color || null,
+                brand: subItem.brand || null,
               },
             });
 
@@ -553,6 +608,68 @@ class InwardService {
             movementDate: new Date(data.date),
           },
         });
+      }
+
+      // Reset/delete old box details for this invoice that are not outwarded
+      const existingInvoiceBoxes = await tx.boxDetail.findMany({
+        where: { inwardInvoiceId: invoice.id, status: 'inwarded' }
+      });
+      for (const box of existingInvoiceBoxes) {
+        if (box.purchaseOrderId) {
+          await tx.boxDetail.update({
+            where: { id: box.id },
+            data: {
+              status: 'expected',
+              inwardInvoiceId: null,
+              stockBatchId: null
+            }
+          });
+        } else {
+          await tx.boxDetail.delete({
+            where: { id: box.id }
+          });
+        }
+      }
+
+      // Re-generate or re-link
+      const { BarcodeService } = require('./barcodeService');
+      const stockBatches = await tx.stockBatch.findMany({
+        where: { inwardInvoiceId: invoice.id }
+      });
+
+      if (data.scannedBarcodes && data.scannedBarcodes.length > 0) {
+        const boxes = await tx.boxDetail.findMany({
+          where: { barcode: { in: data.scannedBarcodes } }
+        });
+        for (const box of boxes) {
+          const matchingBatch = stockBatches.find(sb => sb.productId === box.productId);
+          await tx.boxDetail.update({
+            where: { id: box.id },
+            data: {
+              status: 'inwarded',
+              inwardInvoiceId: invoice.id,
+              stockBatchId: matchingBatch ? matchingBatch.id : null
+            }
+          });
+        }
+      } else if (data.purchaseOrderId) {
+        const poId = parseInt(data.purchaseOrderId);
+        const expectedBoxes = await tx.boxDetail.findMany({
+          where: { purchaseOrderId: poId, status: 'expected' }
+        });
+        for (const box of expectedBoxes) {
+          const matchingBatch = stockBatches.find(sb => sb.productId === box.productId);
+          await tx.boxDetail.update({
+            where: { id: box.id },
+            data: {
+              status: 'inwarded',
+              inwardInvoiceId: invoice.id,
+              stockBatchId: matchingBatch ? matchingBatch.id : null
+            }
+          });
+        }
+      } else {
+        await BarcodeService.generateInwardedBoxesForInvoice(invoice.id, tx);
       }
 
       return await tx.inwardInvoice.findUnique({
