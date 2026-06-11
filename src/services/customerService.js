@@ -72,9 +72,12 @@ class CustomerService {
   }
 
   static async create(data) {
-    // Generate a temporary customer to get the auto-incremented id for code
-    const count = await prisma.customer.count();
-    const code = data.code || `CUST-${String(count + 1).padStart(4, '0')}`;
+    let code = data.code;
+    if (!code) {
+      const last = await prisma.customer.findFirst({ orderBy: { id: 'desc' } });
+      const lastNum = last ? parseInt(last.code.split('-')[1] || 0) : 0;
+      code = `CUST-${String(lastNum + 1).padStart(4, '0')}`;
+    }
 
     return await prisma.customer.create({
       data: {
