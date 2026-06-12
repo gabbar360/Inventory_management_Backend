@@ -65,17 +65,18 @@ const generatePOPDF = async (req, res) => {
     }
 
     const settings = await prisma.settings.findFirst();
-    
+
+    const logoPath = path.join(__dirname, '../public/images/vegnar.webp');
+    let logoBase64 = null;
+    if (fs.existsSync(logoPath)) {
+      logoBase64 = fs.readFileSync(logoPath).toString('base64');
+    }
+
     const templatePath = path.join(__dirname, '../templates/purchaseOrderTemplate.ejs');
-    
+
     let html;
     try {
-      html = await ejs.renderFile(templatePath, {
-        po,
-        settings,
-        logoBase64: null,
-        qrCodeDataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=='
-      });
+      html = await ejs.renderFile(templatePath, { po, settings, logoBase64 });
     } catch (renderError) {
       return res.status(500).json({ success: false, message: 'Template rendering failed: ' + renderError.message });
     }
