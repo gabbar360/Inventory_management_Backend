@@ -312,7 +312,10 @@ class InwardService {
       });
       if (data.scannedBarcodes && data.scannedBarcodes.length > 0) {
         const boxes = await tx.boxDetail.findMany({
-          where: { barcode: { in: data.scannedBarcodes } }
+          where: { 
+            barcode: { in: data.scannedBarcodes },
+            status: 'expected'
+          }
         });
         for (const box of boxes) {
           const matchingBatch = stockBatches.find(sb => sb.productId === box.productId);
@@ -639,7 +642,10 @@ class InwardService {
 
       if (data.scannedBarcodes && data.scannedBarcodes.length > 0) {
         const boxes = await tx.boxDetail.findMany({
-          where: { barcode: { in: data.scannedBarcodes } }
+          where: { 
+            barcode: { in: data.scannedBarcodes },
+            status: 'expected'
+          }
         });
         for (const box of boxes) {
           const matchingBatch = stockBatches.find(sb => sb.productId === box.productId);
