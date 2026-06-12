@@ -35,7 +35,6 @@ async function generateBarcodeFromProduct(product, tx = prisma, generatedBarcode
   let upcPart = String(product.upc).trim();
   const upcLast4 = upcPart.slice(-4); // Last 4 characters
   
-  console.log(`[Barcode Generation] SKU: ${skuPart}, UPC: ${upcPart}, UPC Last 4: ${upcLast4}`);
   
   if (skuPart.length !== 3) {
     throw new Error(`SKU must be exactly 3 digits, got ${skuPart.length} (${skuPart})`);
@@ -56,7 +55,6 @@ async function generateBarcodeFromProduct(product, tx = prisma, generatedBarcode
     
     barcode = `${skuPart}${upcLast4}${first4Random}${second2Random}`;
     
-    console.log(`[Barcode Generation] Attempt ${attempts + 1}: ${barcode} (length: ${barcode.length})`);
     
     // Verify final barcode is 13 digits
     if (barcode.length !== 13) {
@@ -66,7 +64,6 @@ async function generateBarcodeFromProduct(product, tx = prisma, generatedBarcode
     
     // Check if barcode already exists in memory (current batch)
     if (generatedBarcodes.has(barcode)) {
-      console.log(`[Barcode Generation] ⚠️ Duplicate in current batch: ${barcode}`);
       attempts++;
       continue;
     }
@@ -78,9 +75,6 @@ async function generateBarcodeFromProduct(product, tx = prisma, generatedBarcode
     
     if (!existing) {
       isUnique = true;
-      console.log(`[Barcode Generation] ✅ Unique barcode generated: ${barcode}`);
-    } else {
-      console.log(`[Barcode Generation] ⚠️ Barcode exists in DB: ${barcode}`);
     }
     
     attempts++;

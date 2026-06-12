@@ -93,6 +93,8 @@ model Vendor {
   email          String?
   phone          String?
   address        String?
+  state          String?
+  gstNumber      String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   id             Int             @id @default(autoincrement())
