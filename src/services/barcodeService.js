@@ -4,24 +4,93 @@ const prisma = new PrismaClient();
 
 // ============ Helper Functions ============
 
-function generateBarcodeFromId(id) {
-  // EAN-13 Standard for internal inventory (Private Prefix 200 + 9-digit padded ID + 1-digit checksum)
-  const code12 = `200${String(id).padStart(9, '0')}`;
+function generateFirst4RandomDigits() {
+  // Generate 4 random digits
+  const random = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+  return random;
+}
+
+function generateSecond2RandomDigits() {
+  // Generate 2 random digits
+  const random = Math.floor(Math.random() * 100).toString().padStart(2, '0');
+  return random;
+}
+
+async function generateBarcodeFromProduct(product, tx = prisma, generatedBarcodes = new Set()) {
+  // Format: SKU (3 digits) + UPC last 4 digits (4 digits) + 4 random digits + 2 random digits = 13 digits total
   
-  // Calculate EAN-13 checksum digit
-  let sum = 0;
-  for (let i = 0; i < 12; i++) {
-    const digit = parseInt(code12[i], 10);
-    if (i % 2 === 0) {
-      sum += digit; // Odd positions (1st, 3rd, 5th...)
-    } else {
-      sum += digit * 3; // Even positions (2nd, 4th, 6th...)
-    }
+  if (!product.sku || !product.upc) {
+    throw new Error('Product must have both SKU and UPC for barcode generation');
   }
-  const mod = sum % 10;
-  const checksum = mod === 0 ? 0 : 10 - mod;
+
+  // Ensure SKU is string and exactly 3 digits
+  let skuPart = String(product.sku).trim();
+  if (skuPart.length < 3) {
+    skuPart = skuPart.padStart(3, '0');
+  } else if (skuPart.length > 3) {
+    skuPart = skuPart.slice(-3); // Take last 3 if longer
+  }
   
-  return `${code12}${checksum}`;
+  // Ensure UPC is string and get last 4 digits
+  let upcPart = String(product.upc).trim();
+  const upcLast4 = upcPart.slice(-4); // Last 4 characters
+  
+  console.log(`[Barcode Generation] SKU: ${skuPart}, UPC: ${upcPart}, UPC Last 4: ${upcLast4}`);
+  
+  if (skuPart.length !== 3) {
+    throw new Error(`SKU must be exactly 3 digits, got ${skuPart.length} (${skuPart})`);
+  }
+  if (upcLast4.length !== 4) {
+    throw new Error(`UPC last 4 must be 4 digits, got ${upcLast4.length} (${upcLast4})`);
+  }
+  
+  let barcode;
+  let isUnique = false;
+  let attempts = 0;
+  const maxAttempts = 100;
+  
+  // Keep generating until we get a unique barcode
+  while (!isUnique && attempts < maxAttempts) {
+    const first4Random = generateFirst4RandomDigits();
+    const second2Random = generateSecond2RandomDigits();
+    
+    barcode = `${skuPart}${upcLast4}${first4Random}${second2Random}`;
+    
+    console.log(`[Barcode Generation] Attempt ${attempts + 1}: ${barcode} (length: ${barcode.length})`);
+    
+    // Verify final barcode is 13 digits
+    if (barcode.length !== 13) {
+      attempts++;
+      continue;
+    }
+    
+    // Check if barcode already exists in memory (current batch)
+    if (generatedBarcodes.has(barcode)) {
+      console.log(`[Barcode Generation] ⚠️ Duplicate in current batch: ${barcode}`);
+      attempts++;
+      continue;
+    }
+    
+    // Check if barcode already exists in database
+    const existing = await tx.boxDetail.findUnique({
+      where: { barcode }
+    });
+    
+    if (!existing) {
+      isUnique = true;
+      console.log(`[Barcode Generation] ✅ Unique barcode generated: ${barcode}`);
+    } else {
+      console.log(`[Barcode Generation] ⚠️ Barcode exists in DB: ${barcode}`);
+    }
+    
+    attempts++;
+  }
+  
+  if (!isUnique) {
+    throw new Error('Failed to generate unique barcode after 100 attempts');
+  }
+  
+  return barcode;
 }
 
 function validateBarcodeFormat(barcode) {
@@ -70,13 +139,10 @@ class BarcodeService {
     });
     const existingProductIds = new Set(existingBoxes.map(b => b.productId));
 
-    let lastId = await tx.boxDetail.findFirst({
-      select: { id: true },
-      orderBy: { id: 'desc' }
-    });
-    let nextId = (lastId?.id || 0) + 1;
-
     const dataToCreate = [];
+    const barcodes = [];
+    const generatedBarcodes = new Set();
+
     for (const item of po.items) {
       if (existingProductIds.has(item.productId)) continue;
       const boxCount = item.boxes || 1;
@@ -84,8 +150,12 @@ class BarcodeService {
       const packPerPiece = item.packPerPiece || 25;
 
       for (let i = 1; i <= boxCount; i++) {
+        const barcode = await generateBarcodeFromProduct(item.product, tx, generatedBarcodes);
+        barcodes.push(barcode);
+        generatedBarcodes.add(barcode);
+        
         dataToCreate.push({
-          barcode: generateBarcodeFromId(nextId++),
+          barcode,
           productId: item.productId,
           purchaseOrderId: po.id,
           boxIndex: i,
@@ -112,7 +182,7 @@ class BarcodeService {
       where: {
         purchaseOrderId: po.id,
         barcode: {
-          in: dataToCreate.map(d => d.barcode)
+          in: barcodes
         }
       }
     });
@@ -132,13 +202,10 @@ class BarcodeService {
     });
     const existingProductIds = new Set(existingBoxes.map(b => b.productId));
 
-    let lastId = await tx.boxDetail.findFirst({
-      select: { id: true },
-      orderBy: { id: 'desc' }
-    });
-    let nextId = (lastId?.id || 0) + 1;
-
     const dataToCreate = [];
+    const barcodes = [];
+    const generatedBarcodes = new Set();
+
     for (const item of invoice.items) {
       if (existingProductIds.has(item.productId)) continue;
       const boxCount = item.boxes || 1;
@@ -146,8 +213,12 @@ class BarcodeService {
       const packPerPiece = item.packPerPiece || 25;
 
       for (let i = 1; i <= boxCount; i++) {
+        const barcode = await generateBarcodeFromProduct(item.product, tx, generatedBarcodes);
+        barcodes.push(barcode);
+        generatedBarcodes.add(barcode);
+        
         dataToCreate.push({
-          barcode: generateBarcodeFromId(nextId++),
+          barcode,
           productId: item.productId,
           inwardInvoiceId: invoice.id,
           boxIndex: i,
@@ -172,7 +243,7 @@ class BarcodeService {
       where: {
         inwardInvoiceId: invoice.id,
         barcode: {
-          in: dataToCreate.map(d => d.barcode)
+          in: barcodes
         }
       }
     });
