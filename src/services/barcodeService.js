@@ -270,6 +270,9 @@ class BarcodeService {
       }
     });
     
+    // Clear any stale cache for this barcode
+    clearCache(`lookup-${barcode}`);
+    
     return box;
   }
 
