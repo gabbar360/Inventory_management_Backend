@@ -73,6 +73,7 @@
         /* ===== ITEMS TABLE ===== */
         .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 0; border: 1.5px solid #bbb; }
 
+        .items-table thead { display: table-row-group; }
         .items-table thead tr { background: #f0f0f0; }
         .items-table th { padding: 6px 6px; font-size: 9pt; font-weight: 700; color: #444; text-align: center; border: 1px solid #bbb; }
         .items-table th.left { text-align: left; }
@@ -129,7 +130,7 @@
         .status-delivered { background: #d4edda; color: #155724; }
         .status-cancelled { background: #f8d7da; color: #721c24; }
 
-        @page { size: A4; margin: 0; }
+        @page { size: A4; margin: 10mm 0 0 0; }
         @media print {
             body { margin: 0; }
             .page { margin: 0; padding: 10mm 12mm; }
