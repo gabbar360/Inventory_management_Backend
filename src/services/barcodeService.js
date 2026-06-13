@@ -90,7 +90,7 @@ async function generateBarcodeFromProduct(product, tx = prisma, generatedBarcode
 function validateBarcodeFormat(barcode) {
   if (!barcode || typeof barcode !== 'string') return false;
   if (barcode.length < 5 || barcode.length > 50) return false;
-  return /^[A-Z0-9]+$/.test(barcode);
+  return /^[a-zA-Z0-9]+$/.test(barcode);
 }
 
 // ============ Cache Management ============
@@ -293,7 +293,10 @@ class BarcodeService {
           stockBatch: true
         }
       });
-      if (!box) throw new Error(`Barcode ${barcode} not found in system`);
+      if (!box) {
+        const errorMsg = `Barcode "${barcode}" not found in the system.\n\nPossible reasons:\n1. The barcode may be incorrect or mistyped\n2. This barcode is not registered in the system\n3. The barcode label may be damaged or unclear\n\nPlease try scanning again or contact your manager.`;
+        throw new Error(errorMsg);
+      }
 
       if (flow === 'inward') {
         if (box.status === 'inwarded') {
