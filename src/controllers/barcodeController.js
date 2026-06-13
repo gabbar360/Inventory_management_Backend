@@ -21,7 +21,8 @@ class BarcodeController {
       const box = await BarcodeService.lookupBarcode(barcode);
       if (!box) {
         console.log(`[Barcode Lookup] ❌ Barcode not found in database - ${barcode}`);
-        return sendError(res, 404, 'Barcode not found');
+        const errorMsg = `Barcode "${barcode}" not found in the system.\n\nPossible reasons:\n1. The barcode may be incorrect or mistyped\n2. This barcode is not registered in the system\n3. The barcode label may be damaged or unclear\n\nPlease try scanning again or contact your manager.`;
+        return sendError(res, 404, errorMsg);
       }
       console.log(`[Barcode Lookup] ✅ Found - Box ID: ${box.id}, Status: ${box.status}`);
       return sendResponse(res, 200, true, box, 'Barcode looked up successfully');
