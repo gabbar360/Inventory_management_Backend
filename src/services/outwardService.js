@@ -116,9 +116,6 @@ class OutwardService {
             location: true,
           },
         },
-        paymentReceipts: {
-          orderBy: { paymentDate: 'desc' }
-        }
       },
     });
 

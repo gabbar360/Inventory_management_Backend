@@ -202,7 +202,6 @@ model OutwardInvoice {
   boxDetails            BoxDetail[]
   customer              Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
   items                 OutwardItem[]
-  paymentReceipts       PaymentReceipt[]
 
   @@map("outward_invoices")
 }
@@ -590,22 +589,6 @@ model PurchaseOrderItem {
   @@map("purchase_order_items")
 }
 
-
-model PaymentReceipt {
-  id               Int            @id @default(autoincrement())
-  receiptNo        String         @unique @map("receipt_no")
-  outwardInvoiceId Int            @map("outward_invoice_id")
-  amount           Float
-  paymentDate      DateTime       @default(now()) @map("payment_date")
-  paymentMethod    String         @default("UPI") @map("payment_method")
-  transactionId    String?        @map("transaction_id")
-  notes            String?
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  outwardInvoice   OutwardInvoice @relation(fields: [outwardInvoiceId], references: [id], onDelete: Cascade)
-
-  @@map("payment_receipts")
-}
 
 model BoxDetail {
   id               Int             @id @default(autoincrement())
