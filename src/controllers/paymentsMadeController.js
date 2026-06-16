@@ -63,6 +63,15 @@ class PaymentsMadeController {
     }
   }
 
+  static async applyCredits(req, res) {
+    try {
+      const result = await PaymentsMadeService.applyCredits(req.body);
+      return sendResponse(res, 201, true, result, 'Credit application record created successfully');
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
   static async delete(req, res) {
     try {
       const { id } = req.params;

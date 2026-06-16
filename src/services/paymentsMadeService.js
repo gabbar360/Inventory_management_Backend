@@ -59,12 +59,11 @@ class PaymentsMadeService {
       }
     });
 
+    // Aggregate only real cash payments (exclude credit_application which is not actual cash outflow)
+    const cashWhere = { ...where, transactionType: { not: 'credit_application' } };
     const aggregates = await prisma.paymentMade.aggregate({
-      where,
-      _sum: {
-        amount: true,
-        unusedAmount: true
-      }
+      where: cashWhere,
+      _sum: { amount: true, unusedAmount: true }
     });
 
     return {
@@ -252,6 +251,86 @@ class PaymentsMadeService {
       return await tx.paymentMade.findUnique({
         where: { id: paymentId },
         include: { vendor: true, invoices: true }
+      });
+    }, { timeout: 15000 });
+  }
+
+  static async applyCredits(data) {
+    return await prisma.$transaction(async (tx) => {
+      const { vendorId, allocations, date, notes } = data;
+      // allocations: [{ paymentMadeId, invoiceId, amountToApply }]
+
+      const validAllocs = allocations.filter(a => parseFloat(a.amountToApply) > 0);
+      if (validAllocs.length === 0) throw new Error('No valid allocations provided');
+
+      const totalAmount = validAllocs.reduce((s, a) => s + parseFloat(a.amountToApply), 0);
+
+      // Generate unique credit application number
+      const year = new Date().getFullYear();
+      const month = String(new Date().getMonth() + 1).padStart(2, '0');
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const paymentNumber = `CA-${year}${month}-${rand}`;
+
+      // Ensure unique
+      const existing = await tx.paymentMade.findFirst({ where: { paymentNumber } });
+      if (existing) throw new Error('Please retry — duplicate number generated, try again');
+
+      // Create the new Credit Application PaymentMade record
+      const newPayment = await tx.paymentMade.create({
+        data: {
+          paymentNumber,
+          vendorId: parseInt(vendorId),
+          amount: totalAmount,
+          date: date ? new Date(date) : new Date(),
+          paymentMode: 'Credit Adjustment',
+          paidThrough: 'Advance Credits',
+          bankCharges: 0,
+          notes: notes || null,
+          transactionType: 'credit_application',
+          unusedAmount: 0,
+        }
+      });
+
+      for (const alloc of validAllocs) {
+        const pmId = parseInt(alloc.paymentMadeId);
+        const invoiceId = parseInt(alloc.invoiceId);
+        const amountToApply = parseFloat(alloc.amountToApply);
+
+        const sourcePayment = await tx.paymentMade.findUnique({ where: { id: pmId } });
+        if (!sourcePayment) throw new Error(`Source payment ${pmId} not found`);
+        if (sourcePayment.unusedAmount < amountToApply - 0.001) {
+          throw new Error(`Insufficient unused credits in payment ${sourcePayment.paymentNumber}`);
+        }
+
+        const invoice = await tx.inwardInvoice.findUnique({ where: { id: invoiceId } });
+        if (!invoice) throw new Error(`Invoice ${invoiceId} not found`);
+
+        const balanceDue = invoice.totalCost - invoice.amountPaid;
+        if (amountToApply > balanceDue + 0.001) {
+          throw new Error(`Amount exceeds balance due for invoice ${invoice.invoiceNo}`);
+        }
+
+        // Link new payment record to invoice
+        await tx.paymentMadeInvoice.create({
+          data: { paymentMadeId: newPayment.id, invoiceId, amountApplied: amountToApply }
+        });
+
+        // Deduct from source advance payment unusedAmount
+        await tx.paymentMade.update({
+          where: { id: pmId },
+          data: { unusedAmount: sourcePayment.unusedAmount - amountToApply }
+        });
+
+        // Update invoice amountPaid
+        await tx.inwardInvoice.update({
+          where: { id: invoiceId },
+          data: { amountPaid: invoice.amountPaid + amountToApply }
+        });
+      }
+
+      return await tx.paymentMade.findUnique({
+        where: { id: newPayment.id },
+        include: { vendor: true, invoices: { include: { invoice: true } } }
       });
     }, { timeout: 15000 });
   }

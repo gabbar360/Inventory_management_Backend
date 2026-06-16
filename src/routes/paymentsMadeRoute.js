@@ -13,5 +13,6 @@ router.post('/add-paymentsmade', validateRequest(paymentMadeSchema), PaymentsMad
 router.put('/update-paymentsmade/:id', validateRequest(paymentMadeSchema), PaymentsMadeController.update);
 router.delete('/delete-paymentsmade/:id', PaymentsMadeController.delete);
 router.get('/paymentsmade/:id/pdf', PaymentsMadeController.generatePDF);
+router.post('/paymentsmade/apply-credits', PaymentsMadeController.applyCredits);
 
 module.exports = router;

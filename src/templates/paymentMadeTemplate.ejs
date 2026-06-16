@@ -382,7 +382,15 @@
             </div>
         </div>
         <div class="receipt-title-container">
-            <div class="receipt-title">Payment Made</div>
+            <div class="receipt-title">
+                <% if (payment.transactionType === 'credit_application') { %>
+                    Credit Applied
+                <% } else if (payment.transactionType === 'vendor_advance') { %>
+                    Vendor Advance
+                <% } else { %>
+                    Payment Made
+                <% } %>
+            </div>
             <table class="meta-table" style="margin-top: 15px; width: 220px; float: right;">
                 <tr>
                     <td class="label">Payment No.</td>
@@ -434,9 +442,16 @@
     </div>
 
     <!-- PAYMENT SUMMARY CARD -->
-    <div class="payment-summary-card">
-        <div class="summary-label">Amount Paid</div>
-        <div class="summary-amount">₹ <%= fmt(payment.amount) %></div>
+    <div class="payment-summary-card" <% if (payment.transactionType === 'credit_application') { %>style="background-color:#fffbeb;border-left-color:#d97706;"<% } %> >
+        <div>
+            <div class="summary-label" <% if (payment.transactionType === 'credit_application') { %>style="color:#92400e"<% } %> >
+                <% if (payment.transactionType === 'credit_application') { %>Credits Applied from Advance<% } else { %>Amount Paid<% } %>
+            </div>
+            <% if (payment.transactionType === 'credit_application') { %>
+            <div style="font-size:8pt;color:#b45309;margin-top:4px;">Applied from existing vendor advance credits</div>
+            <% } %>
+        </div>
+        <div class="summary-amount" <% if (payment.transactionType === 'credit_application') { %>style="color:#b45309"<% } %> >₹ <%= fmt(payment.amount) %></div>
     </div>
 
     <!-- AMOUNT IN WORDS -->

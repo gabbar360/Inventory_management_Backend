@@ -60,7 +60,7 @@ class PaymentsReceivedService {
     });
 
     const aggregates = await prisma.paymentReceived.aggregate({
-      where,
+      where: { ...where, transactionType: { not: 'credit_application' } },
       _sum: {
         amount: true,
         unusedAmount: true
@@ -254,6 +254,79 @@ class PaymentsReceivedService {
       return await tx.paymentReceived.findUnique({
         where: { id: paymentId },
         include: { customer: true, invoices: true }
+      });
+    }, { timeout: 15000 });
+  }
+
+  static async applyCredits(data) {
+    return await prisma.$transaction(async (tx) => {
+      const { customerId, allocations, date, notes } = data;
+
+      const validAllocs = allocations.filter(a => parseFloat(a.amountToApply) > 0);
+      if (validAllocs.length === 0) throw new Error('No valid allocations provided');
+
+      const totalAmount = validAllocs.reduce((s, a) => s + parseFloat(a.amountToApply), 0);
+
+      const year = new Date().getFullYear();
+      const month = String(new Date().getMonth() + 1).padStart(2, '0');
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const paymentNumber = `CA-${year}${month}-${rand}`;
+
+      const existing = await tx.paymentReceived.findFirst({ where: { paymentNumber } });
+      if (existing) throw new Error('Please retry — duplicate number generated, try again');
+
+      const newPayment = await tx.paymentReceived.create({
+        data: {
+          paymentNumber,
+          customerId: parseInt(customerId),
+          amount: totalAmount,
+          date: date ? new Date(date) : new Date(),
+          paymentMode: 'Credit Adjustment',
+          depositTo: 'Advance Credits',
+          bankCharges: 0,
+          notes: notes || null,
+          transactionType: 'credit_application',
+          unusedAmount: 0,
+        }
+      });
+
+      for (const alloc of validAllocs) {
+        const prId = parseInt(alloc.paymentReceivedId);
+        const invoiceId = parseInt(alloc.invoiceId);
+        const amountToApply = parseFloat(alloc.amountToApply);
+
+        const sourcePayment = await tx.paymentReceived.findUnique({ where: { id: prId } });
+        if (!sourcePayment) throw new Error(`Source payment ${prId} not found`);
+        if (sourcePayment.unusedAmount < amountToApply - 0.001) {
+          throw new Error(`Insufficient unused credits in payment ${sourcePayment.paymentNumber}`);
+        }
+
+        const invoice = await tx.outwardInvoice.findUnique({ where: { id: invoiceId } });
+        if (!invoice) throw new Error(`Invoice ${invoiceId} not found`);
+
+        const balanceDue = invoice.totalCost - invoice.amountReceived;
+        if (amountToApply > balanceDue + 0.001) {
+          throw new Error(`Amount exceeds balance due for invoice ${invoice.invoiceNo}`);
+        }
+
+        await tx.paymentReceivedInvoice.create({
+          data: { paymentReceivedId: newPayment.id, invoiceId, amountApplied: amountToApply }
+        });
+
+        await tx.paymentReceived.update({
+          where: { id: prId },
+          data: { unusedAmount: sourcePayment.unusedAmount - amountToApply }
+        });
+
+        await tx.outwardInvoice.update({
+          where: { id: invoiceId },
+          data: { amountReceived: invoice.amountReceived + amountToApply }
+        });
+      }
+
+      return await tx.paymentReceived.findUnique({
+        where: { id: newPayment.id },
+        include: { customer: true, invoices: { include: { invoice: true } } }
       });
     }, { timeout: 15000 });
   }
