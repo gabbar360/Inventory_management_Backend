@@ -29,15 +29,17 @@ const ITEM_INCLUDE = {
 };
 
 class OutwardService {
-  static async getAll(page, limit, search, sortBy, sortOrder, startDate, endDate) {
-    const where = search
-      ? {
-          OR: [
-            { invoiceNo: { contains: search, mode: 'insensitive' } },
-            { customer: { name: { contains: search, mode: 'insensitive' } } },
-          ],
-        }
-      : {};
+  static async getAll(page, limit, search, sortBy, sortOrder, startDate, endDate, customerId) {
+    const where = {};
+    if (search) {
+      where.OR = [
+        { invoiceNo: { contains: search, mode: 'insensitive' } },
+        { customer: { name: { contains: search, mode: 'insensitive' } } },
+      ];
+    }
+    if (customerId) {
+      where.customerId = parseInt(customerId);
+    }
 
     if (startDate || endDate) {
       where.date = {};

@@ -5,7 +5,8 @@ class InwardController {
   static async getAll(req, res) {
     try {
       const { page, limit, search, sortBy, sortOrder, startDate, endDate } = parseQueryParams(req.query);
-      const result = await InwardService.getAll(page, limit, search, sortBy, sortOrder, startDate, endDate);
+      const vendorId = req.query.vendorId ? parseInt(req.query.vendorId) : null;
+      const result = await InwardService.getAll(page, limit, search, sortBy, sortOrder, startDate, endDate, vendorId);
       return sendResponse(res, 200, true, result.invoices, 'Inward invoices retrieved successfully', result.pagination);
     } catch (error) {
       return sendError(res, 500, error.message);

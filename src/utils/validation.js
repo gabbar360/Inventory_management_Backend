@@ -128,6 +128,41 @@ const outwardInvoiceSchema = z.object({
   items: z.array(outwardItemSchema).min(1, 'At least one item is required'),
 });
 
+const paymentReceivedSchema = z.object({
+  paymentNumber: z.string().min(1, 'Payment number is required'),
+  customerId: z.union([z.string(), z.number()]).transform(val => String(val)),
+  amount: z.number().min(0, 'Amount must be positive'),
+  date: z.string().min(1, 'Date is required'),
+  paymentMode: z.string().min(1, 'Payment mode is required'),
+  referenceNumber: z.string().optional().nullable(),
+  depositTo: z.string().min(1, 'Deposit to account is required'),
+  bankCharges: z.number().min(0).optional().default(0),
+  taxRate: z.number().min(0).optional().default(0),
+  notes: z.string().optional().nullable(),
+  transactionType: z.enum(['invoice_payment', 'customer_advance']).optional().default('invoice_payment'),
+  invoices: z.array(z.object({
+    invoiceId: z.union([z.string(), z.number()]).transform(val => Number(val)),
+    amountApplied: z.number().min(0)
+  })).optional().default([])
+});
+
+const paymentMadeSchema = z.object({
+  paymentNumber: z.string().min(1, 'Payment number is required'),
+  vendorId: z.union([z.string(), z.number()]).transform(val => String(val)),
+  amount: z.number().min(0, 'Amount must be positive'),
+  date: z.string().min(1, 'Date is required'),
+  paymentMode: z.string().min(1, 'Payment mode is required'),
+  referenceNumber: z.string().optional().nullable(),
+  paidThrough: z.string().min(1, 'Paid through account is required'),
+  bankCharges: z.number().min(0).optional().default(0),
+  notes: z.string().optional().nullable(),
+  transactionType: z.enum(['bill_payment', 'vendor_advance']).optional().default('bill_payment'),
+  invoices: z.array(z.object({
+    invoiceId: z.union([z.string(), z.number()]).transform(val => Number(val)),
+    amountApplied: z.number().min(0)
+  })).optional().default([])
+});
+
 module.exports = {
   registerSchema,
   loginSchema,
@@ -141,5 +176,7 @@ module.exports = {
   inwardItemSchema,
   inwardInvoiceSchema,
   outwardItemSchema,
-  outwardInvoiceSchema
+  outwardInvoiceSchema,
+  paymentReceivedSchema,
+  paymentMadeSchema
 };

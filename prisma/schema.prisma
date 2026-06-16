@@ -101,6 +101,7 @@ model Vendor {
   inwardInvoices InwardInvoice[]
   purchaseOrders PurchaseOrder[] @relation("PurchaseOrders")
   stockBatches   StockBatch[]
+  paymentsMade   PaymentMade[]
 
   @@map("vendors")
 }
@@ -117,9 +118,10 @@ model Customer {
   gstNumber       String?          @map("gst_number")
   state           String?
   shippingAddress String?          @map("shipping_address")
-  outwardInvoices OutwardInvoice[]
-  quotes          Quote[]
-  salesOrders     SalesOrder[]
+  outwardInvoices   OutwardInvoice[]
+  quotes            Quote[]
+  salesOrders       SalesOrder[]
+  paymentsReceived  PaymentReceived[]
 
   @@map("customers")
 }
@@ -149,8 +151,10 @@ model InwardInvoice {
   expense    Float        @default(0)
   boxDetails BoxDetail[]
   location   Location     @relation(fields: [locationId], references: [id], onDelete: Cascade)
-  vendor     Vendor       @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  items      InwardItem[]
+  vendor          Vendor               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  items           InwardItem[]
+  amountPaid      Float                @default(0) @map("amount_paid")
+  paymentsApplied PaymentMadeInvoice[]
 
   @@map("inward_invoices")
 }
@@ -200,8 +204,9 @@ model OutwardInvoice {
   shippingCharge        Float            @default(0) @map("shipping_charge")
   discount              Float            @default(0)
   boxDetails            BoxDetail[]
-  customer              Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customer              Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
   items                 OutwardItem[]
+  paymentsApplied       PaymentReceivedInvoice[]
 
   @@map("outward_invoices")
 }
@@ -617,4 +622,71 @@ model BoxDetail {
   stockBatch       StockBatch?     @relation(fields: [stockBatchId], references: [id])
 
   @@map("box_details")
+}
+
+model PaymentReceived {
+  id              Int                      @id @default(autoincrement())
+  paymentNumber   String                   @unique @map("payment_number")
+  customerId      Int                      @map("customer_id")
+  amount          Float
+  date            DateTime
+  paymentMode     String                   @map("payment_mode")
+  referenceNumber String?                  @map("reference_number")
+  depositTo       String                   @map("deposit_to")
+  bankCharges     Float                    @default(0) @map("bank_charges")
+  taxRate         Float                    @default(0) @map("tax_rate")
+  notes           String?
+  transactionType String                   @default("invoice_payment") @map("transaction_type")
+  unusedAmount    Float                    @default(0) @map("unused_amount")
+  createdAt       DateTime                 @default(now()) @map("created_at")
+  updatedAt       DateTime                 @updatedAt @map("updated_at")
+  customer        Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  invoices        PaymentReceivedInvoice[]
+
+  @@map("payments_received")
+}
+
+model PaymentReceivedInvoice {
+  id                Int             @id @default(autoincrement())
+  paymentReceivedId Int             @map("payment_received_id")
+  invoiceId         Int             @map("invoice_id")
+  amountApplied     Float           @map("amount_applied")
+  paymentReceived   PaymentReceived @relation(fields: [paymentReceivedId], references: [id], onDelete: Cascade)
+  invoice           OutwardInvoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentReceivedId, invoiceId])
+  @@map("payment_received_invoices")
+}
+
+model PaymentMade {
+  id              Int                  @id @default(autoincrement())
+  paymentNumber   String               @unique @map("payment_number")
+  vendorId        Int                  @map("vendor_id")
+  amount          Float
+  date            DateTime
+  paymentMode     String               @map("payment_mode")
+  referenceNumber String?              @map("reference_number")
+  paidThrough     String               @map("paid_through")
+  bankCharges     Float                @default(0) @map("bank_charges")
+  notes           String?
+  transactionType String               @default("bill_payment") @map("transaction_type")
+  unusedAmount    Float                @default(0) @map("unused_amount")
+  createdAt       DateTime             @default(now()) @map("created_at")
+  updatedAt       DateTime             @updatedAt @map("updated_at")
+  vendor          Vendor               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  invoices        PaymentMadeInvoice[]
+
+  @@map("payments_made")
+}
+
+model PaymentMadeInvoice {
+  id            Int           @id @default(autoincrement())
+  paymentMadeId Int           @map("payment_made_id")
+  invoiceId     Int           @map("invoice_id")
+  amountApplied Float         @map("amount_applied")
+  paymentMade   PaymentMade   @relation(fields: [paymentMadeId], references: [id], onDelete: Cascade)
+  invoice       InwardInvoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@unique([paymentMadeId, invoiceId])
+  @@map("payment_made_invoices")
 }
