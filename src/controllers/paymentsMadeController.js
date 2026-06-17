@@ -12,6 +12,7 @@ class PaymentsMadeController {
       const { page, limit, search, sortBy, sortOrder, startDate, endDate } = parseQueryParams(req.query);
       const vendorId = req.query.vendorId ? parseInt(req.query.vendorId) : null;
       const paymentMode = req.query.paymentMode || null;
+      const unusedCreditsOnly = req.query.unusedCreditsOnly || null;
 
       const result = await PaymentsMadeService.getAll(
         page,
@@ -22,7 +23,8 @@ class PaymentsMadeController {
         vendorId,
         paymentMode,
         startDate,
-        endDate
+        endDate,
+        unusedCreditsOnly
       );
 
       return sendResponse(res, 200, true, result.payments, 'Payments made retrieved successfully', {

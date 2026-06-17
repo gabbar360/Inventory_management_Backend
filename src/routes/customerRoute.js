@@ -9,6 +9,8 @@ router.use(authenticateToken);
 
 router.get('/getall-customers', CustomerController.getAll);
 router.get('/get-customers/:id', CustomerController.getById);
+router.get('/get-customers/:id/ledger', CustomerController.getLedger);
+router.get('/get-customers/:id/ledger/pdf', CustomerController.downloadLedgerPDF);
 router.post('/add-customers', validateRequest(customerSchema), CustomerController.create);
 router.put('/update-customers/:id', validateRequest(customerSchema.partial()), CustomerController.update);
 router.delete('/delete-customers/:id', CustomerController.delete);

@@ -3,7 +3,7 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class PaymentsMadeService {
-  static async getAll(page, limit, search, sortBy, sortOrder, vendorId, paymentMode, startDate, endDate) {
+  static async getAll(page, limit, search, sortBy, sortOrder, vendorId, paymentMode, startDate, endDate, unusedCreditsOnly) {
     const where = {};
 
     if (search) {
@@ -22,6 +22,10 @@ class PaymentsMadeService {
       where.paymentMode = { equals: paymentMode, mode: 'insensitive' };
     }
 
+    if (unusedCreditsOnly === 'true' || unusedCreditsOnly === true) {
+      where.unusedAmount = { gt: 0 };
+    }
+
     if (startDate || endDate) {
       where.date = {};
       if (startDate) {
@@ -36,9 +40,18 @@ class PaymentsMadeService {
 
     const total = await prisma.paymentMade.count({ where });
     const { offset } = calculatePagination(page, limit, total);
-    const orderBy = sortBy && ['paymentNumber', 'date', 'amount', 'createdAt'].includes(sortBy)
-      ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
-      : { date: 'desc' };
+    let orderBy;
+    if (sortBy === 'vendor' || sortBy === 'vendor.name') {
+      orderBy = {
+        vendor: {
+          name: sortOrder === 'desc' ? 'desc' : 'asc'
+        }
+      };
+    } else if (sortBy && ['paymentNumber', 'date', 'amount', 'unusedAmount', 'createdAt'].includes(sortBy)) {
+      orderBy = { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' };
+    } else {
+      orderBy = { date: 'desc' };
+    }
 
     const payments = await prisma.paymentMade.findMany({
       where,

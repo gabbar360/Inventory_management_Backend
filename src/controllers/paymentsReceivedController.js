@@ -12,6 +12,7 @@ class PaymentsReceivedController {
       const { page, limit, search, sortBy, sortOrder, startDate, endDate } = parseQueryParams(req.query);
       const customerId = req.query.customerId ? parseInt(req.query.customerId) : null;
       const paymentMode = req.query.paymentMode || null;
+      const unusedCreditsOnly = req.query.unusedCreditsOnly || null;
 
       const result = await PaymentsReceivedService.getAll(
         page,
@@ -22,7 +23,8 @@ class PaymentsReceivedController {
         customerId,
         paymentMode,
         startDate,
-        endDate
+        endDate,
+        unusedCreditsOnly
       );
 
       return sendResponse(res, 200, true, result.payments, 'Payments received retrieved successfully', {
