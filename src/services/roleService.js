@@ -60,13 +60,17 @@ class RoleService {
   }
 
   static async createRole({ name, description, isActive = true }) {
+    if (!name || name.trim() === '') {
+      throw new Error('Role name is required and cannot be empty');
+    }
+
     const existingRole = await prisma.role.findUnique({ where: { name } });
     if (existingRole) throw new Error('Role with this name already exists');
 
     const role = await prisma.role.create({
       data: {
-        name,
-        description,
+        name: name.trim(),
+        description: description?.trim() || null,
         isActive
       },
       select: {
@@ -85,14 +89,14 @@ class RoleService {
     const role = await prisma.role.findUnique({ where: { id: roleId } });
     if (!role) throw new Error('Role not found');
 
-    if (name && name !== role.name) {
-      const existingRole = await prisma.role.findUnique({ where: { name } });
+    if (name && name.trim() !== role.name) {
+      const existingRole = await prisma.role.findUnique({ where: { name: name.trim() } });
       if (existingRole) throw new Error('Role name already in use');
     }
 
     const updateData = {};
-    if (name) updateData.name = name;
-    if (description !== undefined) updateData.description = description;
+    if (name) updateData.name = name.trim();
+    if (description !== undefined) updateData.description = description?.trim() || null;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const updatedRole = await prisma.role.update({
@@ -115,9 +119,8 @@ class RoleService {
     const role = await prisma.role.findUnique({ where: { id: roleId } });
     if (!role) throw new Error('Role not found');
 
-    // Check if role is being used by users
     const usersWithRole = await prisma.user.count({
-      where: { role: role.name }
+      where: { roleId: roleId }
     });
 
     if (usersWithRole > 0) {

@@ -15,7 +15,16 @@ class AuthService {
     const hashedPassword = await bcrypt.hash(password, 12);
     const user = await prisma.user.create({
       data: { email, password: hashedPassword, name },
-      select: { id: true, email: true, name: true, createdAt: true },
+      select: { 
+        id: true, 
+        email: true, 
+        name: true,
+        roleId: true,
+        role: {
+          select: { id: true, name: true }
+        },
+        createdAt: true 
+      },
     });
 
     const accessToken = generateAccessToken(user.id);
@@ -36,14 +45,20 @@ class AuthService {
   }
 
   static async login(email, password, deviceInfo, ipAddress) {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ 
+      where: { email },
+      include: {
+        role: {
+          select: { id: true, name: true, isActive: true }
+        }
+      }
+    });
     if (!user) throw new Error('Invalid credentials');
 
     if (!user.isActive) throw new Error('User account is blocked');
 
     // Check if user's role is active
-    const role = await prisma.role.findUnique({ where: { name: user.role } });
-    if (role && !role.isActive) throw new Error('User role is inactive');
+    if (user.role && !user.role.isActive) throw new Error('User role is inactive');
 
     const isValidPassword = await bcrypt.compare(password, user.password);
     if (!isValidPassword) throw new Error('Invalid credentials');
@@ -63,7 +78,14 @@ class AuthService {
     });
 
     return {
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, createdAt: user.createdAt },
+      user: { 
+        id: user.id, 
+        email: user.email, 
+        name: user.name, 
+        roleId: user.roleId,
+        role: user.role,
+        createdAt: user.createdAt 
+      },
       accessToken,
       refreshToken,
     };
@@ -74,7 +96,19 @@ class AuthService {
     
     const tokenRecord = await prisma.refreshToken.findUnique({
       where: { token: hashedToken },
-      include: { user: { select: { id: true, email: true, name: true, role: true } } },
+      include: { 
+        user: { 
+          select: { 
+            id: true, 
+            email: true, 
+            name: true, 
+            roleId: true,
+            role: {
+              select: { id: true, name: true }
+            }
+          } 
+        } 
+      },
     });
 
     if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
@@ -126,7 +160,15 @@ class AuthService {
     
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, email: true, name: true, role: true },
+      select: { 
+        id: true, 
+        email: true, 
+        name: true, 
+        roleId: true,
+        role: {
+          select: { id: true, name: true }
+        }
+      },
     });
 
     if (!user) throw new Error('User not found');
@@ -158,7 +200,10 @@ class AuthService {
         id: true,
         email: true,
         name: true,
-        role: true,
+        roleId: true,
+        role: {
+          select: { id: true, name: true }
+        },
         createdAt: true,
       },
     });
