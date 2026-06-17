@@ -5,7 +5,7 @@ const { InventoryService } = require('./inventoryService');
 const prisma = new PrismaClient();
 
 class InwardService {
-  static async getAll(page, limit, search, sortBy, sortOrder, startDate, endDate) {
+  static async getAll(page, limit, search, sortBy, sortOrder, startDate, endDate, vendorId) {
     const where = {};
     
     if (search) {
@@ -13,6 +13,10 @@ class InwardService {
         { invoiceNo: { contains: search, mode: 'insensitive' } },
         { vendor: { name: { contains: search, mode: 'insensitive' } } },
       ];
+    }
+
+    if (vendorId) {
+      where.vendorId = parseInt(vendorId);
     }
     
     if (startDate || endDate) {

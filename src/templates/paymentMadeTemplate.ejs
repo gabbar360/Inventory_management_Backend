@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Receipt - <%= payment.paymentNumber %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; font-size: 9.5pt; color: #374151; background: #fff; line-height: 1.4; }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 20mm 15mm;
+            background: #fff;
+        }
+
+        /* Top header section */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 1px solid #e5e7eb;
+            padding-bottom: 20px;
+            margin-bottom: 25px;
+        }
+
+        .company-details {
+            max-width: 60%;
+        }
+
+        .logo-container {
+            margin-bottom: 12px;
+        }
+        .logo-container img {
+            max-height: 55px;
+            max-width: 180px;
+            object-fit: contain;
+        }
+
+        .company-name {
+            font-size: 15pt;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .company-info {
+            font-size: 8.5pt;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        .receipt-title-container {
+            text-align: right;
+        }
+
+        .receipt-title {
+            font-size: 22pt;
+            font-weight: 700;
+            color: #017e84; /* Zoho Books/Odoo Teal for Purchases */
+            letter-spacing: -0.5px;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+        }
+
+        /* Parties and Meta columns */
+        .details-grid {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+
+        .billing-to {
+            width: 48%;
+        }
+
+        .section-label {
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .party-name {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .party-addr {
+            font-size: 9pt;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        .payment-meta {
+            width: 45%;
+        }
+
+        .meta-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .meta-table td {
+            padding: 4px 0;
+            font-size: 9pt;
+            vertical-align: top;
+        }
+        .meta-table td.label {
+            color: #6b7280;
+            width: 45%;
+        }
+        .meta-table td.value {
+            color: #111827;
+            font-weight: 600;
+            text-align: right;
+        }
+
+        /* Payment summary highlight card */
+        .payment-summary-card {
+            background-color: #f0faf9; /* Teal Tint */
+            border-left: 4px solid #017e84;
+            padding: 16px 20px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .summary-label {
+            font-size: 9.5pt;
+            font-weight: 600;
+            color: #0d5a5c;
+        }
+
+        .summary-amount {
+            font-size: 18pt;
+            font-weight: 700;
+            color: #0d5a5c;
+        }
+
+        .words-section {
+            font-size: 8.5pt;
+            color: #6b7280;
+            margin-top: -20px;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+        .words-section span {
+            font-weight: 600;
+            color: #374151;
+            font-style: normal;
+        }
+
+        /* Bill allocations table */
+        .allocation-header {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 10px;
+        }
+
+        .items-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .items-table th {
+            padding: 8px 12px;
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: #4b5563;
+            text-transform: uppercase;
+            border-bottom: 2px solid #e5e7eb;
+            background-color: #f9fafb;
+        }
+        
+        .items-table td {
+            padding: 10px 12px;
+            font-size: 9pt;
+            color: #374151;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+        }
+
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        /* Summary Calculations List */
+        .totals-container {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 35px;
+        }
+
+        .totals-table {
+            width: 320px;
+            border-collapse: collapse;
+        }
+
+        .totals-table td {
+            padding: 6px 8px;
+            font-size: 9.5pt;
+        }
+        
+        .totals-table tr.border-top td {
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .totals-table td.label {
+            color: #6b7280;
+        }
+
+        .totals-table td.value {
+            font-weight: 600;
+            color: #111827;
+            text-align: right;
+        }
+
+        .totals-table tr.highlight td.label {
+            font-weight: 700;
+            color: #111827;
+        }
+
+        .totals-table tr.highlight td.value {
+            font-size: 11pt;
+            font-weight: 700;
+            color: #017e84;
+        }
+
+        .totals-table tr.advance-highlight td.label {
+            font-weight: 700;
+            color: #b45309;
+        }
+
+        .totals-table tr.advance-highlight td.value {
+            font-weight: 700;
+            color: #b45309;
+        }
+
+        /* Bottom section notes & signatory */
+        .bottom-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-top: 30px;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+        }
+
+        .notes-block {
+            width: 55%;
+        }
+
+        .notes-title {
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+            margin-bottom: 6px;
+        }
+
+        .notes-content {
+            font-size: 9pt;
+            color: #4b5563;
+            line-height: 1.5;
+        }
+
+        .signatory-block {
+            width: 38%;
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .sig-company {
+            font-size: 9pt;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 45px;
+            text-transform: uppercase;
+        }
+
+        .sig-line {
+            width: 180px;
+            border-top: 1px solid #9ca3af;
+            text-align: center;
+            font-size: 8pt;
+            color: #6b7280;
+            padding-top: 5px;
+            font-weight: 500;
+        }
+
+        .footer {
+            margin-top: 50px;
+            text-align: center;
+            font-size: 8pt;
+            color: #9ca3af;
+            border-top: 1px solid #f3f4f6;
+            padding-top: 10px;
+        }
+
+        @page { size: A4; margin: 0; }
+        @media print {
+            body { margin: 0; }
+            .page { padding: 15mm 15mm; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <%
+        function fmt(num) {
+            if (num === undefined || num === null || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+        
+        function numToWords(n) {
+            const ones = ['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+            const teens = ['Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+            const tens = ['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+            
+            const h = (x) => {
+                let r = '';
+                if (x >= 100) { r += ones[Math.floor(x/100)] + ' Hundred '; x %= 100; }
+                if (x >= 20) { r += tens[Math.floor(x/10)] + ' '; x %= 10; }
+                else if (x >= 10) { r += teens[x-10] + ' '; x = 0; }
+                if (x > 0) r += ones[x] + ' ';
+                return r;
+            };
+            
+            const convertInt = (num) => {
+                if (num === 0) return 'Zero';
+                let r = '';
+                const cr = Math.floor(num/10000000); if (cr) { r += h(cr)+'Crore '; num %= 10000000; }
+                const lk = Math.floor(num/100000); if (lk) { r += h(lk)+'Lakh '; num %= 100000; }
+                const th = Math.floor(num/1000); if (th) { r += h(th)+'Thousand '; num %= 1000; }
+                if (num > 0) r += h(num);
+                return r.trim();
+            };
+
+            const fixedNum = parseFloat(n).toFixed(2);
+            const parts = fixedNum.split('.');
+            const rupees = parseInt(parts[0]);
+            const paise = parseInt(parts[1]);
+
+            let words = 'INR ' + convertInt(rupees);
+            if (paise > 0) {
+                words += ' and ' + convertInt(paise) + ' Paise';
+            }
+            return words + ' Only';
+        }
+    %>
+
+    <!-- HEADER SECTION -->
+    <div class="header-section">
+        <div class="company-details">
+            <div class="logo-container">
+                <% if (logoBase64) { %>
+                    <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+                <% } %>
+            </div>
+            <div class="company-name"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
+            <div class="company-info">
+                <%= settings?.companyAddress || 'B-623, RK Iconic, 150 Feet Ring Road, Ayodhya Chowk, Rajkot Gujarat 360007, India' %><br>
+                GSTIN: <%= settings?.companyGstin || '24ABAFV3901A1ZV' %><br>
+                Email: <%= settings?.companyEmail || 'sales@vegnar.com' %> | Phone: <%= settings?.companyPhone || '+91 9998040482' %>
+            </div>
+        </div>
+        <div class="receipt-title-container">
+            <div class="receipt-title">
+                <% if (payment.transactionType === 'credit_application') { %>
+                    Credit Applied
+                <% } else if (payment.transactionType === 'vendor_advance') { %>
+                    Vendor Advance
+                <% } else { %>
+                    Payment Made
+                <% } %>
+            </div>
+            <table class="meta-table" style="margin-top: 15px; width: 220px; float: right;">
+                <tr>
+                    <td class="label">Payment No.</td>
+                    <td class="value"><%= payment.paymentNumber %></td>
+                </tr>
+                <tr>
+                    <td class="label">Payment Date</td>
+                    <td class="value"><%= fmtDate(payment.date) %></td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- DETAILS GRID -->
+    <div class="details-grid">
+        <div class="billing-to">
+            <span class="section-label">Paid To</span>
+            <div class="party-name"><%= payment.vendor?.name || '' %></div>
+            <div class="party-addr">
+                <%= payment.vendor?.address || '' %><br>
+                <% if (payment.vendor?.state) { %>State: <%= payment.vendor.state %><br><% } %>
+                <% if (payment.vendor?.phone) { %>Phone: <%= payment.vendor.phone %><br><% } %>
+                <% if (payment.vendor?.gstNumber) { %>GSTIN: <%= payment.vendor.gstNumber %><% } %>
+            </div>
+        </div>
+        <div class="payment-meta">
+            <span class="section-label">Payment Details</span>
+            <table class="meta-table">
+                <tr>
+                    <td class="label">Payment Mode</td>
+                    <td class="value"><%= payment.paymentMode %></td>
+                </tr>
+                <tr>
+                    <td class="label">Paid Through</td>
+                    <td class="value"><%= payment.paidThrough %></td>
+                </tr>
+                <tr>
+                    <td class="label">Reference No.</td>
+                    <td class="value"><%= payment.referenceNumber || '—' %></td>
+                </tr>
+                <% if (payment.bankCharges > 0) { %>
+                    <tr>
+                        <td class="label">Bank Charges</td>
+                        <td class="value">₹ <%= fmt(payment.bankCharges) %></td>
+                    </tr>
+                <% } %>
+            </table>
+        </div>
+    </div>
+
+    <!-- PAYMENT SUMMARY CARD -->
+    <div class="payment-summary-card" <% if (payment.transactionType === 'credit_application') { %>style="background-color:#fffbeb;border-left-color:#d97706;"<% } %> >
+        <div>
+            <div class="summary-label" <% if (payment.transactionType === 'credit_application') { %>style="color:#92400e"<% } %> >
+                <% if (payment.transactionType === 'credit_application') { %>Credits Applied from Advance<% } else { %>Amount Paid<% } %>
+            </div>
+            <% if (payment.transactionType === 'credit_application') { %>
+            <div style="font-size:8pt;color:#b45309;margin-top:4px;">Applied from existing vendor advance credits</div>
+            <% } %>
+        </div>
+        <div class="summary-amount" <% if (payment.transactionType === 'credit_application') { %>style="color:#b45309"<% } %> >₹ <%= fmt(payment.amount) %></div>
+    </div>
+
+    <!-- AMOUNT IN WORDS -->
+    <div class="words-section">
+        Amount Paid in Words: <span><%= numToWords(payment.amount) %></span>
+    </div>
+
+    <!-- ALLOCATED BILLS TABLE -->
+    <% if (payment.invoices && payment.invoices.length > 0) { %>
+        <div class="allocation-header">Bill Allocation</div>
+        <table class="items-table">
+            <thead>
+                <tr>
+                    <th class="text-center" style="width: 8%">S.No.</th>
+                    <th class="text-left" style="width: 32%">Bill / Invoice Number</th>
+                    <th class="text-center" style="width: 20%">Bill Date</th>
+                    <th class="text-right" style="width: 20%">Bill Amount</th>
+                    <th class="text-right" style="width: 20%">Amount Applied</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% payment.invoices.forEach((inv, index) => { %>
+                <tr>
+                    <td class="text-center text-gray-400" style="font-size: 8.5pt;"><%= index + 1 %></td>
+                    <td style="font-weight: 600;"><%= inv.invoice?.invoiceNo %></td>
+                    <td class="text-center"><%= fmtDate(inv.invoice?.date) %></td>
+                    <td class="text-right">₹ <%= fmt(inv.invoice?.totalCost) %></td>
+                    <td class="text-right" style="font-weight: 600;">₹ <%= fmt(inv.amountApplied) %></td>
+                </tr>
+                <% }) %>
+            </tbody>
+        </table>
+
+        <!-- TOTALS & OVERPAYMENTS -->
+        <div class="totals-container">
+            <table class="totals-table">
+                <tr>
+                    <td class="label">Total Amount Paid:</td>
+                    <td class="value">₹ <%= fmt(payment.amount) %></td>
+                </tr>
+                <tr class="border-top">
+                    <td class="label">Amount Allocated:</td>
+                    <td class="value">₹ <%= fmt(payment.amount - payment.unusedAmount) %></td>
+                </tr>
+                <% if (payment.unusedAmount > 0) { %>
+                    <tr class="border-top advance-highlight">
+                        <td class="label">Amount Saved as Advance (Overpayment):</td>
+                        <td class="value">₹ <%= fmt(payment.unusedAmount) %></td>
+                    </tr>
+                <% } %>
+            </table>
+        </div>
+    <% } else { %>
+        <div style="margin-bottom: 30px; padding: 15px 20px; background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 4px; font-size: 9.5pt; color: #b45309; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                This payment was recorded as a <strong>Vendor Advance</strong>. No bills were applied.
+            </div>
+            <div style="font-weight: 700; font-size: 11pt; color: #b45309;">
+                ₹ <%= fmt(payment.amount) %>
+            </div>
+        </div>
+    <% } %>
+
+    <!-- BOTTOM SECTION -->
+    <div class="bottom-section">
+        <div class="notes-block">
+            <div class="notes-title">Notes / Remarks</div>
+            <div class="notes-content">
+                <%= payment.notes || 'Thank you!' %>
+            </div>
+        </div>
+        <div class="signatory-block">
+            <div class="sig-company">for <%= settings?.companyName || 'VEGNAR GLOBAL LLP' %></div>
+            <div class="sig-line">Authorized Signatory</div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <div class="footer">
+        This is a computer generated receipt. Signature is not required.
+    </div>
+</div>
+</body>
+</html>

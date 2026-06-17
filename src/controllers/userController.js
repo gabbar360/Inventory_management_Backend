@@ -24,13 +24,13 @@ class UserController {
 
   static async createUser(req, res) {
     try {
-      const { email, password, name, role } = req.body;
+      const { email, password, name, roleId } = req.body;
       
-      if (!email || !password || !name || !role) {
-        return sendError(res, 400, 'Email, password, name, and role are required');
+      if (!email || !password || !name || !roleId) {
+        return sendError(res, 400, 'Email, password, name, and roleId are required');
       }
 
-      const user = await UserService.createUser({ email, password, name, role });
+      const user = await UserService.createUser({ email, password, name, roleId: parseInt(roleId) });
       return sendResponse(res, 201, true, { user }, 'User created successfully');
     } catch (error) {
       return sendError(res, 400, error.message);
@@ -40,9 +40,14 @@ class UserController {
   static async updateUser(req, res) {
     try {
       const { id } = req.params;
-      const { name, email, role, isActive } = req.body;
+      const { name, email, roleId, isActive } = req.body;
       
-      const user = await UserService.updateUser(parseInt(id), { name, email, role, isActive });
+      const user = await UserService.updateUser(parseInt(id), { 
+        name, 
+        email, 
+        roleId: roleId ? parseInt(roleId) : undefined, 
+        isActive 
+      });
       return sendResponse(res, 200, true, { user }, 'User updated successfully');
     } catch (error) {
       return sendError(res, 400, error.message);

@@ -1,19 +1,36 @@
 const { sendResponse, sendError, parseQueryParams } = require("../utils/helpers");
-const { Request, Response } = require('express');
-const { CustomerService } = require('../services/customerService');
+const { PaymentsMadeService } = require('../services/paymentsMadeService');
 const settingsService = require('../services/settingsService');
 const ejs = require('ejs');
 const puppeteer = require('puppeteer');
 const path = require('path');
 const fs = require('fs');
 
-
-class CustomerController {
+class PaymentsMadeController {
   static async getAll(req, res) {
     try {
-      const { page, limit, search, sortBy, sortOrder } = parseQueryParams(req.query);
-      const result = await CustomerService.getAll(page, limit, search, sortBy, sortOrder);
-      return sendResponse(res, 200, true, result.customers, 'Customers retrieved successfully', result.pagination);
+      const { page, limit, search, sortBy, sortOrder, startDate, endDate } = parseQueryParams(req.query);
+      const vendorId = req.query.vendorId ? parseInt(req.query.vendorId) : null;
+      const paymentMode = req.query.paymentMode || null;
+      const unusedCreditsOnly = req.query.unusedCreditsOnly || null;
+
+      const result = await PaymentsMadeService.getAll(
+        page,
+        limit,
+        search,
+        sortBy,
+        sortOrder,
+        vendorId,
+        paymentMode,
+        startDate,
+        endDate,
+        unusedCreditsOnly
+      );
+
+      return sendResponse(res, 200, true, result.payments, 'Payments made retrieved successfully', {
+        ...result.pagination,
+        summary: result.summary
+      });
     } catch (error) {
       return sendError(res, 500, error.message);
     }
@@ -22,8 +39,8 @@ class CustomerController {
   static async getById(req, res) {
     try {
       const { id } = req.params;
-      const customer = await CustomerService.getById(id);
-      return sendResponse(res, 200, true, customer, 'Customer retrieved successfully');
+      const payment = await PaymentsMadeService.getById(id);
+      return sendResponse(res, 200, true, payment, 'Payment made retrieved successfully');
     } catch (error) {
       return sendError(res, 404, error.message);
     }
@@ -31,8 +48,8 @@ class CustomerController {
 
   static async create(req, res) {
     try {
-      const customer = await CustomerService.create(req.body);
-      return sendResponse(res, 201, true, customer, 'Customer created successfully');
+      const payment = await PaymentsMadeService.create(req.body);
+      return sendResponse(res, 201, true, payment, 'Payment made created successfully');
     } catch (error) {
       return sendError(res, 400, error.message);
     }
@@ -41,8 +58,17 @@ class CustomerController {
   static async update(req, res) {
     try {
       const { id } = req.params;
-      const customer = await CustomerService.update(id, req.body);
-      return sendResponse(res, 200, true, customer, 'Customer updated successfully');
+      const payment = await PaymentsMadeService.update(id, req.body);
+      return sendResponse(res, 200, true, payment, 'Payment made updated successfully');
+    } catch (error) {
+      return sendError(res, 400, error.message);
+    }
+  }
+
+  static async applyCredits(req, res) {
+    try {
+      const result = await PaymentsMadeService.applyCredits(req.body);
+      return sendResponse(res, 201, true, result, 'Credit application record created successfully');
     } catch (error) {
       return sendError(res, 400, error.message);
     }
@@ -51,29 +77,17 @@ class CustomerController {
   static async delete(req, res) {
     try {
       const { id } = req.params;
-      const result = await CustomerService.delete(id);
-      return sendResponse(res, 200, true, result, 'Customer deleted successfully');
+      const result = await PaymentsMadeService.delete(id);
+      return sendResponse(res, 200, true, result, 'Payment made deleted successfully');
     } catch (error) {
       return sendError(res, 400, error.message);
     }
   }
 
-  static async getLedger(req, res) {
+  static async generatePDF(req, res) {
     try {
       const { id } = req.params;
-      const { startDate, endDate } = req.query;
-      const ledger = await CustomerService.getLedger(id, startDate, endDate);
-      return sendResponse(res, 200, true, ledger, 'Customer ledger retrieved successfully');
-    } catch (error) {
-      return sendError(res, 500, error.message);
-    }
-  }
-
-  static async downloadLedgerPDF(req, res) {
-    try {
-      const { id } = req.params;
-      const { startDate, endDate } = req.query;
-      const ledger = await CustomerService.getLedger(id, startDate, endDate);
+      const payment = await PaymentsMadeService.getById(id);
       const settings = await settingsService.getSettings();
 
       // Convert logo to base64
@@ -84,8 +98,8 @@ class CustomerController {
         logoBase64 = logoBuffer.toString('base64');
       }
 
-      const templatePath = path.join(__dirname, '../templates/customerLedgerTemplate.ejs');
-      const html = await ejs.renderFile(templatePath, { ledger, logoBase64, settings, startDate, endDate });
+      const templatePath = path.join(__dirname, '../templates/paymentMadeTemplate.ejs');
+      const html = await ejs.renderFile(templatePath, { payment, logoBase64, settings });
 
       const browser = await puppeteer.launch({
         headless: 'new',
@@ -113,7 +127,7 @@ class CustomerController {
       await browser.close();
 
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="CustomerLedger-${ledger.customer.code}.pdf"`);
+      res.setHeader('Content-Disposition', `inline; filename="PaymentReceipt-${payment.paymentNumber}.pdf"`);
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
@@ -125,4 +139,5 @@ class CustomerController {
     }
   }
 }
-module.exports = { CustomerController };
+
+module.exports = { PaymentsMadeController };

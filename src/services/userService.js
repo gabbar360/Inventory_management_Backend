@@ -23,7 +23,13 @@ class UserService {
           id: true,
           email: true,
           name: true,
-          role: true,
+          roleId: true,
+          role: {
+            select: {
+              id: true,
+              name: true
+            }
+          },
           isActive: true,
           createdAt: true,
           updatedAt: true
@@ -56,7 +62,13 @@ class UserService {
         id: true,
         email: true,
         name: true,
-        role: true,
+        roleId: true,
+        role: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         isActive: true,
         createdAt: true,
         updatedAt: true
@@ -71,9 +83,16 @@ class UserService {
     };
   }
 
-  static async createUser({ email, password, name, role }) {
+  static async createUser({ email, password, name, roleId }) {
+    if (!email || !password || !name || !roleId) {
+      throw new Error('Email, password, name, and roleId are required');
+    }
+
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new Error('User with this email already exists');
+
+    const roleExists = await prisma.role.findUnique({ where: { id: roleId } });
+    if (!roleExists) throw new Error('Role does not exist');
 
     const hashedPassword = await bcrypt.hash(password, 12);
     
@@ -82,14 +101,20 @@ class UserService {
         email,
         password: hashedPassword,
         name,
-        role,
+        roleId,
         isActive: true
       },
       select: {
         id: true,
         email: true,
         name: true,
-        role: true,
+        roleId: true,
+        role: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         isActive: true,
         createdAt: true
       }
@@ -101,20 +126,26 @@ class UserService {
     };
   }
 
-  static async updateUser(userId, { name, email, role, isActive }) {
+  static async updateUser(userId, { name, email, roleId, isActive }) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new Error('User not found');
 
     const updateData = {};
+    
     if (name) updateData.name = name;
+    
     if (email && email !== user.email) {
       const existingUser = await prisma.user.findUnique({ where: { email } });
       if (existingUser) throw new Error('Email already in use');
       updateData.email = email;
     }
-    if (role) {
-      updateData.role = role;
+    
+    if (roleId) {
+      const roleExists = await prisma.role.findUnique({ where: { id: roleId } });
+      if (!roleExists) throw new Error('Role does not exist');
+      updateData.roleId = roleId;
     }
+    
     if (isActive !== undefined) {
       updateData.isActive = isActive;
     }
@@ -126,7 +157,13 @@ class UserService {
         id: true,
         email: true,
         name: true,
-        role: true,
+        roleId: true,
+        role: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
         isActive: true,
         createdAt: true,
         updatedAt: true

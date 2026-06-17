@@ -9,6 +9,8 @@ router.use(authenticateToken);
 
 router.get('/getall-vendors', VendorController.getAll);
 router.get('/get-vendors/:id', VendorController.getById);
+router.get('/get-vendors/:id/ledger', VendorController.getLedger);
+router.get('/get-vendors/:id/ledger/pdf', VendorController.downloadLedgerPDF);
 router.post('/add-vendors', validateRequest(vendorSchema), VendorController.create);
 router.put('/update-vendors/:id', validateRequest(vendorSchema.partial()), VendorController.update);
 router.delete('/delete-vendors/:id', VendorController.delete);
