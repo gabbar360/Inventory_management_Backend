@@ -382,7 +382,15 @@
             </div>
         </div>
         <div class="receipt-title-container">
-            <div class="receipt-title">Payment Receipt</div>
+            <div class="receipt-title">
+                <% if (payment.transactionType === 'credit_application') { %>
+                    Credit Applied
+                <% } else if (payment.transactionType === 'customer_advance') { %>
+                    Customer Advance
+                <% } else { %>
+                    Payment Successful
+                <% } %>
+            </div>
             <table class="meta-table" style="margin-top: 15px; width: 220px; float: right;">
                 <tr>
                     <td class="label">Receipt No.</td>
@@ -433,28 +441,18 @@
         </div>
     </div>
 
-    <!-- PAYMENT SUMMARY CARD -->
-    <div class="payment-summary-card">
-        <div class="summary-label">Amount Received</div>
-        <div class="summary-amount">₹ <%= fmt(payment.amount) %></div>
-    </div>
-
-    <!-- AMOUNT IN WORDS -->
-    <div class="words-section">
-        Amount Received in Words: <span><%= numToWords(payment.amount) %></span>
-    </div>
-
     <!-- ALLOCATED INVOICES TABLE -->
     <% if (payment.invoices && payment.invoices.length > 0) { %>
         <div class="allocation-header">Invoice Allocation</div>
         <table class="items-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 8%">S.No.</th>
-                    <th class="text-left" style="width: 32%">Invoice Number</th>
-                    <th class="text-center" style="width: 20%">Invoice Date</th>
-                    <th class="text-right" style="width: 20%">Invoice Amount</th>
-                    <th class="text-right" style="width: 20%">Amount Applied</th>
+                    <th class="text-center" style="width: 6%">S.No.</th>
+                    <th class="text-left" style="width: 26%">Invoice Number</th>
+                    <th class="text-center" style="width: 16%">Invoice Date</th>
+                    <th class="text-right" style="width: 16%">Invoice Amount</th>
+                    <th class="text-right" style="width: 18%">Amount Applied</th>
+                    <th class="text-right" style="width: 18%">Balance Due</th>
                 </tr>
             </thead>
             <tbody>
@@ -465,6 +463,9 @@
                     <td class="text-center"><%= fmtDate(inv.invoice?.date) %></td>
                     <td class="text-right">₹ <%= fmt(inv.invoice?.totalCost) %></td>
                     <td class="text-right" style="font-weight: 600;">₹ <%= fmt(inv.amountApplied) %></td>
+                    <td class="text-right" style="font-weight: 600; color: #dc2626;">
+                        ₹ <%= fmt(Math.max(0, (inv.invoice?.totalCost || 0) - (inv.invoice?.amountReceived || 0))) %>
+                    </td>
                 </tr>
                 <% }) %>
             </tbody>
@@ -487,6 +488,12 @@
                         <td class="value">₹ <%= fmt(payment.unusedAmount) %></td>
                     </tr>
                 <% } %>
+                <tr class="border-top">
+                    <td class="label" style="font-weight: 700; color: #dc2626;">Total Balance Due:</td>
+                    <td class="value" style="font-weight: 700; color: #dc2626;">
+                        ₹ <%= fmt(payment.invoices.reduce((sum, inv) => sum + Math.max(0, (inv.invoice?.totalCost || 0) - (inv.invoice?.amountReceived || 0)), 0)) %>
+                    </td>
+                </tr>
             </table>
         </div>
     <% } else { %>
@@ -499,6 +506,17 @@
             </div>
         </div>
     <% } %>
+
+    <!-- PAYMENT SUMMARY CARD -->
+    <div class="payment-summary-card">
+        <div class="summary-label">Amount Received</div>
+        <div class="summary-amount">₹ <%= fmt(payment.amount) %></div>
+    </div>
+
+    <!-- AMOUNT IN WORDS -->
+    <div class="words-section">
+        Amount Received in Words: <span><%= numToWords(payment.amount) %></span>
+    </div>
 
     <!-- BOTTOM SECTION -->
     <div class="bottom-section">

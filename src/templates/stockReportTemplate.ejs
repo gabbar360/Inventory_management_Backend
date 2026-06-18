@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Stock Report - <%= reportType %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; font-size: 10pt; color: #333; background: #fff; }
+
+        .page {
+            width: 210mm;
+            height: auto;
+            margin: 0 auto;
+            padding: 10mm 12mm;
+            background: #fff;
+        }
+
+        .top-container { border: 1.5px solid #bbb; margin-bottom: 0; }
+
+        .header { display: flex; align-items: stretch; padding: 8px 10px; border-bottom: 1.5px solid #bbb; }
+
+        .logo-block { width: 100px; display: flex; align-items: center; justify-content: flex-start; flex-shrink: 0; margin-right: 14px; }
+        .logo-block img { max-width: 90px; max-height: 70px; object-fit: contain; }
+
+        .company-block { flex: 1; }
+        .company-name { font-size: 16pt; font-weight: 700; color: #222; line-height: 1.1; }
+        .company-info { font-size: 8.5pt; color: #555; line-height: 1.5; margin-top: 3px; }
+
+        .report-title-block { width: 160px; display: flex; align-items: flex-end; justify-content: flex-end; flex-shrink: 0; }
+        .report-title-text { font-size: 18pt; font-weight: 700; color: #222; letter-spacing: 1px; text-align: right; }
+
+        .meta-row { display: flex; border-bottom: 1.5px solid #bbb; }
+        .meta-left { flex: 1; border-right: 1.5px solid #bbb; padding: 8px 10px; }
+        .meta-right { width: 260px; padding: 8px 10px; }
+
+        .meta-table { width: 100%; border-collapse: collapse; }
+        .meta-table td { padding: 2px 4px; font-size: 9.5pt; vertical-align: top; }
+        .meta-table td:first-child { color: #666; white-space: nowrap; }
+        .meta-table td:last-child { font-weight: 600; color: #222; }
+
+        .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 0; border: 1.5px solid #bbb; table-layout: auto; }
+        .items-table thead { display: table-header-group; }
+        .items-table thead tr { background: #f0f0f0; }
+        .items-table th { padding: 6px 8px; font-size: 9.5pt; font-weight: 700; color: #222; text-align: center; border: 1px solid #bbb; }
+        .items-table th.left { text-align: left; }
+        .items-table td { padding: 5px 8px; font-size: 9.5pt; border: 1px solid #ddd; vertical-align: middle; }
+        .items-table td.center { text-align: center; }
+        .items-table td.right { text-align: right; }
+
+        .item-name { font-weight: 500; color: #222; }
+
+        .badge { display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 8pt; font-weight: 600; white-space: nowrap; }
+        .badge-success { background: #dcfce7; color: #15803d; }
+        .badge-warning { background: #fef3c7; color: #b45309; }
+
+        .text-bold { font-weight: bold; }
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+
+        .words-section {
+            padding: 8px 10px;
+            border: 1.5px solid #bbb;
+            border-top: none;
+            font-size: 9.5pt;
+            background-color: #fafafa;
+        }
+        .words-section span {
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        .invoice-bottom-container {
+            display: flex;
+            border: 1.5px solid #bbb;
+            border-top: none;
+        }
+        .bottom-left-panel {
+            flex: 1.2;
+            padding: 8px 10px;
+            border-right: 1.5px solid #bbb;
+            font-size: 8.5pt;
+        }
+        .bottom-right-panel {
+            flex: 0.8;
+            padding: 8px 10px;
+            font-size: 8.5pt;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: stretch;
+            min-height: 90px;
+        }
+        .panel-label {
+            font-size: 9pt;
+            font-weight: bold;
+            color: #222;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 2px;
+            margin-bottom: 4px;
+        }
+        
+        .signatory-company {
+            text-align: right;
+            font-weight: bold;
+            font-size: 9pt;
+            margin-bottom: auto;
+            padding-top: 4px;
+        }
+        .signatory-signatures {
+            display: flex;
+            justify-content: flex-end;
+            align-items: flex-end;
+            margin-top: auto;
+            padding-bottom: 4px;
+        }
+        .sig-col {
+            text-align: center;
+            font-size: 8pt;
+            width: 160px;
+            border-top: 1px solid #bbb;
+            padding-top: 4px;
+            margin-left: auto;
+        }
+
+        .footer { margin-top: 12px; text-align: center; font-size: 8pt; color: #aaa; border-top: 1px solid #ccc; padding-top: 4px; }
+
+        @page { size: A4; margin: 0; }
+        @media print {
+            body { margin: 0; }
+            .page { margin: 0; padding: 10mm 12mm; height: auto; }
+        }
+    </style>
+</head>
+<body>
+<div class="page">
+    <%
+        function fmt(num) {
+            if (num === undefined || num === null || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+    %>
+
+    <!-- HEADER -->
+    <div class="top-container">
+        <div class="header">
+            <div class="logo-block">
+                <% if (logoBase64) { %>
+                    <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+                <% } %>
+            </div>
+            <div class="company-block">
+                <div class="company-name"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
+                <div class="company-info">
+                    <%= settings?.companyAddress || 'B-623, RK Iconic, 150 Feet Ring Road, Ayodhya Chowk\nRajkot Gujarat 360007, India' %><br>
+                    <%= settings?.companyEmail || 'sales@vegnar.com' %> | <%= settings?.companyPhone || '+91 9998040482' %> | <%= settings?.companyWebsite || 'www.vegnar.com' %>
+                </div>
+            </div>
+            <div class="report-title-block">
+                <div class="report-title-text">Stock Report</div>
+            </div>
+        </div>
+
+        <!-- META INFO -->
+        <div class="meta-row">
+            <div class="meta-left">
+                <table class="meta-table">
+                    <tr><td>Report Type</td><td><%= reportType === 'location' ? 'Location-wise Stock' : 'All Locations Stock' %></td></tr>
+                    <tr><td>Report Date</td><td><%= fmtDate(new Date()) %></td></tr>
+                    <tr><td>Generated Time</td><td><%= new Date().toLocaleTimeString('en-GB') %></td></tr>
+                </table>
+            </div>
+            <div class="meta-right">
+                <table class="meta-table">
+                    <% if (reportType === 'location' && locationName) { %>
+                    <tr><td>Location</td><td><%= locationName %></td></tr>
+                    <% } %>
+                    <tr><td>Total Products</td><td><%= data.length %></td></tr>
+                    <tr><td>Locations Covered</td><td><%= locationCount %></td></tr>
+                </table>
+            </div>
+        </div>
+    </div><!-- end top-container -->
+
+    <!-- STOCK INVENTORY TABLE -->
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width:4%">S.No</th>
+                <th style="width:24%" class="left">Product Name</th>
+                <th style="width:10%">Category</th>
+                <th style="width:10%">Boxes</th>
+                <th style="width:10%">Pieces</th>
+                <th style="width:10%">Status</th>
+                <th style="width:16%">Location</th>
+                <th style="width:12%">Value</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% data.forEach((product, idx) => { %>
+                <% if (product.locations && product.locations.length > 0) { %>
+                    <% product.locations.forEach((loc, locIdx) => { %>
+                    <tr>
+                        <% if (locIdx === 0) { %>
+                            <td class="center" rowspan="<%= product.locations.length %>"><%= idx + 1 %></td>
+                            <td rowspan="<%= product.locations.length %>">
+                                <div class="item-name"><%= product.productName %></div>
+                                <% if (product.productDescription) { %>
+                                    <div style="font-size: 8pt; color: #666; margin-top: 2px; font-style: italic;"><%= product.productDescription %></div>
+                                <% } %>
+                            </td>
+                            <td class="center" rowspan="<%= product.locations.length %>"><span class="badge badge-success"><%= product.categoryName %></span></td>
+                            <td class="right text-bold" rowspan="<%= product.locations.length %>"><%= product.totalBoxes.toLocaleString('en-IN') %></td>
+                            <td class="right text-bold" rowspan="<%= product.locations.length %>"><%= product.totalPcs.toLocaleString('en-IN') %></td>
+                            <td class="center" rowspan="<%= product.locations.length %>">
+                                <% if (product.totalPcs < 100) { %>
+                                    <span class="badge badge-warning">Low Stock</span>
+                                <% } else { %>
+                                    <span class="badge badge-success">In Stock</span>
+                                <% } %>
+                            </td>
+                        <% } %>
+                        <td style="font-size: 9pt; text-align: center;"><strong><%= loc.locationName %></strong></td>
+                        <% if (locIdx === 0) { %>
+                            <td class="right text-bold" rowspan="<%= product.locations.length %>">₹ <%= fmt(product.totalValue) %></td>
+                        <% } %>
+                    </tr>
+                    <% }) %>
+                <% } else { %>
+                <tr>
+                    <td class="center"><%= idx + 1 %></td>
+                    <td>
+                        <div class="item-name"><%= product.productName %></div>
+                        <% if (product.productDescription) { %>
+                            <div style="font-size: 8pt; color: #666; margin-top: 2px; font-style: italic;"><%= product.productDescription %></div>
+                        <% } %>
+                    </td>
+                    <td class="center"><span class="badge badge-success"><%= product.categoryName %></span></td>
+                    <td class="right text-bold"><%= product.totalBoxes.toLocaleString('en-IN') %></td>
+                    <td class="right text-bold"><%= product.totalPcs.toLocaleString('en-IN') %></td>
+                    <td class="center">
+                        <% if (product.totalPcs < 100) { %>
+                            <span class="badge badge-warning">Low Stock</span>
+                        <% } else { %>
+                            <span class="badge badge-success">In Stock</span>
+                        <% } %>
+                    </td>
+                    <td style="font-size: 9pt; text-align: center;"><em>—</em></td>
+                    <td class="right text-bold">₹ <%= fmt(product.totalValue) %></td>
+                </tr>
+                <% } %>
+            <% }) %>
+
+            <!-- TOTAL Row -->
+            <tr style="page-break-before: avoid;">
+                <td colspan="2" class="center" style="border-top: 1.5px solid #bbb; border-right: none; border-bottom: 1.5px solid #bbb; font-weight: bold;">TOTAL</td>
+                <td style="border: 1px solid #bbb; border-bottom: 1.5px solid #bbb;"></td>
+                <td class="right text-bold" style="border: 1px solid #bbb; border-bottom: 1.5px solid #bbb; padding: 5px 8px;"><%= totalBoxes.toLocaleString('en-IN') %></td>
+                <td class="right text-bold" style="border: 1px solid #bbb; border-bottom: 1.5px solid #bbb; padding: 5px 8px;"><%= totalPcs.toLocaleString('en-IN') %></td>
+                <td colspan="2" class="right text-bold" style="border: 1px solid #bbb; border-bottom: 1.5px solid #bbb; padding: 5px 8px;">—</td>
+                <td class="right text-bold" style="border-top: 1.5px solid #bbb; border-bottom: 1.5px solid #bbb; padding: 5px 8px;">₹ <%= fmt(totalValue) %></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Summary Stats in Words -->
+    <div class="words-section">
+        <strong>Summary:</strong> Total Products: <%= data.length %> | Total Boxes: <%= totalBoxes.toLocaleString('en-IN') %> | Total Pieces: <%= totalPcs.toLocaleString('en-IN') %> | Total Value: ₹ <%= fmt(totalValue) %> | Low Stock Items: <%= lowStockCount %>
+    </div>
+
+    <!-- BOTTOM PANELS -->
+    <div class="invoice-bottom-container">
+        <!-- Left Panel: Report Info -->
+        <div class="bottom-left-panel">
+            <div>
+                <div class="panel-label">Report Information</div>
+                <div style="font-size: 8.5pt; color: #333; line-height: 1.4;">
+                    <strong>Report Type:</strong> <%= reportType === 'location' ? 'Location-wise Stock Summary' : 'All Locations Stock Summary' %><br>
+                    <strong>Generated On:</strong> <%= new Date().toLocaleString() %><br>
+                    <strong>Locations Included:</strong> <%= locationCount %><br>
+                    <strong>Report Status:</strong> <span style="color: #15803d; font-weight: 700;">Final</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 6px;">
+                <div class="panel-label">Stock Status</div>
+                <div style="font-size: 8.5pt; color: #333; line-height: 1.4;">
+                    <strong>Total Products in Stock:</strong> <%= data.length - lowStockCount %><br>
+                    <strong>Low Stock Products:</strong> <span style="color: #e11d48;"><%= lowStockCount %></span><br>
+                    <strong>Overall Inventory Value:</strong> <span style="color: #1e40af; font-weight: bold;">₹ <%= fmt(totalValue) %></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Signature -->
+        <div class="bottom-right-panel">
+            <div class="signatory-company">
+                for <%= settings?.companyName || 'VEGNAR GLOBAL LLP' %>
+            </div>
+            
+            <div class="signatory-signatures">
+                <div class="sig-col">Authorised Signatory</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">This is a Computer Generated Report | <%= new Date().toLocaleString() %></div>
+</div>
+</body>
+</html>

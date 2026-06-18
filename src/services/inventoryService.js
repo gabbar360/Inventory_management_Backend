@@ -204,6 +204,7 @@ class InventoryService {
         summary.set(key, {
           productId: batch.productId,
           productName: batch.product.name,
+          productDescription: batch.product.description,
           categoryName: batch.product.category.name,
           totalBoxes: batch.remainingBoxes,
           totalPacks: batch.remainingPacks || 0,
