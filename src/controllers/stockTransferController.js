@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 
 const transferStock = async (req, res) => {
   try {
-    const { stockBatchId, toLocationId, boxes, packs = 0, pieces = 0, remarks } = req.body;
+    const { stockBatchId, toLocationId, boxes = 0, packs = 0, pieces = 0, remarks } = req.body;
 
     const stockBatch = await prisma.stockBatch.findUnique({
       where: { id: parseInt(stockBatchId) },
@@ -18,8 +18,15 @@ const transferStock = async (req, res) => {
       return res.status(400).json({ message: 'Cannot transfer to same location' });
     }
 
-    const totalPcsToTransfer = (boxes * stockBatch.packPerBox * stockBatch.packPerPiece) + 
-                                (packs * stockBatch.packPerPiece) + pieces;
+    const totalPcsToTransfer =
+      boxes * stockBatch.packPerBox * stockBatch.packPerPiece +
+      packs * stockBatch.packPerPiece +
+      pieces;
+
+    // Bug 3 Fix: zero quantity check
+    if (totalPcsToTransfer <= 0) {
+      return res.status(400).json({ message: 'Transfer quantity must be greater than 0' });
+    }
 
     if (totalPcsToTransfer > stockBatch.remainingPcs) {
       return res.status(400).json({ message: 'Insufficient stock' });
@@ -41,6 +48,10 @@ const transferStock = async (req, res) => {
           remainingPcs: newSourcePcs,
         },
       });
+
+      // Bug 1 & 2 Fix: calculate dest packs/boxes from totalPcsToTransfer
+      const destPacks = Math.floor(totalPcsToTransfer / stockBatch.packPerPiece);
+      const destBoxes = Math.floor(destPacks / stockBatch.packPerBox);
 
       // Create or update batch at destination
       const existingBatch = await tx.stockBatch.findFirst({
@@ -64,8 +75,8 @@ const transferStock = async (req, res) => {
             remainingBoxes: newDestBoxes,
             remainingPacks: newDestPacks,
             remainingPcs: newDestPcs,
-            boxes: existingBatch.boxes + boxes,
-            totalPacks: existingBatch.totalPacks + packs,
+            boxes: existingBatch.boxes + destBoxes,
+            totalPacks: existingBatch.totalPacks + newDestPacks,
             totalPcs: existingBatch.totalPcs + totalPcsToTransfer,
           },
         });
@@ -76,13 +87,13 @@ const transferStock = async (req, res) => {
             vendorId: stockBatch.vendorId,
             locationId: parseInt(toLocationId),
             inwardDate: stockBatch.inwardDate,
-            boxes,
+            boxes: destBoxes,
             packPerBox: stockBatch.packPerBox,
             packPerPiece: stockBatch.packPerPiece,
-            totalPacks: packs,
+            totalPacks: destPacks,
             totalPcs: totalPcsToTransfer,
-            remainingBoxes: boxes,
-            remainingPacks: packs,
+            remainingBoxes: destBoxes,
+            remainingPacks: destPacks,
             remainingPcs: totalPcsToTransfer,
             costPerBox: stockBatch.costPerBox,
             costPerPack: stockBatch.costPerPack,
@@ -119,32 +130,22 @@ const getTransferHistory = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    // Bug 5 Fix: use include instead of N+1 queries
     const [transfers, total] = await Promise.all([
       prisma.stockTransfer.findMany({
         skip,
         take: parseInt(limit),
         orderBy: { createdAt: 'desc' },
+        include: {
+          stockBatch: { include: { product: true, vendor: true } },
+          fromLocation: true,
+          toLocation: true,
+        },
       }),
       prisma.stockTransfer.count(),
     ]);
 
-    const transfersWithDetails = await Promise.all(
-      transfers.map(async (transfer) => {
-        const batch = await prisma.stockBatch.findUnique({
-          where: { id: transfer.stockBatchId },
-          include: { product: true, vendor: true },
-        });
-        const fromLocation = await prisma.location.findUnique({
-          where: { id: transfer.fromLocationId },
-        });
-        const toLocation = await prisma.location.findUnique({
-          where: { id: transfer.toLocationId },
-        });
-        return { ...transfer, batch, fromLocation, toLocation };
-      })
-    );
-
-    res.json({ transfers: transfersWithDetails, total, page: parseInt(page), limit: parseInt(limit) });
+    res.json({ transfers, total, page: parseInt(page), limit: parseInt(limit) });
   } catch (error) {
     console.error('Get transfer history error:', error);
     res.status(500).json({ message: 'Failed to fetch transfer history' });

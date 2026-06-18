@@ -4,7 +4,7 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-router.post('/transfer', authenticateToken, transferStock);
-router.get('/history', authenticateToken, getTransferHistory);
+router.post('/stock-transfers/transfer', authenticateToken, transferStock);
+router.get('/stock-transfers/history', authenticateToken, getTransferHistory);
 
 module.exports = router;
