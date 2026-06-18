@@ -158,6 +158,7 @@ model InwardInvoice {
   amountPaid      Float                @default(0) @map("amount_paid")
   paymentsApplied PaymentMadeInvoice[]
 
+  @@index([vendorId])
   @@map("inward_invoices")
 }
 
@@ -210,6 +211,7 @@ model OutwardInvoice {
   items                 OutwardItem[]
   paymentsApplied       PaymentReceivedInvoice[]
 
+  @@index([customerId])
   @@map("outward_invoices")
 }
 
@@ -260,6 +262,7 @@ model StockBatch {
   product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
   vendor          Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
+  @@index([vendorId])
   @@map("stock_batches")
 }
 
@@ -361,6 +364,7 @@ model Quote {
   customer           Customer     @relation(fields: [customerId], references: [id], onDelete: Cascade)
   salesOrders        SalesOrder[]
 
+  @@index([customerId])
   @@map("quotes")
 }
 
@@ -406,6 +410,7 @@ model SalesOrder {
   customer             Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
   quote                Quote?           @relation(fields: [quoteId], references: [id])
 
+  @@index([customerId])
   @@map("sales_orders")
 }
 
@@ -562,6 +567,7 @@ model PurchaseOrder {
   items              PurchaseOrderItem[]
   vendor             Vendor              @relation("PurchaseOrders", fields: [vendorId], references: [id], onDelete: Cascade)
 
+  @@index([vendorId])
   @@map("purchase_orders")
 }
 
@@ -645,6 +651,7 @@ model PaymentReceived {
   customer        Customer                 @relation(fields: [customerId], references: [id], onDelete: Cascade)
   invoices        PaymentReceivedInvoice[]
 
+  @@index([customerId])
   @@map("payments_received")
 }
 
@@ -678,6 +685,7 @@ model PaymentMade {
   vendor          Vendor               @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   invoices        PaymentMadeInvoice[]
 
+  @@index([vendorId])
   @@map("payments_made")
 }
 

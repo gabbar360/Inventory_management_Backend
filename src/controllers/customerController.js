@@ -91,34 +91,36 @@ class CustomerController {
         headless: 'new',
         args: ['--no-sandbox', '--disable-setuid-sandbox']
       });
-      const page = await browser.newPage();
+      try {
+        const page = await browser.newPage();
 
-      await page.setContent(html, {
-        waitUntil: 'networkidle0',
-        timeout: 30000
-      });
+        await page.setContent(html, {
+          waitUntil: 'networkidle0',
+          timeout: 30000
+        });
 
-      const pdfBuffer = await page.pdf({
-        format: 'A4',
-        printBackground: true,
-        preferCSSPageSize: true,
-        margin: {
-          top: '15mm',
-          right: '15mm',
-          bottom: '15mm',
-          left: '15mm'
-        }
-      });
+        const pdfBuffer = await page.pdf({
+          format: 'A4',
+          printBackground: true,
+          preferCSSPageSize: true,
+          margin: {
+            top: '15mm',
+            right: '15mm',
+            bottom: '15mm',
+            left: '15mm'
+          }
+        });
 
-      await browser.close();
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="CustomerLedger-${ledger.customer.code}.pdf"`);
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
 
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="CustomerLedger-${ledger.customer.code}.pdf"`);
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-
-      res.end(pdfBuffer);
+        res.end(pdfBuffer);
+      } finally {
+        await browser.close();
+      }
     } catch (error) {
       console.error('PDF Generation Error:', error);
       return sendError(res, 500, error.message);

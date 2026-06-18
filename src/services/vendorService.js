@@ -36,15 +36,54 @@ class VendorService {
       },
     });
 
+    const vendorIds = vendors.map(v => v.id);
+
+    // Fetch aggregates for only the vendorIds in the current page
+    const payablesAggregates = await prisma.inwardInvoice.groupBy({
+      by: ['vendorId'],
+      where: { vendorId: { in: vendorIds } },
+      _sum: {
+        totalCost: true,
+        amountPaid: true,
+      }
+    });
+
+    const unusedCreditsAggregates = await prisma.paymentMade.groupBy({
+      by: ['vendorId'],
+      where: { vendorId: { in: vendorIds } },
+      _sum: {
+        unusedAmount: true,
+      }
+    });
+
+    const payablesMap = {};
+    payablesAggregates.forEach(agg => {
+      payablesMap[agg.vendorId] = Math.max(0, (agg._sum.totalCost || 0) - (agg._sum.amountPaid || 0));
+    });
+
+    const unusedCreditsMap = {};
+    unusedCreditsAggregates.forEach(agg => {
+      unusedCreditsMap[agg.vendorId] = agg._sum.unusedAmount || 0;
+    });
+
+    const vendorsWithBalances = vendors.map(vendor => {
+      return {
+        ...vendor,
+        payables: payablesMap[vendor.id] || 0,
+        unusedCredits: unusedCreditsMap[vendor.id] || 0,
+      };
+    });
+
     return {
-      vendors,
+      vendors: vendorsWithBalances,
       pagination: calculatePagination(page, limit, total),
     };
   }
 
   static async getById(id) {
+    const parsedId = parseInt(id);
     const vendor = await prisma.vendor.findUnique({
-      where: { id: parseInt(id) },
+      where: { id: parsedId },
       include: {
         inwardInvoices: {
           select: {
@@ -52,9 +91,35 @@ class VendorService {
             invoiceNo: true,
             date: true,
             totalCost: true,
+            amountPaid: true,
+            createdAt: true,
           },
           orderBy: { date: 'desc' },
-          take: 10,
+          take: 20,
+        },
+        paymentsMade: {
+          select: {
+            id: true,
+            paymentNumber: true,
+            date: true,
+            amount: true,
+            unusedAmount: true,
+            createdAt: true,
+          },
+          orderBy: { date: 'desc' },
+          take: 20,
+        },
+        purchaseOrders: {
+          select: {
+            id: true,
+            poNo: true,
+            poDate: true,
+            totalAmount: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { poDate: 'desc' },
+          take: 20,
         },
         _count: {
           select: {
@@ -68,17 +133,112 @@ class VendorService {
       throw new Error('Vendor not found');
     }
 
-    return vendor;
+    const payablesAggregate = await prisma.inwardInvoice.aggregate({
+      where: { vendorId: parsedId },
+      _sum: {
+        totalCost: true,
+        amountPaid: true,
+      }
+    });
+
+    const unusedCreditsAggregate = await prisma.paymentMade.aggregate({
+      where: { vendorId: parsedId },
+      _sum: {
+        unusedAmount: true,
+      }
+    });
+
+    const payables = Math.max(0, (payablesAggregate._sum.totalCost || 0) - (payablesAggregate._sum.amountPaid || 0));
+    const unusedCredits = unusedCreditsAggregate._sum.unusedAmount || 0;
+
+    const timeline = [];
+
+    vendor.inwardInvoices.forEach(inv => {
+      timeline.push({
+        id: `bill-${inv.id}`,
+        type: 'bill',
+        title: 'Bill created',
+        description: `Bill ${inv.invoiceNo} generated for ₹${inv.totalCost.toFixed(2)}`,
+        date: inv.date,
+        createdAt: inv.createdAt,
+      });
+    });
+
+    vendor.paymentsMade.forEach(pay => {
+      timeline.push({
+        id: `payment-${pay.id}`,
+        type: 'payment',
+        title: 'Payment made',
+        description: `Payment ${pay.paymentNumber} of ₹${pay.amount.toFixed(2)} paid to supplier`,
+        date: pay.date,
+        createdAt: pay.createdAt,
+      });
+    });
+
+    vendor.purchaseOrders.forEach(po => {
+      timeline.push({
+        id: `po-${po.id}`,
+        type: 'purchase_order',
+        title: 'Purchase Order added',
+        description: `Purchase Order ${po.poNo} added for ₹${po.totalAmount.toFixed(2)} (${po.status})`,
+        date: po.poDate,
+        createdAt: po.createdAt,
+      });
+    });
+
+    timeline.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+
+    const recentTimeline = timeline.slice(0, 30);
+
+    return {
+      ...vendor,
+      payables,
+      unusedCredits,
+      timeline: recentTimeline,
+    };
   }
 
   static async create(data) {
-    const count = await prisma.vendor.count();
-    const code = data.code || `VEND-${String(count + 1).padStart(4, '0')}`;
+    let code = data.code;
+    let vendor;
+    let attempts = 0;
+
+    while (!code && attempts < 5) {
+      try {
+        const last = await prisma.vendor.findFirst({ orderBy: { code: 'desc' } });
+        let lastNum = 0;
+        if (last && last.code && last.code.startsWith('VEND-')) {
+          lastNum = parseInt(last.code.split('-')[1]) || 0;
+        }
+        const nextCode = `VEND-${String(lastNum + 1).padStart(4, '0')}`;
+
+        vendor = await prisma.vendor.create({
+          data: {
+            ...data,
+            code: nextCode,
+          },
+          include: {
+            _count: {
+              select: {
+                inwardInvoices: true,
+              },
+            },
+          },
+        });
+        return vendor;
+      } catch (err) {
+        if (err.code === 'P2002' && err.meta?.target?.includes('code')) {
+          attempts++;
+        } else {
+          throw err;
+        }
+      }
+    }
 
     return await prisma.vendor.create({
       data: {
         ...data,
-        code,
+        code: code || `VEND-${String(Math.floor(Math.random() * 100000)).padStart(4, '0')}`,
       },
       include: {
         _count: {
