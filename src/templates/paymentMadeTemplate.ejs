@@ -388,7 +388,7 @@
                 <% } else if (payment.transactionType === 'vendor_advance') { %>
                     Vendor Advance
                 <% } else { %>
-                    Payment Made
+                    Payment Successful
                 <% } %>
             </div>
             <table class="meta-table" style="margin-top: 15px; width: 220px; float: right;">
@@ -441,35 +441,18 @@
         </div>
     </div>
 
-    <!-- PAYMENT SUMMARY CARD -->
-    <div class="payment-summary-card" <% if (payment.transactionType === 'credit_application') { %>style="background-color:#fffbeb;border-left-color:#d97706;"<% } %> >
-        <div>
-            <div class="summary-label" <% if (payment.transactionType === 'credit_application') { %>style="color:#92400e"<% } %> >
-                <% if (payment.transactionType === 'credit_application') { %>Credits Applied from Advance<% } else { %>Amount Paid<% } %>
-            </div>
-            <% if (payment.transactionType === 'credit_application') { %>
-            <div style="font-size:8pt;color:#b45309;margin-top:4px;">Applied from existing vendor advance credits</div>
-            <% } %>
-        </div>
-        <div class="summary-amount" <% if (payment.transactionType === 'credit_application') { %>style="color:#b45309"<% } %> >₹ <%= fmt(payment.amount) %></div>
-    </div>
-
-    <!-- AMOUNT IN WORDS -->
-    <div class="words-section">
-        Amount Paid in Words: <span><%= numToWords(payment.amount) %></span>
-    </div>
-
     <!-- ALLOCATED BILLS TABLE -->
     <% if (payment.invoices && payment.invoices.length > 0) { %>
         <div class="allocation-header">Bill Allocation</div>
         <table class="items-table">
             <thead>
                 <tr>
-                    <th class="text-center" style="width: 8%">S.No.</th>
-                    <th class="text-left" style="width: 32%">Bill / Invoice Number</th>
-                    <th class="text-center" style="width: 20%">Bill Date</th>
-                    <th class="text-right" style="width: 20%">Bill Amount</th>
-                    <th class="text-right" style="width: 20%">Amount Applied</th>
+                    <th class="text-center" style="width: 6%">S.No.</th>
+                    <th class="text-left" style="width: 26%">Bill / Invoice Number</th>
+                    <th class="text-center" style="width: 16%">Bill Date</th>
+                    <th class="text-right" style="width: 16%">Bill Amount</th>
+                    <th class="text-right" style="width: 18%">Amount Applied</th>
+                    <th class="text-right" style="width: 18%">Balance Due</th>
                 </tr>
             </thead>
             <tbody>
@@ -480,6 +463,9 @@
                     <td class="text-center"><%= fmtDate(inv.invoice?.date) %></td>
                     <td class="text-right">₹ <%= fmt(inv.invoice?.totalCost) %></td>
                     <td class="text-right" style="font-weight: 600;">₹ <%= fmt(inv.amountApplied) %></td>
+                    <td class="text-right" style="font-weight: 600; color: #dc2626;">
+                        ₹ <%= fmt(Math.max(0, (inv.invoice?.totalCost || 0) - (inv.invoice?.amountPaid || 0))) %>
+                    </td>
                 </tr>
                 <% }) %>
             </tbody>
@@ -502,6 +488,12 @@
                         <td class="value">₹ <%= fmt(payment.unusedAmount) %></td>
                     </tr>
                 <% } %>
+                <tr class="border-top">
+                    <td class="label" style="font-weight: 700; color: #dc2626;">Total Balance Due:</td>
+                    <td class="value" style="font-weight: 700; color: #dc2626;">
+                        ₹ <%= fmt(payment.invoices.reduce((sum, inv) => sum + Math.max(0, (inv.invoice?.totalCost || 0) - (inv.invoice?.amountPaid || 0)), 0)) %>
+                    </td>
+                </tr>
             </table>
         </div>
     <% } else { %>
@@ -514,6 +506,24 @@
             </div>
         </div>
     <% } %>
+
+    <!-- PAYMENT SUMMARY CARD -->
+    <div class="payment-summary-card" <% if (payment.transactionType === 'credit_application') { %>style="background-color:#fffbeb;border-left-color:#d97706;"<% } %> >
+        <div>
+            <div class="summary-label" <% if (payment.transactionType === 'credit_application') { %>style="color:#92400e"<% } %> >
+                <% if (payment.transactionType === 'credit_application') { %>Credits Applied from Advance<% } else { %>Amount Paid<% } %>
+            </div>
+            <% if (payment.transactionType === 'credit_application') { %>
+            <div style="font-size:8pt;color:#b45309;margin-top:4px;">Applied from existing vendor advance credits</div>
+            <% } %>
+        </div>
+        <div class="summary-amount" <% if (payment.transactionType === 'credit_application') { %>style="color:#b45309"<% } %> >₹ <%= fmt(payment.amount) %></div>
+    </div>
+
+    <!-- AMOUNT IN WORDS -->
+    <div class="words-section">
+        Amount Paid in Words: <span><%= numToWords(payment.amount) %></span>
+    </div>
 
     <!-- BOTTOM SECTION -->
     <div class="bottom-section">
