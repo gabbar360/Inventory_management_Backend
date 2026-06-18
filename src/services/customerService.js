@@ -36,8 +36,46 @@ class CustomerService {
       },
     });
 
+    const customerIds = customers.map(c => c.id);
+
+    // Fetch aggregates for only the customerIds in the current page
+    const receivablesAggregates = await prisma.outwardInvoice.groupBy({
+      by: ['customerId'],
+      where: { customerId: { in: customerIds } },
+      _sum: {
+        totalCost: true,
+        amountReceived: true,
+      }
+    });
+
+    const unusedCreditsAggregates = await prisma.paymentReceived.groupBy({
+      by: ['customerId'],
+      where: { customerId: { in: customerIds } },
+      _sum: {
+        unusedAmount: true,
+      }
+    });
+
+    const receivablesMap = {};
+    receivablesAggregates.forEach(agg => {
+      receivablesMap[agg.customerId] = Math.max(0, (agg._sum.totalCost || 0) - (agg._sum.amountReceived || 0));
+    });
+
+    const unusedCreditsMap = {};
+    unusedCreditsAggregates.forEach(agg => {
+      unusedCreditsMap[agg.customerId] = agg._sum.unusedAmount || 0;
+    });
+
+    const customersWithBalances = customers.map(customer => {
+      return {
+        ...customer,
+        receivables: receivablesMap[customer.id] || 0,
+        unusedCredits: unusedCreditsMap[customer.id] || 0,
+      };
+    });
+
     return {
-      customers,
+      customers: customersWithBalances,
       pagination: calculatePagination(page, limit, total),
     };
   }
@@ -52,9 +90,47 @@ class CustomerService {
             invoiceNo: true,
             date: true,
             totalCost: true,
+            amountReceived: true,
+            createdAt: true,
           },
           orderBy: { date: 'desc' },
-          take: 10,
+          take: 20,
+        },
+        paymentsReceived: {
+          select: {
+            id: true,
+            paymentNumber: true,
+            date: true,
+            amount: true,
+            unusedAmount: true,
+            createdAt: true,
+          },
+          orderBy: { date: 'desc' },
+          take: 20,
+        },
+        quotes: {
+          select: {
+            id: true,
+            quoteNo: true,
+            quoteDate: true,
+            totalAmount: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { quoteDate: 'desc' },
+          take: 20,
+        },
+        salesOrders: {
+          select: {
+            id: true,
+            orderNo: true,
+            orderDate: true,
+            totalAmount: true,
+            status: true,
+            createdAt: true,
+          },
+          orderBy: { orderDate: 'desc' },
+          take: 20,
         },
         _count: {
           select: {
@@ -68,21 +144,123 @@ class CustomerService {
       throw new Error('Customer not found');
     }
 
-    return customer;
+    const receivablesAggregate = await prisma.outwardInvoice.aggregate({
+      where: { customerId: parseInt(id) },
+      _sum: {
+        totalCost: true,
+        amountReceived: true,
+      }
+    });
+
+    const unusedCreditsAggregate = await prisma.paymentReceived.aggregate({
+      where: { customerId: parseInt(id) },
+      _sum: {
+        unusedAmount: true,
+      }
+    });
+
+    const receivables = Math.max(0, (receivablesAggregate._sum.totalCost || 0) - (receivablesAggregate._sum.amountReceived || 0));
+    const unusedCredits = unusedCreditsAggregate._sum.unusedAmount || 0;
+
+    const timeline = [];
+
+    customer.outwardInvoices.forEach(inv => {
+      timeline.push({
+        id: `invoice-${inv.id}`,
+        type: 'invoice',
+        title: 'Invoice created',
+        description: `Invoice ${inv.invoiceNo} generated for ₹${inv.totalCost.toFixed(2)}`,
+        date: inv.date,
+        createdAt: inv.createdAt,
+      });
+    });
+
+    customer.paymentsReceived.forEach(pay => {
+      timeline.push({
+        id: `payment-${pay.id}`,
+        type: 'payment',
+        title: 'Payment received',
+        description: `Payment ${pay.paymentNumber} of ₹${pay.amount.toFixed(2)} received`,
+        date: pay.date,
+        createdAt: pay.createdAt,
+      });
+    });
+
+    customer.quotes.forEach(q => {
+      timeline.push({
+        id: `quote-${q.id}`,
+        type: 'quote',
+        title: 'Quote created',
+        description: `Quote ${q.quoteNo} generated for ₹${q.totalAmount.toFixed(2)} (${q.status})`,
+        date: q.quoteDate,
+        createdAt: q.createdAt,
+      });
+    });
+
+    customer.salesOrders.forEach(so => {
+      timeline.push({
+        id: `order-${so.id}`,
+        type: 'order',
+        title: 'Sales Order added',
+        description: `Sales Order ${so.orderNo} added for ₹${so.totalAmount.toFixed(2)} (${so.status})`,
+        date: so.orderDate,
+        createdAt: so.createdAt,
+      });
+    });
+
+    timeline.sort((a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt));
+
+    const recentTimeline = timeline.slice(0, 30);
+
+    return {
+      ...customer,
+      receivables,
+      unusedCredits,
+      timeline: recentTimeline,
+    };
   }
 
   static async create(data) {
     let code = data.code;
-    if (!code) {
-      const last = await prisma.customer.findFirst({ orderBy: { id: 'desc' } });
-      const lastNum = last ? parseInt(last.code.split('-')[1] || 0) : 0;
-      code = `CUST-${String(lastNum + 1).padStart(4, '0')}`;
+    let customer;
+    let attempts = 0;
+
+    while (!code && attempts < 5) {
+      try {
+        const last = await prisma.customer.findFirst({ orderBy: { code: 'desc' } });
+        let lastNum = 0;
+        if (last && last.code && last.code.startsWith('CUST-')) {
+          lastNum = parseInt(last.code.split('-')[1]) || 0;
+        }
+        const nextCode = `CUST-${String(lastNum + 1).padStart(4, '0')}`;
+        
+        customer = await prisma.customer.create({
+          data: {
+            ...data,
+            code: nextCode,
+          },
+          include: {
+            _count: {
+              select: {
+                outwardInvoices: true,
+              },
+            },
+          },
+        });
+        return customer;
+      } catch (err) {
+        if (err.code === 'P2002' && err.meta?.target?.includes('code')) {
+          attempts++;
+        } else {
+          throw err;
+        }
+      }
     }
 
     return await prisma.customer.create({
       data: {
         ...data,
-        code,
+        code: code || `CUST-${String(Math.floor(Math.random() * 100000)).padStart(4, '0')}`,
       },
       include: {
         _count: {
