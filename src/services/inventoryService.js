@@ -93,8 +93,8 @@ class InventoryService {
       }
 
       const requiredQuantity = item.saleUnit === 'box' ? item.quantity : item.quantity;
-      const availableQuantity = item.saleUnit === 'box' ? stockBatch.remainingBoxes : 
-                               item.saleUnit === 'pack' ? stockBatch.remainingPacks : stockBatch.remainingPcs;
+      const availableQuantity = item.saleUnit === 'box' ? stockBatch.remainingBoxes :
+        item.saleUnit === 'pack' ? stockBatch.remainingPacks : stockBatch.remainingPcs;
 
       if (requiredQuantity > availableQuantity) {
         throw new Error(`Insufficient stock. Available: ${availableQuantity}, Required: ${requiredQuantity}`);
@@ -173,9 +173,11 @@ class InventoryService {
 
     stockBatches.forEach((batch) => {
       const key = batch.productId;
-      const value = batch.remainingBoxes * batch.costPerBox + 
-                   (batch.remainingPacks - (batch.remainingBoxes * batch.packPerBox)) * batch.costPerPack +
-                   (batch.remainingPcs - (batch.remainingPacks * batch.packPerPiece)) * batch.costPerPcs;
+      const value = batch.remainingBoxes * batch.costPerBox +
+        (batch.remainingPacks - (batch.remainingBoxes * batch.packPerBox)) * batch.costPerPack +
+        (batch.remainingPcs - (batch.remainingPacks * batch.packPerPiece)) * batch.costPerPcs;
+
+      const packagingLabel = `${batch.packPerBox} Pack/Box\n${batch.packPerPiece} Pcs/Pack`;
 
       if (summary.has(key)) {
         const existing = summary.get(key);
@@ -183,7 +185,15 @@ class InventoryService {
         existing.totalPacks = (existing.totalPacks || 0) + (batch.remainingPacks || 0);
         existing.totalPcs += batch.remainingPcs;
         existing.totalValue += value;
-        
+
+        const vi = existing.variants.findIndex(v => v.packagingLabel === packagingLabel);
+        if (vi >= 0) {
+          existing.variants[vi].boxes += batch.remainingBoxes;
+          existing.variants[vi].pcs += batch.remainingPcs;
+        } else {
+          existing.variants.push({ packagingLabel, boxes: batch.remainingBoxes, pcs: batch.remainingPcs });
+        }
+
         const locationIndex = existing.locations.findIndex((l) => l.locationId === batch.locationId);
         if (locationIndex >= 0) {
           existing.locations[locationIndex].boxes += batch.remainingBoxes;
@@ -209,6 +219,7 @@ class InventoryService {
           totalPacks: batch.remainingPacks || 0,
           totalPcs: batch.remainingPcs,
           totalValue: value,
+          variants: [{ packagingLabel, boxes: batch.remainingBoxes, pcs: batch.remainingPcs }],
           locations: [{
             locationId: batch.locationId,
             locationName: batch.location.name,
@@ -260,9 +271,9 @@ class InventoryService {
       });
 
       if (stockBatch) {
-        const unitCost = item.saleUnit === 'box' ? stockBatch.costPerBox : 
-                        item.saleUnit === 'pack' ? (stockBatch.costPerPack || stockBatch.costPerBox / (stockBatch.packPerBox || 1)) : 
-                        stockBatch.costPerPcs;
+        const unitCost = item.saleUnit === 'box' ? stockBatch.costPerBox :
+          item.saleUnit === 'pack' ? (stockBatch.costPerPack || stockBatch.costPerBox / (stockBatch.packPerBox || 1)) :
+            stockBatch.costPerPcs;
         totalCOGS += unitCost * item.quantity;
       }
     }
