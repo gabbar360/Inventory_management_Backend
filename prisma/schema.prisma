@@ -20,18 +20,21 @@ model User {
   roleId           Int?           @map("role_id")
   refreshTokens    RefreshToken[]
   role             Role?          @relation(fields: [roleId], references: [id], onDelete: Restrict)
+  auditLogs        AuditLog[]
 
   @@map("users")
 }
 
 model Role {
-  id          Int      @id @default(autoincrement())
-  name        String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  isActive    Boolean  @default(true) @map("is_active")
-  users       User[]
+  id           Int              @id @default(autoincrement())
+  name         String           @unique
+  description  String?
+  isSuperAdmin Boolean          @default(false) @map("is_super_admin")
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  isActive     Boolean          @default(true) @map("is_active")
+  users        User[]
+  permissions  RolePermission[]
 
   @@map("roles")
 }
@@ -699,4 +702,83 @@ model PaymentMadeInvoice {
 
   @@unique([paymentMadeId, invoiceId])
   @@map("payment_made_invoices")
+}
+
+model Permission {
+  id           Int              @id @default(autoincrement())
+  slug         String           @unique
+  name         String
+  module       String
+  action       String
+  description  String?
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+  roles        RolePermission[]
+  menuItems    MenuItem[]
+  subMenuItems SubMenuItem[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       Int        @map("role_id")
+  permissionId Int        @map("permission_id")
+  role         Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission   Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("roles_permissions")
+}
+
+model MenuItem {
+  id           Int           @id @default(autoincrement())
+  name         String
+  path         String?
+  icon         String?
+  order        Int           @default(0)
+  permissionId Int?          @map("permission_id")
+  isActive     Boolean       @default(true) @map("is_active")
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  permission   Permission?   @relation(fields: [permissionId], references: [id], onDelete: SetNull)
+  subMenus     SubMenuItem[]
+
+  @@map("menu_items")
+}
+
+model SubMenuItem {
+  id           Int        @id @default(autoincrement())
+  name         String
+  path         String
+  icon         String?
+  order        Int        @default(0)
+  menuItemId   Int        @map("menu_item_id")
+  permissionId Int?       @map("permission_id")
+  isActive     Boolean    @default(true) @map("is_active")
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  menuItem     MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  permission   Permission? @relation(fields: [permissionId], references: [id], onDelete: SetNull)
+
+  @@map("sub_menu_items")
+}
+
+model AuditLog {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  userEmail  String?  @map("user_email")
+  action     String
+  resource   String
+  resourceId String?  @map("resource_id")
+  details    Json?
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+  createdAt  DateTime @default(now()) @map("created_at")
+  user       User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

@@ -9,6 +9,9 @@ const prisma = new PrismaClient();
 
 const authenticateToken = async (req, res, next) => {
   try {
+    if (req.user) {
+      return next();
+    }
     const token = req.cookies.accessToken;
 
     if (!token) {
@@ -19,7 +22,7 @@ const authenticateToken = async (req, res, next) => {
     
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { id: true, email: true, name: true },
+      select: { id: true, email: true, name: true, roleId: true },
     });
 
     if (!user) {

@@ -8,6 +8,8 @@ const app = express();
 const loadRoutes = async () => {
   const routesPath = path.join(__dirname, 'routes');
   const files = fs.readdirSync(routesPath);
+  const { authenticateToken } = require('./middleware/auth');
+  const { dynamicAuthorize } = require('./middleware/authorize');
 
   for (const file of files) {
     if (
@@ -17,7 +19,7 @@ const loadRoutes = async () => {
       file !== 'authRoute.js'
     ) {
       const route = require(`./routes/${file}`);
-      app.use('/api/v1', route);
+      app.use('/api/v1', authenticateToken, dynamicAuthorize, route);
     }
   }
 };

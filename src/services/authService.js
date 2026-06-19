@@ -8,6 +8,19 @@ const { generateAccessToken, generateRefreshToken, hashToken } = require('../uti
 const prisma = new PrismaClient();
 
 class AuthService {
+  static async getRolePermissions(role) {
+    if (!role) return [];
+    if (role.isSuperAdmin) {
+      const allPerms = await prisma.permission.findMany({ select: { slug: true } });
+      return allPerms.map(p => p.slug);
+    }
+    const rolePermissions = await prisma.rolePermission.findMany({
+      where: { roleId: role.id },
+      include: { permission: true }
+    });
+    return rolePermissions.map(rp => rp.permission.slug);
+  }
+
   static async register(email, password, name, deviceInfo, ipAddress) {
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) throw new Error('User already exists');
@@ -21,7 +34,7 @@ class AuthService {
         name: true,
         roleId: true,
         role: {
-          select: { id: true, name: true }
+          select: { id: true, name: true, isSuperAdmin: true, isActive: true }
         },
         createdAt: true 
       },
@@ -41,7 +54,16 @@ class AuthService {
       },
     });
 
-    return { user, accessToken, refreshToken };
+    const permissions = await this.getRolePermissions(user.role);
+
+    return { 
+      user: {
+        ...user,
+        permissions
+      }, 
+      accessToken, 
+      refreshToken 
+    };
   }
 
   static async login(email, password, deviceInfo, ipAddress) {
@@ -49,7 +71,7 @@ class AuthService {
       where: { email },
       include: {
         role: {
-          select: { id: true, name: true, isActive: true }
+          select: { id: true, name: true, isSuperAdmin: true, isActive: true }
         }
       }
     });
@@ -77,6 +99,8 @@ class AuthService {
       },
     });
 
+    const permissions = await this.getRolePermissions(user.role);
+
     return {
       user: { 
         id: user.id, 
@@ -84,6 +108,7 @@ class AuthService {
         name: user.name, 
         roleId: user.roleId,
         role: user.role,
+        permissions,
         createdAt: user.createdAt 
       },
       accessToken,
@@ -104,7 +129,7 @@ class AuthService {
             name: true, 
             roleId: true,
             role: {
-              select: { id: true, name: true }
+              select: { id: true, name: true, isSuperAdmin: true, isActive: true }
             }
           } 
         } 
@@ -142,7 +167,16 @@ class AuthService {
       },
     });
 
-    return { accessToken: newAccessToken, refreshToken: newRefreshToken, user: tokenRecord.user };
+    const permissions = await this.getRolePermissions(tokenRecord.user.role);
+
+    return { 
+      accessToken: newAccessToken, 
+      refreshToken: newRefreshToken, 
+      user: {
+        ...tokenRecord.user,
+        permissions
+      } 
+    };
   }
 
   static async logout(refreshToken) {
@@ -166,13 +200,22 @@ class AuthService {
         name: true, 
         roleId: true,
         role: {
-          select: { id: true, name: true }
+          select: { id: true, name: true, isSuperAdmin: true, isActive: true }
         }
       },
     });
 
     if (!user) throw new Error('User not found');
-    return { valid: true, user };
+    
+    const permissions = await this.getRolePermissions(user.role);
+
+    return { 
+      valid: true, 
+      user: {
+        ...user,
+        permissions
+      } 
+    };
   }
 
   static async updateProfile(userId, { name, email }) {
@@ -202,13 +245,18 @@ class AuthService {
         name: true,
         roleId: true,
         role: {
-          select: { id: true, name: true }
+          select: { id: true, name: true, isSuperAdmin: true, isActive: true }
         },
         createdAt: true,
       },
     });
 
-    return updatedUser;
+    const permissions = await this.getRolePermissions(updatedUser.role);
+
+    return {
+      ...updatedUser,
+      permissions
+    };
   }
 
   static async forgotPassword(email) {
