@@ -65,7 +65,7 @@ class OutwardService {
       take: limit,
       orderBy,
       include: {
-        customer: { select: { name: true, code: true } },
+        customer: { select: { name: true, code: true, email: true } },
         items: { include: ITEM_INCLUDE },
       },
     });
