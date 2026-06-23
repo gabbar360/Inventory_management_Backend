@@ -1,4 +1,5 @@
 const { PrismaClient } = require('@prisma/client');
+const { invalidateRoleCache } = require('../middleware/authorize');
 
 const prisma = new PrismaClient();
 
@@ -22,6 +23,7 @@ class RoleService {
           id: true,
           name: true,
           description: true,
+          isSuperAdmin: true,
           isActive: true,
           createdAt: true,
           updatedAt: true
@@ -49,6 +51,7 @@ class RoleService {
         id: true,
         name: true,
         description: true,
+        isSuperAdmin: true,
         isActive: true,
         createdAt: true,
         updatedAt: true
@@ -59,7 +62,7 @@ class RoleService {
     return role;
   }
 
-  static async createRole({ name, description, isActive = true }) {
+  static async createRole({ name, description, isSuperAdmin = false, isActive = true }) {
     if (!name || name.trim() === '') {
       throw new Error('Role name is required and cannot be empty');
     }
@@ -71,12 +74,14 @@ class RoleService {
       data: {
         name: name.trim(),
         description: description?.trim() || null,
+        isSuperAdmin,
         isActive
       },
       select: {
         id: true,
         name: true,
         description: true,
+        isSuperAdmin: true,
         isActive: true,
         createdAt: true
       }
@@ -85,7 +90,7 @@ class RoleService {
     return role;
   }
 
-  static async updateRole(roleId, { name, description, isActive }) {
+  static async updateRole(roleId, { name, description, isSuperAdmin, isActive }) {
     const role = await prisma.role.findUnique({ where: { id: roleId } });
     if (!role) throw new Error('Role not found');
 
@@ -97,6 +102,7 @@ class RoleService {
     const updateData = {};
     if (name) updateData.name = name.trim();
     if (description !== undefined) updateData.description = description?.trim() || null;
+    if (isSuperAdmin !== undefined) updateData.isSuperAdmin = isSuperAdmin;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     const updatedRole = await prisma.role.update({
@@ -106,11 +112,15 @@ class RoleService {
         id: true,
         name: true,
         description: true,
+        isSuperAdmin: true,
         isActive: true,
         createdAt: true,
         updatedAt: true
       }
     });
+
+    // Evict role credentials from caching layer
+    invalidateRoleCache(roleId);
 
     return updatedRole;
   }
@@ -128,6 +138,7 @@ class RoleService {
     }
 
     await prisma.role.delete({ where: { id: roleId } });
+    invalidateRoleCache(roleId);
   }
 }
 

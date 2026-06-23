@@ -24,13 +24,13 @@ class RoleController {
 
   static async createRole(req, res) {
     try {
-      const { name, description, isActive } = req.body;
+      const { name, description, isSuperAdmin, isActive } = req.body;
       
       if (!name) {
         return sendError(res, 400, 'Role name is required');
       }
 
-      const role = await RoleService.createRole({ name, description, isActive });
+      const role = await RoleService.createRole({ name, description, isSuperAdmin, isActive });
       return sendResponse(res, 201, true, { role }, 'Role created successfully');
     } catch (error) {
       return sendError(res, 400, error.message);
@@ -40,9 +40,9 @@ class RoleController {
   static async updateRole(req, res) {
     try {
       const { id } = req.params;
-      const { name, description, isActive } = req.body;
+      const { name, description, isSuperAdmin, isActive } = req.body;
       
-      const role = await RoleService.updateRole(parseInt(id), { name, description, isActive });
+      const role = await RoleService.updateRole(parseInt(id), { name, description, isSuperAdmin, isActive });
       return sendResponse(res, 200, true, { role }, 'Role updated successfully');
     } catch (error) {
       return sendError(res, 400, error.message);

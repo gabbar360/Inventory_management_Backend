@@ -60,7 +60,7 @@ class PaymentsMadeService {
       orderBy,
       include: {
         vendor: {
-          select: { id: true, name: true, code: true }
+          select: { id: true, name: true, code: true, email: true }
         },
         invoices: {
           include: {
