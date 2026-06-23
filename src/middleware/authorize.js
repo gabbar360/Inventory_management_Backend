@@ -60,6 +60,16 @@ const getDynamicPermissionSlug = (method, originalUrl) => {
   const segments = cleanPath.split('/').filter(Boolean);
   if (segments.length === 0) return null;
 
+  // Special handling for ledger endpoints
+  if (cleanPath.includes('/ledger')) {
+    if (cleanPath.includes('/get-vendors/') && cleanPath.includes('/ledger')) {
+      return 'vendor-ledger.read';
+    }
+    if (cleanPath.includes('/get-customers/') && cleanPath.includes('/ledger')) {
+      return 'customer-ledger.read';
+    }
+  }
+
   // Check permissions/role subroute paths (e.g. GET:/roles/1/permissions -> roles.read)
   if (segments[0] === 'roles' && segments[2] === 'permissions') {
     return method === 'POST' ? 'roles.update' : 'roles.read';

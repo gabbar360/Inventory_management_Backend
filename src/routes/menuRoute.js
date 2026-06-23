@@ -8,6 +8,12 @@ const router = express.Router();
 
 router.get('/menus/sidebar', authenticateToken, MenuController.getSidebarMenu);
 
+router.get('/menus/:id', 
+  authenticateToken, 
+  authorizePermission('roles.read'), 
+  MenuController.getMenuById
+);
+
 router.get('/menus', 
   authenticateToken, 
   authorizePermission('roles.read'), 

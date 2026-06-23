@@ -27,6 +27,20 @@ class MenuController {
     }
   }
 
+  static async getMenuById(req, res) {
+    try {
+      const { id } = req.params;
+      const menu = await MenuService.getMenuItemById(id);
+      if (!menu) {
+        return sendError(res, 404, 'Menu item not found');
+      }
+      return sendResponse(res, 200, true, { menu }, 'Menu item fetched successfully');
+    } catch (error) {
+      console.error('Error fetching menu item:', error);
+      return sendError(res, 500, error.message);
+    }
+  }
+
   static async createMenu(req, res) {
     try {
       const menu = await MenuService.createMenuItem(req.body);
@@ -51,7 +65,8 @@ class MenuController {
   static async deleteMenu(req, res) {
     try {
       const { id } = req.params;
-      await MenuService.deleteMenuItem(id);
+      const { type } = req.query; // Accept type from query parameter
+      await MenuService.deleteMenuItem(id, type);
       return sendResponse(res, 200, true, null, 'Menu item deleted successfully');
     } catch (error) {
       console.error('Error deleting menu item:', error);

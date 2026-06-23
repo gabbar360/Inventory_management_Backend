@@ -143,6 +143,48 @@ class MenuService {
   }
 
   /**
+   * Fetch a single menu item by ID
+   */
+  static async getMenuItemById(id) {
+    const parsedId = parseInt(id);
+
+    // Check in subMenuItem first
+    let menu = await prisma.subMenuItem.findUnique({
+      where: { id: parsedId },
+      include: { permission: true, menuItem: true }
+    });
+
+    // If not found, check in menuItem
+    if (!menu) {
+      menu = await prisma.menuItem.findUnique({
+        where: { id: parsedId },
+        include: { permission: true }
+      });
+    }
+
+    if (!menu) {
+      return null;
+    }
+
+    // Format response - check if it's a submenu by menuItemId property
+    const isSub = !!menu.menuItemId;
+    
+    return {
+      id: menu.id,
+      name: menu.name,
+      path: menu.path,
+      icon: menu.icon,
+      order: menu.order,
+      permissionId: menu.permissionId,
+      isActive: menu.isActive,
+      type: isSub ? 'sub' : 'main',
+      parentId: isSub ? menu.menuItemId : undefined,
+      permission: menu.permission,
+      parent: isSub ? menu.menuItem : null
+    };
+  }
+
+  /**
    * Create a new menu item in the database
    */
   static async createMenuItem(data) {
@@ -218,29 +260,45 @@ class MenuService {
    */
   static async updateMenuItem(id, data) {
     const parsedId = parseInt(id);
-    let permissionId = data.permissionId !== undefined ? (data.permissionId && data.permissionId !== '0' && data.permissionId !== 0 ? parseInt(data.permissionId) : null) : undefined;
+    
+    // Parse permission ID properly
+    let permissionId = null;
+    if (data.permissionId && data.permissionId !== '0' && data.permissionId !== 0) {
+      permissionId = parseInt(data.permissionId);
+    }
 
-    // Check if the record currently exists in sub_menu_items
+    // Determine if user wants this to be a submenu based on menuItemId being truthy
+    const wantSubmenu = !!(data.menuItemId && data.menuItemId !== '0' && data.menuItemId !== 0 && data.menuItemId !== '');
+
+    // Check if record exists in sub_menu_items
     const currentSub = await prisma.subMenuItem.findUnique({
       where: { id: parsedId }
     });
 
-    const wantSubmenu = data.menuItemId !== undefined && data.menuItemId !== null && data.menuItemId !== '0' && data.menuItemId !== 0;
+    // Check if record exists in menu_items
+    const currentMain = await prisma.menuItem.findUnique({
+      where: { id: parsedId }
+    });
 
+    // If record not found in either table
+    if (!currentSub && !currentMain) {
+      throw new Error('Menu item not found');
+    }
+
+    // Case 1: Record exists in SubMenuItem table
     if (currentSub) {
-      // Existing type is Submenu
       if (wantSubmenu) {
-        // Keep as Submenu, update values
+        // Keep as Submenu - just update
         return prisma.subMenuItem.update({
           where: { id: parsedId },
           data: {
             name: data.name,
-            path: data.path !== undefined ? data.path : undefined,
-            icon: data.icon !== undefined ? data.icon : undefined,
-            order: data.order !== undefined ? parseInt(data.order) : undefined,
-            menuItemId: data.menuItemId ? parseInt(data.menuItemId) : undefined,
-            permissionId: permissionId,
-            isActive: data.isActive !== undefined ? data.isActive : undefined
+            path: data.path !== undefined ? data.path : currentSub.path,
+            icon: data.icon !== undefined ? data.icon : currentSub.icon,
+            order: data.order !== undefined ? parseInt(data.order) : currentSub.order,
+            menuItemId: parseInt(data.menuItemId),
+            permissionId: permissionId !== null ? permissionId : currentSub.permissionId,
+            isActive: data.isActive !== undefined ? data.isActive : currentSub.isActive
           },
           include: {
             permission: true,
@@ -248,70 +306,61 @@ class MenuService {
           }
         });
       } else {
-        // Structural conversion: Submenu -> Main Menu
-        // Delete Submenu and create Main Menu
-        const deleted = await prisma.subMenuItem.delete({
+        // Convert: Submenu -> Main Menu
+        // Delete from SubMenuItem and create in MenuItem
+        await prisma.subMenuItem.delete({
           where: { id: parsedId }
         });
 
         return prisma.menuItem.create({
           data: {
-            id: parsedId,
-            name: data.name !== undefined ? data.name : deleted.name,
-            path: data.path !== undefined ? data.path : deleted.path,
-            icon: data.icon !== undefined ? data.icon : deleted.icon,
-            order: data.order !== undefined ? parseInt(data.order) : deleted.order,
-            permissionId: permissionId !== undefined ? permissionId : deleted.permissionId,
-            isActive: data.isActive !== undefined ? data.isActive : deleted.isActive
+            name: data.name || currentSub.name,
+            path: data.path !== undefined ? data.path : currentSub.path,
+            icon: data.icon !== undefined ? data.icon : currentSub.icon,
+            order: data.order !== undefined ? parseInt(data.order) : currentSub.order,
+            permissionId: permissionId !== null ? permissionId : currentSub.permissionId,
+            isActive: data.isActive !== undefined ? data.isActive : currentSub.isActive
           },
           include: {
             permission: true
           }
         });
       }
-    } else {
-      // Existing type is Main Menu
-      const currentMain = await prisma.menuItem.findUnique({
-        where: { id: parsedId }
-      });
-
-      if (!currentMain) {
-        throw new Error('Menu item not found in either MenuItem or SubMenuItem');
-      }
-
+    }
+    // Case 2: Record exists in MenuItem table
+    else if (currentMain) {
       if (!wantSubmenu) {
-        // Keep as Main Menu, update values
+        // Keep as Main Menu - just update
         return prisma.menuItem.update({
           where: { id: parsedId },
           data: {
             name: data.name,
-            path: data.path !== undefined ? data.path : undefined,
-            icon: data.icon !== undefined ? data.icon : undefined,
-            order: data.order !== undefined ? parseInt(data.order) : undefined,
-            permissionId: permissionId,
-            isActive: data.isActive !== undefined ? data.isActive : undefined
+            path: data.path !== undefined ? data.path : currentMain.path,
+            icon: data.icon !== undefined ? data.icon : currentMain.icon,
+            order: data.order !== undefined ? parseInt(data.order) : currentMain.order,
+            permissionId: permissionId !== null ? permissionId : currentMain.permissionId,
+            isActive: data.isActive !== undefined ? data.isActive : currentMain.isActive
           },
           include: {
             permission: true
           }
         });
       } else {
-        // Structural conversion: Main Menu -> Submenu
-        // Delete Main Menu and create Submenu
-        const deleted = await prisma.menuItem.delete({
+        // Convert: Main Menu -> Submenu
+        // Delete from MenuItem and create in SubMenuItem
+        await prisma.menuItem.delete({
           where: { id: parsedId }
         });
 
         return prisma.subMenuItem.create({
           data: {
-            id: parsedId,
-            name: data.name !== undefined ? data.name : deleted.name,
-            path: data.path || '', // path is mandatory for submenus
-            icon: data.icon !== undefined ? data.icon : deleted.icon,
-            order: data.order !== undefined ? parseInt(data.order) : deleted.order,
+            name: data.name || currentMain.name,
+            path: data.path !== undefined ? data.path : (currentMain.path || ''),
+            icon: data.icon !== undefined ? data.icon : currentMain.icon,
+            order: data.order !== undefined ? parseInt(data.order) : currentMain.order,
             menuItemId: parseInt(data.menuItemId),
-            permissionId: permissionId !== undefined ? permissionId : deleted.permissionId,
-            isActive: data.isActive !== undefined ? data.isActive : deleted.isActive
+            permissionId: permissionId !== null ? permissionId : currentMain.permissionId,
+            isActive: data.isActive !== undefined ? data.isActive : currentMain.isActive
           },
           include: {
             permission: true,
@@ -323,11 +372,25 @@ class MenuService {
   }
 
   /**
-   * Delete a menu item
+   * Delete a menu item - ensures correct item is deleted
+   * @param {number} id - Menu item ID
+   * @param {string} type - Menu type ('main' or 'sub') to avoid ID conflicts
    */
-  static async deleteMenuItem(id) {
+  static async deleteMenuItem(id, type) {
     const parsedId = parseInt(id);
 
+    // If type is explicitly provided, use it
+    if (type === 'sub') {
+      return prisma.subMenuItem.delete({
+        where: { id: parsedId }
+      });
+    } else if (type === 'main') {
+      return prisma.menuItem.delete({
+        where: { id: parsedId }
+      });
+    }
+
+    // Fallback: Auto-detect type (original behavior for backward compatibility)
     const isSub = await prisma.subMenuItem.findUnique({
       where: { id: parsedId }
     });

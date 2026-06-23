@@ -130,6 +130,12 @@ async function main() {
     { slug: 'payments-received.create', name: 'Create Payments Received', module: 'payments-received', action: 'create' },
     { slug: 'payments-received.read', name: 'View Payments Received', module: 'payments-received', action: 'read' },
     
+    // Vendor Ledger
+    { slug: 'vendor-ledger.read', name: 'View Vendor Ledger', module: 'vendor-ledger', action: 'read' },
+    
+    // Customer Ledger
+    { slug: 'customer-ledger.read', name: 'View Customer Ledger', module: 'customer-ledger', action: 'read' },
+    
     // Warehouse Locations
     { slug: 'locations.create', name: 'Create Locations', module: 'locations', action: 'create' },
     { slug: 'locations.read', name: 'View Locations', module: 'locations', action: 'read' },
@@ -190,77 +196,93 @@ async function main() {
   await prisma.subMenuItem.deleteMany();
   await prisma.menuItem.deleteMany();
 
-  // Define Standalone Top-Level Menu Items
-  const dashboardMenu = await prisma.menuItem.create({
-    data: { name: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard', order: 1, permissionId: dbPermissions['dashboard.read'] }
-  });
-  const leadsMenu = await prisma.menuItem.create({
-    data: { name: 'Leads', path: '/leads', icon: 'Megaphone', order: 2, permissionId: dbPermissions['leads.read'] }
-  });
-  const webQuotesMenu = await prisma.menuItem.create({
-    data: { name: 'Website Quotes', path: '/website-quotes', icon: 'Globe', order: 3, permissionId: dbPermissions['website-quotes.read'] }
-  });
-  const categoriesMenu = await prisma.menuItem.create({
-    data: { name: 'Categories', path: '/categories', icon: 'FolderTree', order: 4, permissionId: dbPermissions['categories.read'] }
-  });
-  const productsMenu = await prisma.menuItem.create({
-    data: { name: 'Products', path: '/products', icon: 'Box', order: 5, permissionId: dbPermissions['products.read'] }
+  // Production-level menu ordering with section-based grouping
+  // Sequential order: 10, 20, 30, 40, 50, 60, 70, 80, 90, 100, 110, 120, 130, 200
+  // Format: Each section gets 10 unit gap, submenus are +1, +2, +3 from parent
+
+  // Section 10: Dashboard
+  await prisma.menuItem.create({
+    data: { name: 'Dashboard', path: '/dashboard', icon: 'LayoutDashboard', order: 10, permissionId: dbPermissions['dashboard.read'] }
   });
 
-  // Purchase Group (Container MenuItem)
+  // Section 20: Leads
+  await prisma.menuItem.create({
+    data: { name: 'Leads', path: '/leads', icon: 'Megaphone', order: 20, permissionId: dbPermissions['leads.read'] }
+  });
+
+  // Section 30: Website Quotes
+  await prisma.menuItem.create({
+    data: { name: 'Website Quotes', path: '/website-quotes', icon: 'Globe', order: 30, permissionId: dbPermissions['website-quotes.read'] }
+  });
+
+  // Section 40-50: Master Data (Categories, Products)
+  await prisma.menuItem.create({
+    data: { name: 'Categories', path: '/categories', icon: 'FolderTree', order: 40, permissionId: dbPermissions['categories.read'] }
+  });
+
+  await prisma.menuItem.create({
+    data: { name: 'Products', path: '/products', icon: 'Box', order: 50, permissionId: dbPermissions['products.read'] }
+  });
+
+  // Section 60-65: Purchase Module (Group)
   const purchaseGroup = await prisma.menuItem.create({
-    data: { name: 'Purchase', path: null, icon: 'ShoppingCart', order: 6 }
+    data: { name: 'Purchase', path: null, icon: 'ShoppingCart', order: 60 }
   });
 
   await prisma.subMenuItem.createMany({
     data: [
-      { name: 'Vendors', path: '/vendors', icon: 'Users', order: 1, menuItemId: purchaseGroup.id, permissionId: dbPermissions['vendors.read'] },
-      { name: 'Purchase Orders', path: '/purchase-orders', icon: 'ShoppingCart', order: 2, menuItemId: purchaseGroup.id, permissionId: dbPermissions['purchase-orders.read'] },
-      { name: 'Inward', path: '/inward', icon: 'ArrowDownToLine', order: 3, menuItemId: purchaseGroup.id, permissionId: dbPermissions['inward.read'] },
-      { name: 'Payments Made', path: '/paymentsmade', icon: 'CreditCard', order: 4, menuItemId: purchaseGroup.id, permissionId: dbPermissions['payments-made.read'] }
+      { name: 'Vendors', path: '/vendors', icon: 'Users', order: 61, menuItemId: purchaseGroup.id, permissionId: dbPermissions['vendors.read'] },
+      { name: 'Purchase Orders', path: '/purchase-orders', icon: 'ShoppingCart', order: 62, menuItemId: purchaseGroup.id, permissionId: dbPermissions['purchase-orders.read'] },
+      { name: 'Inward', path: '/inward', icon: 'ArrowDownToLine', order: 63, menuItemId: purchaseGroup.id, permissionId: dbPermissions['inward.read'] },
+      { name: 'Payments Made', path: '/paymentsmade', icon: 'CreditCard', order: 64, menuItemId: purchaseGroup.id, permissionId: dbPermissions['payments-made.read'] },
+      { name: 'Vendor Ledger', path: '/vendor-ledger', icon: 'BarChart3', order: 65, menuItemId: purchaseGroup.id, permissionId: dbPermissions['vendor-ledger.read'] }
     ]
   });
 
-  // Sales Group (Container MenuItem)
+  // Section 70-79: Available for future modules
+
+  // Section 80-87: Sales Module (Group)
   const salesGroup = await prisma.menuItem.create({
-    data: { name: 'Sales', path: null, icon: 'ShoppingBag', order: 30 }
+    data: { name: 'Sales', path: null, icon: 'ShoppingBag', order: 80 }
   });
 
   await prisma.subMenuItem.createMany({
     data: [
-      { name: 'Customers', path: '/customers', icon: 'Users', order: 1, menuItemId: salesGroup.id, permissionId: dbPermissions['customers.read'] },
-      { name: 'Quotes', path: '/quotes', icon: 'FileText', order: 2, menuItemId: salesGroup.id, permissionId: dbPermissions['quotes.read'] },
-      { name: 'Sales Orders', path: '/sales-orders', icon: 'ClipboardList', order: 3, menuItemId: salesGroup.id, permissionId: dbPermissions['sales-orders.read'] },
-      { name: 'Order Dispatch', path: '/order-dispatch', icon: 'Truck', order: 4, menuItemId: salesGroup.id, permissionId: dbPermissions['order-dispatches.read'] },
-      { name: 'Outward', path: '/outward', icon: 'ArrowUpFromLine', order: 5, menuItemId: salesGroup.id, permissionId: dbPermissions['outward.read'] },
-      { name: 'Payments Received', path: '/paymentsreceived', icon: 'CreditCard', order: 6, menuItemId: salesGroup.id, permissionId: dbPermissions['payments-received.read'] }
+      { name: 'Customers', path: '/customers', icon: 'Users', order: 81, menuItemId: salesGroup.id, permissionId: dbPermissions['customers.read'] },
+      { name: 'Quotes', path: '/quotes', icon: 'FileText', order: 82, menuItemId: salesGroup.id, permissionId: dbPermissions['quotes.read'] },
+      { name: 'Sales Orders', path: '/sales-orders', icon: 'ClipboardList', order: 83, menuItemId: salesGroup.id, permissionId: dbPermissions['sales-orders.read'] },
+      { name: 'Order Dispatch', path: '/order-dispatch', icon: 'Truck', order: 84, menuItemId: salesGroup.id, permissionId: dbPermissions['order-dispatches.read'] },
+      { name: 'Outward', path: '/outward', icon: 'ArrowUpFromLine', order: 85, menuItemId: salesGroup.id, permissionId: dbPermissions['outward.read'] },
+      { name: 'Payments Received', path: '/paymentsreceived', icon: 'CreditCard', order: 86, menuItemId: salesGroup.id, permissionId: dbPermissions['payments-received.read'] },
+      { name: 'Customer Ledger', path: '/customer-ledger', icon: 'BarChart3', order: 87, menuItemId: salesGroup.id, permissionId: dbPermissions['customer-ledger.read'] }
     ]
   });
 
-  // Standalone Menu Items
+  // Section 100-130: Operations & Inventory & Reports
   await prisma.menuItem.createMany({
     data: [
-      { name: 'Warehouse', path: '/locations', icon: 'MapPin', order: 40, permissionId: dbPermissions['locations.read'] },
-      { name: 'Inventory', path: '/inventory', icon: 'Warehouse', order: 41, permissionId: dbPermissions['inventory.read'] },
-      { name: 'Samples', path: '/samples', icon: 'FlaskConical', order: 42, permissionId: dbPermissions['samples.read'] },
-      { name: 'Profit & Loss', path: '/profit-loss', icon: 'TrendingUp', order: 43, permissionId: dbPermissions['profit-loss.read'] }
+      { name: 'Warehouse', path: '/locations', icon: 'MapPin', order: 100, permissionId: dbPermissions['locations.read'] },
+      { name: 'Inventory', path: '/inventory', icon: 'Warehouse', order: 110, permissionId: dbPermissions['inventory.read'] },
+      { name: 'Samples', path: '/samples', icon: 'FlaskConical', order: 120, permissionId: dbPermissions['samples.read'] },
+      { name: 'Profit & Loss', path: '/profit-loss', icon: 'TrendingUp', order: 130, permissionId: dbPermissions['profit-loss.read'] }
     ]
   });
 
-  // System Settings Group (Container MenuItem)
+  // Section 200: System Settings & Configuration (Group)
   const settingsGroup = await prisma.menuItem.create({
-    data: { name: 'System Settings', path: null, icon: 'Users', order: 50 }
+    data: { name: 'System Settings', path: null, icon: 'Settings', order: 200 }
   });
 
   await prisma.subMenuItem.createMany({
     data: [
-      { name: 'Roles', path: '/roles', icon: 'Users', order: 1, menuItemId: settingsGroup.id, permissionId: dbPermissions['roles.read'] },
-      { name: 'Users', path: '/users', icon: 'Users', order: 2, menuItemId: settingsGroup.id, permissionId: dbPermissions['users.read'] },
-      { name: 'Menus', path: '/menus', icon: 'List', order: 3, menuItemId: settingsGroup.id, permissionId: dbPermissions['roles.read'] }
+      { name: 'Roles', path: '/roles', icon: 'Shield', order: 201, menuItemId: settingsGroup.id, permissionId: dbPermissions['roles.read'] },
+      { name: 'Users', path: '/users', icon: 'Users', order: 202, menuItemId: settingsGroup.id, permissionId: dbPermissions['users.read'] },
+      { name: 'Menus', path: '/menus', icon: 'List', order: 203, menuItemId: settingsGroup.id, permissionId: dbPermissions['roles.update'] }
     ]
   });
 
-  console.log('Dynamic Menu Items seeded successfully.');
+  console.log('Dynamic Menu Items seeded successfully with production-level ordering.');
+  console.log('Menu Order Sequence: 10, 20, 30, 40, 50, 60-65(Purchase), 70-79(Reserved), 80-87(Sales), 100, 110, 120, 130, 200-203(Settings)');
   console.log('🎉 Seeding completed successfully!');
 }
 
