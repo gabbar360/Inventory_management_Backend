@@ -53,6 +53,15 @@ const sendDocument = async (req, res) => {
 
     await sendDocumentEmail({ to, cc, subject, message: message || '', docType, docId, data, settings });
 
+    if (docType === 'quote') {
+      const { PrismaClient } = require('@prisma/client');
+      const prisma = new PrismaClient();
+      await prisma.quote.update({
+        where: { id: parseInt(docId) },
+        data: { status: 'sent' }
+      });
+    }
+
     return sendResponse(res, 200, true, null, 'Document sent successfully via email');
   } catch (error) {
     console.error('Email send error:', error);
