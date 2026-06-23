@@ -18,20 +18,8 @@ const PUBLIC_ROUTE_PREFIXES = [
 ];
 
 /**
- * Route-specific permission overrides.
- * Maps exact clean paths and methods to custom slugs where automatic naming conventions do not apply.
- */
-const ROUTE_PERMISSION_OVERRIDES = {
-  'GET:/permissions': 'roles.read',
-  'GET:/menus': 'roles.read',
-  'POST:/menus': 'roles.update',
-  'PUT:/menus': 'roles.update',
-  'DELETE:/menus': 'roles.update',
-  'GET:/menus/sidebar': null, // Handled inside MenuService dynamically
-};
-
-/**
  * Dynamically resolves a required permission slug based on HTTP Method and URL Path.
+ * Uses RESTful naming conventions without hardcoding.
  */
 const getDynamicPermissionSlug = (method, originalUrl) => {
   // 1. Normalize path: remove query params and trailing slash
@@ -43,62 +31,73 @@ const getDynamicPermissionSlug = (method, originalUrl) => {
     return null;
   }
 
-  // 3. Check for specific overrides first
-  // Check exact route override (e.g. GET:/permissions)
-  const exactKey = `${method}:${cleanPath}`;
-  if (ROUTE_PERMISSION_OVERRIDES[exactKey] !== undefined) {
-    return ROUTE_PERMISSION_OVERRIDES[exactKey];
+  // 3. Special cases (exact matches)
+  if (cleanPath === '/menus/sidebar') {
+    return null; // Public - no permission check
   }
 
-  // Check base route override (e.g. PUT:/menus/5 matches PUT:/menus)
-  const baseSegment = cleanPath.split('/')[1] || '';
-  const baseKey = `${method}:/${baseSegment}`;
-  if (ROUTE_PERMISSION_OVERRIDES[baseKey] !== undefined) {
-    return ROUTE_PERMISSION_OVERRIDES[baseKey];
-  }
+  // 4. Remove IDs and sub-paths to get base module name
+  // Examples:
+  // /get-products/5 → /get-products
+  // /get-customers/5/ledger → /get-customers
+  // /add-samples → /add-samples
+  const pathWithoutId = cleanPath.replace(/\/\d+(?:\/.*)?$/, '');
 
-  const segments = cleanPath.split('/').filter(Boolean);
-  if (segments.length === 0) return null;
-
-  // Special handling for ledger endpoints
-  if (cleanPath.includes('/ledger')) {
-    if (cleanPath.includes('/get-vendors/') && cleanPath.includes('/ledger')) {
-      return 'vendor-ledger.read';
-    }
-    if (cleanPath.includes('/get-customers/') && cleanPath.includes('/ledger')) {
-      return 'customer-ledger.read';
-    }
-  }
-
-  // Check permissions/role subroute paths (e.g. GET:/roles/1/permissions -> roles.read)
-  if (segments[0] === 'roles' && segments[2] === 'permissions') {
-    return method === 'POST' ? 'roles.update' : 'roles.read';
-  }
-
-  // 4. Determine Module Name from the first segment (e.g. "get-categories" -> "categories")
-  let primarySegment = segments[0];
-  let moduleName = primarySegment
-    .replace(/^(get|create|update|delete|print)-/, '') // Strip standard CRUD prefixes
+  // 5. Extract module name from path
+  // Remove verb prefixes: get, getall, add, create, update, delete, print
+  let moduleName = pathWithoutId
+    .replace(/^\//, '') // Remove leading slash
+    .replace(/^(getall|get|add|create|update|delete|print)-/, '') // Remove CRUD verbs
     .toLowerCase();
 
-  // 5. Determine Action based on HTTP Method
-  let action = 'read'; // Default standard action
+  // Handle special cases with hyphens
+  if (moduleName.includes('-')) {
+    // Keep the full name like 'purchase-orders', 'sales-orders'
+    moduleName = moduleName;
+  }
 
-  if (method === 'POST') action = 'create';
-  else if (method === 'PUT' || method === 'PATCH') action = 'update';
-  else if (method === 'DELETE') action = 'delete';
+  // 6. Determine action based on HTTP method
+  let action = 'read'; // Default
 
-  // Override actions based on custom sub-paths/verbs in the URL
+  if (method === 'POST') {
+    action = 'create';
+  } else if (method === 'PUT' || method === 'PATCH') {
+    action = 'update';
+  } else if (method === 'DELETE') {
+    action = 'delete';
+  } else if (method === 'GET') {
+    action = 'read';
+  }
+
+  // 7. Override action based on URL patterns
   const urlLower = cleanPath.toLowerCase();
-  if (urlLower.includes('/approve')) {
+  if (urlLower.includes('/ledger')) {
+    action = 'read'; // Ledger is read-only
+    if (urlLower.includes('/vendors')) {
+      moduleName = 'vendor-ledger';
+    } else if (urlLower.includes('/customers')) {
+      moduleName = 'customer-ledger';
+    }
+  } else if (urlLower.includes('/approve')) {
     action = 'approve';
   } else if (urlLower.includes('/export')) {
     action = 'export';
   } else if (urlLower.includes('/print') || urlLower.includes('/pdf')) {
     action = 'read';
+  } else if (urlLower.includes('/sidebar')) {
+    action = 'read';
   }
 
-  return `${moduleName}.${action}`;
+  // 8. Handle special routes
+  if (cleanPath === '/permissions' || cleanPath === '/menus') {
+    return method === 'GET' ? 'roles.read' : 'roles.update';
+  }
+
+  if (cleanPath.includes('/permissions') && cleanPath.includes('/roles')) {
+    return method === 'POST' ? 'roles.update' : 'roles.read';
+  }
+
+  return moduleName ? `${moduleName}.${action}` : null;
 };
 
 /**
@@ -172,7 +171,7 @@ const dynamicAuthorize = async (req, res, next) => {
     console.warn(`[Blocked Request] User: ${user.email} | Required Permission: "${requiredPermissionSlug}" | Route: ${method} ${path}`);
     return res.status(403).json({ 
       success: false, 
-      error: `Access denied: Insufficient permissions (Requires ${requiredPermissionSlug})` 
+      error: `You do not have permission to perform this action. Please contact your administrator.` 
     });
   } catch (error) {
     console.error('Dynamic Authorization middleware error:', error);
