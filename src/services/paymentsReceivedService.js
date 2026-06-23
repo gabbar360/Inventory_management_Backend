@@ -60,7 +60,7 @@ class PaymentsReceivedService {
       orderBy,
       include: {
         customer: {
-          select: { id: true, name: true, code: true }
+          select: { id: true, name: true, code: true, email: true }
         },
         invoices: {
           include: {

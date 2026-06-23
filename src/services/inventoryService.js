@@ -173,60 +173,60 @@ class InventoryService {
 
     stockBatches.forEach((batch) => {
       const key = batch.productId;
+      const batchCostPerPcs = batch.costPerPcs || (batch.costPerBox / ((batch.packPerBox || 1) * (batch.packPerPiece || 1)));
       const value = batch.remainingBoxes * batch.costPerBox +
         (batch.remainingPacks - (batch.remainingBoxes * batch.packPerBox)) * batch.costPerPack +
-        (batch.remainingPcs - (batch.remainingPacks * batch.packPerPiece)) * batch.costPerPcs;
-
-      const packagingLabel = `${batch.packPerBox} Pack/Box\n${batch.packPerPiece} Pcs/Pack`;
+        (batch.remainingPcs - (batch.remainingPacks * batch.packPerPiece)) * batchCostPerPcs;
 
       if (summary.has(key)) {
         const existing = summary.get(key);
         existing.totalBoxes += batch.remainingBoxes;
-        existing.totalPacks = (existing.totalPacks || 0) + (batch.remainingPacks || 0);
         existing.totalPcs += batch.remainingPcs;
         existing.totalValue += value;
 
-        const vi = existing.variants.findIndex(v => v.packagingLabel === packagingLabel);
-        if (vi >= 0) {
-          existing.variants[vi].boxes += batch.remainingBoxes;
-          existing.variants[vi].pcs += batch.remainingPcs;
-        } else {
-          existing.variants.push({ packagingLabel, boxes: batch.remainingBoxes, pcs: batch.remainingPcs });
-        }
-
-        const locationIndex = existing.locations.findIndex((l) => l.locationId === batch.locationId);
-        if (locationIndex >= 0) {
-          existing.locations[locationIndex].boxes += batch.remainingBoxes;
-          existing.locations[locationIndex].packs = (existing.locations[locationIndex].packs || 0) + (batch.remainingPacks || 0);
-          existing.locations[locationIndex].pcs += batch.remainingPcs;
-          existing.locations[locationIndex].value += value;
+        const locIdx = existing.locations.findIndex(l => l.locationId === batch.locationId);
+        if (locIdx >= 0) {
+          const loc = existing.locations[locIdx];
+          loc.boxes += batch.remainingBoxes;
+          loc.pcs += batch.remainingPcs;
+          loc.value += value;
+          const vi = loc.variants.findIndex(v => v.packPerBox === batch.packPerBox && v.packPerPiece === batch.packPerPiece);
+          if (vi >= 0) {
+            const existingPcs = loc.variants[vi].pcs;
+            const newPcs = batch.remainingPcs;
+            const totalPcs = existingPcs + newPcs;
+            loc.variants[vi].costPerPcs = totalPcs > 0
+              ? ((loc.variants[vi].costPerPcs * existingPcs) + (batchCostPerPcs * newPcs)) / totalPcs
+              : batchCostPerPcs;
+            loc.variants[vi].boxes += batch.remainingBoxes;
+            loc.variants[vi].pcs = totalPcs;
+          } else {
+            loc.variants.push({ packPerBox: batch.packPerBox, packPerPiece: batch.packPerPiece, boxes: batch.remainingBoxes, pcs: batch.remainingPcs, costPerBox: batch.costPerBox, costPerPcs: batchCostPerPcs });
+          }
         } else {
           existing.locations.push({
             locationId: batch.locationId,
             locationName: batch.location.name,
             boxes: batch.remainingBoxes,
-            packs: batch.remainingPacks || 0,
             pcs: batch.remainingPcs,
             value,
+            variants: [{ packPerBox: batch.packPerBox, packPerPiece: batch.packPerPiece, boxes: batch.remainingBoxes, pcs: batch.remainingPcs, costPerBox: batch.costPerBox, costPerPcs: batchCostPerPcs }],
           });
         }
       } else {
         summary.set(key, {
           productId: batch.productId,
           productName: batch.product.name,
-          categoryName: batch.product.category.name,
           totalBoxes: batch.remainingBoxes,
-          totalPacks: batch.remainingPacks || 0,
           totalPcs: batch.remainingPcs,
           totalValue: value,
-          variants: [{ packagingLabel, boxes: batch.remainingBoxes, pcs: batch.remainingPcs }],
           locations: [{
             locationId: batch.locationId,
             locationName: batch.location.name,
             boxes: batch.remainingBoxes,
-            packs: batch.remainingPacks || 0,
             pcs: batch.remainingPcs,
             value,
+            variants: [{ packPerBox: batch.packPerBox, packPerPiece: batch.packPerPiece, boxes: batch.remainingBoxes, pcs: batch.remainingPcs, costPerBox: batch.costPerBox, costPerPcs: batchCostPerPcs }],
           }],
         });
       }

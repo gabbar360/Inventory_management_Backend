@@ -2,7 +2,7 @@ const { calculatePagination, generateCode } = require("../utils/helpers");
 const { PrismaClient } = require('@prisma/client');
 const bcrypt = require('bcryptjs');
 const crypto = require('crypto');
-const emailService = require('./emailService');
+const { sendPasswordResetEmail } = require('./emailService');
 const { generateAccessToken, generateRefreshToken, hashToken } = require('../utils/tokenUtils');
 
 const prisma = new PrismaClient();
@@ -280,7 +280,7 @@ class AuthService {
     });
 
     try {
-      await emailService.sendPasswordResetEmail(user.email, user.name, resetToken);
+      await sendPasswordResetEmail(user.email, user.name, resetToken);
     } catch (error) {
       console.error('Email send failed:', error);
       // Rollback token if email fails
