@@ -97,6 +97,8 @@ async function main() {
     // Payments Made
     { slug: 'payments-made.create', name: 'Create Payments Made', module: 'payments-made', action: 'create' },
     { slug: 'payments-made.read', name: 'View Payments Made', module: 'payments-made', action: 'read' },
+    { slug: 'payments-made.update', name: 'Edit Payments Made', module: 'payments-made', action: 'update' },
+    { slug: 'payments-made.delete', name: 'Delete Payments Made', module: 'payments-made', action: 'delete' },
     
     // Customers
     { slug: 'customers.create', name: 'Create Customers', module: 'customers', action: 'create' },
@@ -120,15 +122,19 @@ async function main() {
     { slug: 'order-dispatches.create', name: 'Create Dispatches', module: 'order-dispatches', action: 'create' },
     { slug: 'order-dispatches.read', name: 'View Dispatches', module: 'order-dispatches', action: 'read' },
     { slug: 'order-dispatches.update', name: 'Update Dispatches', module: 'order-dispatches', action: 'update' },
+    { slug: 'order-dispatches.delete', name: 'Delete Dispatches', module: 'order-dispatches', action: 'delete' },
     
     // Outward
     { slug: 'outward.create', name: 'Create Outwards', module: 'outward', action: 'create' },
     { slug: 'outward.read', name: 'View Outwards', module: 'outward', action: 'read' },
     { slug: 'outward.update', name: 'Update Outwards', module: 'outward', action: 'update' },
+    { slug: 'outward.delete', name: 'Delete Outwards', module: 'outward', action: 'delete' },
     
     // Payments Received
     { slug: 'payments-received.create', name: 'Create Payments Received', module: 'payments-received', action: 'create' },
     { slug: 'payments-received.read', name: 'View Payments Received', module: 'payments-received', action: 'read' },
+    { slug: 'payments-received.update', name: 'Edit Payments Received', module: 'payments-received', action: 'update' },
+    { slug: 'payments-received.delete', name: 'Delete Payments Received', module: 'payments-received', action: 'delete' },
     
     // Vendor Ledger
     { slug: 'vendor-ledger.read', name: 'View Vendor Ledger', module: 'vendor-ledger', action: 'read' },
@@ -149,6 +155,7 @@ async function main() {
     { slug: 'samples.create', name: 'Create Samples', module: 'samples', action: 'create' },
     { slug: 'samples.read', name: 'View Samples', module: 'samples', action: 'read' },
     { slug: 'samples.update', name: 'Update Samples', module: 'samples', action: 'update' },
+    { slug: 'samples.delete', name: 'Delete Samples', module: 'samples', action: 'delete' },
     
     // Profit & Loss
     { slug: 'profit-loss.read', name: 'View Profit & Loss Reports', module: 'profit-loss', action: 'read' },
