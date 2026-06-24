@@ -7,10 +7,10 @@ const router = Router();
 
 router.use(authenticateToken);
 
-router.get('/samples', SampleController.getAll);
-router.get('/samples/:id', SampleController.getById);
-router.post('/samples', validateRequest(sampleSchema), SampleController.create);
-router.put('/samples/:id', validateRequest(sampleSchema.partial()), SampleController.update);
-router.delete('/samples/:id', SampleController.delete);
+router.get('/getall-samples', SampleController.getAll);
+router.get('/get-samples/:id', SampleController.getById);
+router.post('/add-samples', validateRequest(sampleSchema), SampleController.create);
+router.put('/update-samples/:id', validateRequest(sampleSchema.partial()), SampleController.update);
+router.delete('/delete-samples/:id', SampleController.delete);
 
 module.exports = router;
