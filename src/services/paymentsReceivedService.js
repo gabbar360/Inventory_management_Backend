@@ -98,7 +98,20 @@ class PaymentsReceivedService {
         invoices: {
           include: {
             invoice: {
-              select: { id: true, invoiceNo: true, totalCost: true, amountReceived: true, date: true }
+              include: {
+                items: {
+                  include: {
+                    product: {
+                      select: {
+                        name: true,
+                        grade: true,
+                        sku: true,
+                        category: { select: { name: true, gstRate: true, hsnCode: true } }
+                      }
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -107,6 +120,28 @@ class PaymentsReceivedService {
 
     if (!payment) {
       throw new Error('Payment received record not found');
+    }
+
+    if (payment.invoices) {
+      payment.invoices = payment.invoices.map((inv) => {
+        if (inv.invoice) {
+          let baseCost = 0;
+          let gstCost = 0;
+          inv.invoice.items?.forEach((item) => {
+            const gstRate = item.product?.category?.gstRate || 0;
+            const itemBase = item.quantity * item.ratePerUnit;
+            baseCost += itemBase;
+            gstCost += (itemBase * gstRate) / 100;
+          });
+          const expense = inv.invoice.expense || 0;
+          const adjustment = inv.invoice.adjustment || 0;
+          const shippingCharge = inv.invoice.shippingCharge || 0;
+          const discount = inv.invoice.discount || 0;
+          const grandTotal = baseCost + gstCost + expense + shippingCharge - adjustment - discount;
+          inv.invoice.totalCost = Math.round(grandTotal * 100) / 100;
+        }
+        return inv;
+      });
     }
 
     return payment;
