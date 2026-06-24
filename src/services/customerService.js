@@ -352,13 +352,41 @@ class CustomerService {
     let openingBalance = 0;
     if (startDate) {
       const startDateTime = new Date(startDate);
-      const outwardBefore = await prisma.outwardInvoice.aggregate({
+      const outwardBefore = await prisma.outwardInvoice.findMany({
         where: {
           customerId: parsedCustomerId,
           date: { lt: startDateTime }
         },
-        _sum: { totalCost: true }
+        include: {
+          items: {
+            include: {
+              product: {
+                select: {
+                  category: { select: { gstRate: true } }
+                }
+              }
+            }
+          }
+        }
       });
+
+      const totalOutwardBefore = outwardBefore.reduce((sum, inv) => {
+        let baseCost = 0;
+        let gstCost = 0;
+        inv.items?.forEach((item) => {
+          const gstRate = item.product?.category?.gstRate || 0;
+          const itemBase = item.quantity * item.ratePerUnit;
+          baseCost += itemBase;
+          gstCost += (itemBase * gstRate) / 100;
+        });
+        const expense = inv.expense || 0;
+        const adjustment = inv.adjustment || 0;
+        const shippingCharge = inv.shippingCharge || 0;
+        const discount = inv.discount || 0;
+        const grandTotal = baseCost + gstCost + expense + shippingCharge - adjustment - discount;
+        return sum + grandTotal;
+      }, 0);
+
       const paymentsBefore = await prisma.paymentReceived.aggregate({
         where: {
           customerId: parsedCustomerId,
@@ -390,7 +418,7 @@ class CustomerService {
         vendorPaymentsBefore = paymentsMadeBefore._sum.amount || 0;
       }
 
-      openingBalance = (outwardBefore._sum.totalCost || 0) - (paymentsBefore._sum.amount || 0) - vendorInwardBefore + vendorPaymentsBefore;
+      openingBalance = totalOutwardBefore - (paymentsBefore._sum.amount || 0) - vendorInwardBefore + vendorPaymentsBefore;
     }
 
     // 2. Fetch outward invoices in range
@@ -406,16 +434,43 @@ class CustomerService {
         invoicesWhere.date.lte = end;
       }
     }
-    const invoices = await prisma.outwardInvoice.findMany({
+    const rawInvoices = await prisma.outwardInvoice.findMany({
       where: invoicesWhere,
-      select: {
-        id: true,
-        invoiceNo: true,
-        date: true,
-        totalCost: true,
-        amountReceived: true,
-        createdAt: true
+      include: {
+        items: {
+          include: {
+            product: {
+              select: {
+                category: { select: { name: true, gstRate: true, hsnCode: true } }
+              }
+            }
+          }
+        }
       }
+    });
+
+    const invoices = rawInvoices.map(inv => {
+      let baseCost = 0;
+      let gstCost = 0;
+      inv.items?.forEach((item) => {
+        const gstRate = item.product?.category?.gstRate || 0;
+        const itemBase = item.quantity * item.ratePerUnit;
+        baseCost += itemBase;
+        gstCost += (itemBase * gstRate) / 100;
+      });
+      const expense = inv.expense || 0;
+      const adjustment = inv.adjustment || 0;
+      const shippingCharge = inv.shippingCharge || 0;
+      const discount = inv.discount || 0;
+      const grandTotal = baseCost + gstCost + expense + shippingCharge - adjustment - discount;
+      return {
+        id: inv.id,
+        invoiceNo: inv.invoiceNo,
+        date: inv.date,
+        totalCost: Math.round(grandTotal * 100) / 100,
+        amountReceived: inv.amountReceived,
+        createdAt: inv.createdAt
+      };
     });
 
     // 3. Fetch payments received in range
