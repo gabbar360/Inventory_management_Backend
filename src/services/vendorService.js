@@ -303,6 +303,29 @@ class VendorService {
       throw new Error('Vendor not found');
     }
 
+    // Find matching customer using priority logic
+    let matchingCustomer = null;
+    if (vendor.gstNumber && vendor.gstNumber.trim()) {
+      matchingCustomer = await prisma.customer.findFirst({
+        where: { gstNumber: { equals: vendor.gstNumber.trim(), mode: 'insensitive' } }
+      });
+    }
+    if (!matchingCustomer && vendor.name && vendor.name.trim()) {
+      matchingCustomer = await prisma.customer.findFirst({
+        where: { name: { equals: vendor.name.trim(), mode: 'insensitive' } }
+      });
+    }
+    if (!matchingCustomer && vendor.email && vendor.email.trim()) {
+      matchingCustomer = await prisma.customer.findFirst({
+        where: { email: { equals: vendor.email.trim(), mode: 'insensitive' } }
+      });
+    }
+    if (!matchingCustomer && vendor.phone && vendor.phone.trim()) {
+      matchingCustomer = await prisma.customer.findFirst({
+        where: { phone: { equals: vendor.phone.trim(), mode: 'insensitive' } }
+      });
+    }
+
     // 1. Calculate opening balance (all transactions before startDate)
     let openingBalance = 0;
     if (startDate) {
@@ -322,7 +345,30 @@ class VendorService {
         },
         _sum: { amount: true }
       });
-      openingBalance = (inwardBefore._sum.totalCost || 0) - (paymentsBefore._sum.amount || 0);
+
+      let customerInwardBefore = 0;
+      let customerPaymentsBefore = 0;
+      if (matchingCustomer) {
+        const outwardBefore = await prisma.outwardInvoice.aggregate({
+          where: {
+            customerId: matchingCustomer.id,
+            date: { lt: startDateTime }
+          },
+          _sum: { totalCost: true }
+        });
+        const paymentsReceivedBefore = await prisma.paymentReceived.aggregate({
+          where: {
+            customerId: matchingCustomer.id,
+            date: { lt: startDateTime },
+            transactionType: { not: 'credit_application' }
+          },
+          _sum: { amount: true }
+        });
+        customerInwardBefore = outwardBefore._sum.totalCost || 0;
+        customerPaymentsBefore = paymentsReceivedBefore._sum.amount || 0;
+      }
+
+      openingBalance = (inwardBefore._sum.totalCost || 0) - (paymentsBefore._sum.amount || 0) - customerInwardBefore + customerPaymentsBefore;
     }
 
     // 2. Fetch inward invoices in range
@@ -378,13 +424,69 @@ class VendorService {
       }
     });
 
+    // Fetch matching customer transactions in range
+    let customerInvoices = [];
+    let customerPayments = [];
+    if (matchingCustomer) {
+      const customerInvoicesWhere = {
+        customerId: matchingCustomer.id,
+      };
+      if (startDate || endDate) {
+        customerInvoicesWhere.date = {};
+        if (startDate) customerInvoicesWhere.date.gte = new Date(startDate);
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          customerInvoicesWhere.date.lte = end;
+        }
+      }
+      customerInvoices = await prisma.outwardInvoice.findMany({
+        where: customerInvoicesWhere,
+        select: {
+          id: true,
+          invoiceNo: true,
+          date: true,
+          totalCost: true,
+          amountReceived: true,
+          createdAt: true
+        }
+      });
+
+      const customerPaymentsWhere = {
+        customerId: matchingCustomer.id,
+        transactionType: { not: 'credit_application' }
+      };
+      if (startDate || endDate) {
+        customerPaymentsWhere.date = {};
+        if (startDate) customerPaymentsWhere.date.gte = new Date(startDate);
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999);
+          customerPaymentsWhere.date.lte = end;
+        }
+      }
+      customerPayments = await prisma.paymentReceived.findMany({
+        where: customerPaymentsWhere,
+        select: {
+          id: true,
+          paymentNumber: true,
+          date: true,
+          amount: true,
+          paymentMode: true,
+          referenceNumber: true,
+          transactionType: true,
+          createdAt: true
+        }
+      });
+    }
+
     // 4. Merge & format
     let transactions = [
       ...invoices.map(inv => ({
         id: `invoice-${inv.id}`,
         date: inv.date,
         refNo: inv.invoiceNo,
-        type: 'Bill',
+        type: 'Purchase',
         details: 'Purchase Bill',
         debit: 0,
         credit: inv.totalCost,
@@ -398,6 +500,26 @@ class VendorService {
         details: p.transactionType === 'vendor_advance' ? `Advance Payment (${p.paymentMode})` : `Bill Payment (${p.paymentMode})`,
         debit: p.amount,
         credit: 0,
+        createdAt: p.createdAt
+      })),
+      ...customerInvoices.map(inv => ({
+        id: `cust-invoice-${inv.id}`,
+        date: inv.date,
+        refNo: inv.invoiceNo,
+        type: 'Sales',
+        details: 'Contra: Sales Invoice',
+        debit: inv.totalCost,
+        credit: 0,
+        createdAt: inv.createdAt
+      })),
+      ...customerPayments.map(p => ({
+        id: `cust-payment-${p.id}`,
+        date: p.date,
+        refNo: p.paymentNumber,
+        type: 'Payment Received',
+        details: p.transactionType === 'customer_advance' ? `Contra: Advance Received (${p.paymentMode})` : `Contra: Payment Received (${p.paymentMode})`,
+        debit: 0,
+        credit: p.amount,
         createdAt: p.createdAt
       }))
     ];
@@ -419,8 +541,8 @@ class VendorService {
       };
     });
 
-    const totalCredit = invoices.reduce((sum, inv) => sum + inv.totalCost, 0);
-    const totalDebit = payments.reduce((sum, p) => sum + p.amount, 0);
+    const totalCredit = invoices.reduce((sum, inv) => sum + inv.totalCost, 0) + customerPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalDebit = payments.reduce((sum, p) => sum + p.amount, 0) + customerInvoices.reduce((sum, inv) => sum + inv.totalCost, 0);
     const closingBalance = currentBalance;
 
     return {
