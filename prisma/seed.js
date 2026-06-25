@@ -142,6 +142,8 @@ async function main() {
     // Customer Ledger
     { slug: 'customer-ledger.read', name: 'View Customer Ledger', module: 'customer-ledger', action: 'read' },
     
+    
+    
     // Warehouse Locations
     { slug: 'locations.create', name: 'Create Locations', module: 'locations', action: 'create' },
     { slug: 'locations.read', name: 'View Locations', module: 'locations', action: 'read' },
@@ -174,6 +176,41 @@ async function main() {
     { slug: 'users.update', name: 'Update Users', module: 'users', action: 'update' },
     { slug: 'users.delete', name: 'Delete Users', module: 'users', action: 'delete' },
   ];
+
+  // Clean up any permissions in the database that are no longer in the permissionsList
+  const activeSlugs = permissionsList.map(p => p.slug);
+  await prisma.rolePermission.deleteMany({
+    where: {
+      permission: {
+        slug: { notIn: activeSlugs }
+      }
+    }
+  });
+  await prisma.menuItem.updateMany({
+    where: {
+      permission: {
+        slug: { notIn: activeSlugs }
+      }
+    },
+    data: {
+      permissionId: null
+    }
+  });
+  await prisma.subMenuItem.updateMany({
+    where: {
+      permission: {
+        slug: { notIn: activeSlugs }
+      }
+    },
+    data: {
+      permissionId: null
+    }
+  });
+  await prisma.permission.deleteMany({
+    where: {
+      slug: { notIn: activeSlugs }
+    }
+  });
 
   const dbPermissions = {};
   for (const perm of permissionsList) {
@@ -231,7 +268,7 @@ async function main() {
     data: { name: 'Products', path: '/products', icon: 'Box', order: 50, permissionId: dbPermissions['products.read'] }
   });
 
-  // Section 60-65: Purchase Module (Group)
+  // Section 60-63: Purchase Module (Group)
   const purchaseGroup = await prisma.menuItem.create({
     data: { name: 'Purchase', path: null, icon: 'ShoppingCart', order: 60 }
   });
@@ -240,15 +277,13 @@ async function main() {
     data: [
       { name: 'Vendors', path: '/vendors', icon: 'Users', order: 61, menuItemId: purchaseGroup.id, permissionId: dbPermissions['vendors.read'] },
       { name: 'Purchase Orders', path: '/purchase-orders', icon: 'ShoppingCart', order: 62, menuItemId: purchaseGroup.id, permissionId: dbPermissions['purchase-orders.read'] },
-      { name: 'Inward', path: '/inward', icon: 'ArrowDownToLine', order: 63, menuItemId: purchaseGroup.id, permissionId: dbPermissions['inward.read'] },
-      { name: 'Payments Made', path: '/paymentsmade', icon: 'CreditCard', order: 64, menuItemId: purchaseGroup.id, permissionId: dbPermissions['payments-made.read'] },
-      { name: 'Vendor Ledger', path: '/vendor-ledger', icon: 'BarChart3', order: 65, menuItemId: purchaseGroup.id, permissionId: dbPermissions['vendor-ledger.read'] }
+      { name: 'Inward', path: '/inward', icon: 'ArrowDownToLine', order: 63, menuItemId: purchaseGroup.id, permissionId: dbPermissions['inward.read'] }
     ]
   });
 
   // Section 70-79: Available for future modules
 
-  // Section 80-87: Sales Module (Group)
+  // Section 80-85: Sales Module (Group)
   const salesGroup = await prisma.menuItem.create({
     data: { name: 'Sales', path: null, icon: 'ShoppingBag', order: 80 }
   });
@@ -259,9 +294,31 @@ async function main() {
       { name: 'Quotes', path: '/quotes', icon: 'FileText', order: 82, menuItemId: salesGroup.id, permissionId: dbPermissions['quotes.read'] },
       { name: 'Sales Orders', path: '/sales-orders', icon: 'ClipboardList', order: 83, menuItemId: salesGroup.id, permissionId: dbPermissions['sales-orders.read'] },
       { name: 'Order Dispatch', path: '/order-dispatch', icon: 'Truck', order: 84, menuItemId: salesGroup.id, permissionId: dbPermissions['order-dispatches.read'] },
-      { name: 'Outward', path: '/outward', icon: 'ArrowUpFromLine', order: 85, menuItemId: salesGroup.id, permissionId: dbPermissions['outward.read'] },
-      { name: 'Payments Received', path: '/paymentsreceived', icon: 'CreditCard', order: 86, menuItemId: salesGroup.id, permissionId: dbPermissions['payments-received.read'] },
-      { name: 'Customer Ledger', path: '/customer-ledger', icon: 'BarChart3', order: 87, menuItemId: salesGroup.id, permissionId: dbPermissions['customer-ledger.read'] }
+      { name: 'Outward', path: '/outward', icon: 'ArrowUpFromLine', order: 85, menuItemId: salesGroup.id, permissionId: dbPermissions['outward.read'] }
+    ]
+  });
+
+  // Section 90-92: Payment Module (Group)
+  const paymentGroup = await prisma.menuItem.create({
+    data: { name: 'Payment', path: null, icon: 'CreditCard', order: 90 }
+  });
+
+  await prisma.subMenuItem.createMany({
+    data: [
+      { name: 'Payments Made', path: '/paymentsmade', icon: 'CreditCard', order: 91, menuItemId: paymentGroup.id, permissionId: dbPermissions['payments-made.read'] },
+      { name: 'Payments Received', path: '/paymentsreceived', icon: 'CreditCard', order: 92, menuItemId: paymentGroup.id, permissionId: dbPermissions['payments-received.read'] }
+    ]
+  });
+
+  // Section 95: Account Ledger (Group)
+  const ledgerGroup = await prisma.menuItem.create({
+    data: { name: 'Account Ledger', path: null, icon: 'BarChart3', order: 95 }
+  });
+
+  await prisma.subMenuItem.createMany({
+    data: [
+      { name: 'Customer Ledger', path: '/account-ledger/customer', icon: 'Users', order: 96, menuItemId: ledgerGroup.id, permissionId: dbPermissions['customer-ledger.read'] },
+      { name: 'Vendor Ledger', path: '/account-ledger/vendor', icon: 'Warehouse', order: 97, menuItemId: ledgerGroup.id, permissionId: dbPermissions['vendor-ledger.read'] }
     ]
   });
 
