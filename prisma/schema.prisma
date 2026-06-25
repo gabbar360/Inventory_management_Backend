@@ -629,7 +629,7 @@ model BoxDetail {
   inwardInvoice    InwardInvoice?  @relation(fields: [inwardInvoiceId], references: [id])
   outwardInvoice   OutwardInvoice? @relation(fields: [outwardInvoiceId], references: [id])
   product          Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
-  purchaseOrder    PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id])
+  purchaseOrder    PurchaseOrder?  @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   stockBatch       StockBatch?     @relation(fields: [stockBatchId], references: [id])
 
   @@map("box_details")

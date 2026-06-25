@@ -646,7 +646,7 @@ const updatePurchaseOrder = async (id, data) => {
       }
     }
 
-    if ((updated.status === 'confirmed' || updated.status === 'sent') && processedItems?.length > 0) {
+    if (processedItems?.length > 0) {
       await tx.boxDetail.deleteMany({
         where: { purchaseOrderId: updated.id, status: 'expected' }
       });
