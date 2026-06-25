@@ -74,6 +74,7 @@ class OutwardService {
       let totalQty = 0;
       let totalBoxes = 0;
       let totalCOGS = 0;
+      let totalBaseSale = 0;
 
       invoice.items?.forEach((item) => {
         totalQty += item.quantity;
@@ -89,10 +90,11 @@ class OutwardService {
           item.saleUnit === 'pack' ? (item.stockBatch?.costPerPack || item.stockBatch?.costPerBox / (item.stockBatch?.packPerBox || 1)) :
           item.stockBatch?.costPerPcs;
         totalCOGS += (unitCost || 0) * item.quantity;
+        totalBaseSale += item.quantity * item.ratePerUnit;
       });
 
-      const grossProfit = invoice.totalCost - totalCOGS - invoice.expense;
-      const grossProfitMargin = invoice.totalCost > 0 ? (grossProfit / invoice.totalCost) * 100 : 0;
+      const grossProfit = totalBaseSale - totalCOGS - (invoice.expense || 0);
+      const grossProfitMargin = totalBaseSale > 0 ? (grossProfit / totalBaseSale) * 100 : 0;
 
       return {
         ...invoice,
@@ -142,6 +144,26 @@ class OutwardService {
 
       const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
 
+      // Fetch GST rates for all items to calculate correct grand total
+      const productIds = [...new Set(processedItems.map(i => parseInt(i.productId)))];
+      const products = await tx.product.findMany({
+        where: { id: { in: productIds } },
+        select: { id: true, category: { select: { gstRate: true } } }
+      });
+      const gstRateMap = Object.fromEntries(products.map(p => [p.id, p.category?.gstRate || 0]));
+
+      let gstSum = 0;
+      for (const item of processedItems) {
+        const gstRate = gstRateMap[parseInt(item.productId)] || 0;
+        gstSum += (item.totalCost * gstRate) / 100;
+      }
+      const allGstRates = Object.values(gstRateMap);
+      const shippingVal = parseFloat(data.shippingCharge || 0);
+      const shippingGstRate = allGstRates.includes(18) ? 18 : allGstRates.includes(5) ? 5 : 0;
+      const shippingGstAmt = shippingVal > 0 ? shippingVal * (shippingGstRate / 100) : 0;
+      const rawTotal = totalInvoiceCost + gstSum + shippingGstAmt + parseFloat(data.expense || 0) + shippingVal - parseFloat(data.discount || 0);
+      const grandTotal = Math.round(rawTotal);
+
       const invoice = await tx.outwardInvoice.create({
         data: {
           invoiceNo: data.invoiceNo,
@@ -149,7 +171,7 @@ class OutwardService {
           customerId: parseInt(data.customerId),
           saleType: data.saleType,
           expense: data.expense,
-          totalCost: totalInvoiceCost,
+          totalCost: grandTotal,
           adjustment: data.adjustment !== undefined ? parseFloat(data.adjustment) : 0,
           amountReceived: data.amountReceived !== undefined ? parseFloat(data.amountReceived) : 0,
           referenceNo: data.referenceNo || null,
@@ -319,6 +341,26 @@ class OutwardService {
 
       const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
 
+      // Fetch GST rates for all items to calculate correct grand total
+      const productIdsUpdate = [...new Set(processedItems.map(i => parseInt(i.productId)))];
+      const productsUpdate = await tx.product.findMany({
+        where: { id: { in: productIdsUpdate } },
+        select: { id: true, category: { select: { gstRate: true } } }
+      });
+      const gstRateMapUpdate = Object.fromEntries(productsUpdate.map(p => [p.id, p.category?.gstRate || 0]));
+
+      let gstSumUpdate = 0;
+      for (const item of processedItems) {
+        const gstRate = gstRateMapUpdate[parseInt(item.productId)] || 0;
+        gstSumUpdate += (item.totalCost * gstRate) / 100;
+      }
+      const allGstRatesUpdate = Object.values(gstRateMapUpdate);
+      const shippingValUpdate = parseFloat(data.shippingCharge || 0);
+      const shippingGstRateUpdate = allGstRatesUpdate.includes(18) ? 18 : allGstRatesUpdate.includes(5) ? 5 : 0;
+      const shippingGstAmtUpdate = shippingValUpdate > 0 ? shippingValUpdate * (shippingGstRateUpdate / 100) : 0;
+      const rawTotalUpdate = totalInvoiceCost + gstSumUpdate + shippingGstAmtUpdate + parseFloat(data.expense || 0) + shippingValUpdate - parseFloat(data.discount || 0);
+      const grandTotalUpdate = Math.round(rawTotalUpdate);
+
       const invoice = await tx.outwardInvoice.update({
         where: { id: parseInt(id) },
         data: {
@@ -327,7 +369,7 @@ class OutwardService {
           customerId: parseInt(data.customerId),
           saleType: data.saleType,
           expense: data.expense,
-          totalCost: totalInvoiceCost,
+          totalCost: grandTotalUpdate,
           adjustment: data.adjustment !== undefined ? parseFloat(data.adjustment) : undefined,
           amountReceived: data.amountReceived !== undefined ? parseFloat(data.amountReceived) : undefined,
           referenceNo: data.referenceNo !== undefined ? data.referenceNo : undefined,
