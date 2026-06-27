@@ -95,6 +95,7 @@ model Product {
 model Vendor {
   code           String          @unique
   name           String
+  companyName    String?         @map("company_name")
   email          String?
   phone          String?
   address        String?
@@ -114,6 +115,7 @@ model Vendor {
 model Customer {
   code            String           @unique
   name            String
+  companyName     String?          @map("company_name")
   email           String?
   phone           String?
   address         String?
@@ -123,6 +125,7 @@ model Customer {
   gstNumber       String?          @map("gst_number")
   state           String?
   shippingAddress String?          @map("shipping_address")
+  reference       String?
   outwardInvoices   OutwardInvoice[]
   quotes            Quote[]
   salesOrders       SalesOrder[]

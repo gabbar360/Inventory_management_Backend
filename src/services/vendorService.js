@@ -11,6 +11,7 @@ class VendorService {
             { name: { contains: search, mode: 'insensitive' } },
             { code: { contains: search, mode: 'insensitive' } },
             { email: { contains: search, mode: 'insensitive' } },
+            { phone: { contains: search, mode: 'insensitive' } },
           ],
         }
       : {};
@@ -18,7 +19,7 @@ class VendorService {
     const total = await prisma.vendor.count({ where });
     const { offset } = calculatePagination(page, limit, total);
 
-    const orderBy = sortBy && ['name', 'code', 'email', 'phone', 'createdAt'].includes(sortBy)
+    const orderBy = sortBy && ['name', 'companyName', 'code', 'email', 'phone', 'state', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
 
