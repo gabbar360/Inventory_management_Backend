@@ -8,6 +8,7 @@ const router = Router();
 router.use(authenticateToken);
 
 router.get('/getall-customers', CustomerController.getAll);
+router.get('/get-customer-references', CustomerController.getUniqueReferences);
 router.get('/get-customers/:id', CustomerController.getById);
 router.get('/get-customers/:id/ledger', CustomerController.getLedger);
 router.get('/get-customers/:id/ledger/pdf', CustomerController.downloadLedgerPDF);
