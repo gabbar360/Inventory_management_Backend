@@ -4,21 +4,24 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class CustomerService {
-  static async getAll(page, limit, search, sortBy, sortOrder) {
-    const where = search
-      ? {
-          OR: [
-            { name: { contains: search, mode: 'insensitive' } },
-            { code: { contains: search, mode: 'insensitive' } },
-            { email: { contains: search, mode: 'insensitive' } },
-          ],
-        }
-      : {};
+  static async getAll(page, limit, search, sortBy, sortOrder, reference) {
+    const where = {};
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { code: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (reference) {
+      where.reference = { equals: reference };
+    }
 
     const total = await prisma.customer.count({ where });
     const { offset } = calculatePagination(page, limit, total);
 
-    const orderBy = sortBy && ['name', 'code', 'email', 'phone', 'createdAt'].includes(sortBy)
+    const orderBy = sortBy && ['name', 'companyName', 'code', 'email', 'phone', 'state', 'reference', 'createdAt'].includes(sortBy)
       ? { [sortBy]: sortOrder === 'desc' ? 'desc' : 'asc' }
       : { createdAt: 'desc' };
 
@@ -630,6 +633,22 @@ class CustomerService {
       totalCredit,
       closingBalance
     };
+  }
+
+  static async getUniqueReferences() {
+    const customers = await prisma.customer.findMany({
+      where: {
+        reference: {
+          not: null,
+          not: "",
+        },
+      },
+      select: {
+        reference: true,
+      },
+      distinct: ['reference'],
+    });
+    return customers.map(c => c.reference);
   }
 }
 module.exports = { CustomerService };

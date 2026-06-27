@@ -12,7 +12,8 @@ class CustomerController {
   static async getAll(req, res) {
     try {
       const { page, limit, search, sortBy, sortOrder } = parseQueryParams(req.query);
-      const result = await CustomerService.getAll(page, limit, search, sortBy, sortOrder);
+      const { reference } = req.query;
+      const result = await CustomerService.getAll(page, limit, search, sortBy, sortOrder, reference);
       return sendResponse(res, 200, true, result.customers, 'Customers retrieved successfully', result.pagination);
     } catch (error) {
       return sendError(res, 500, error.message);
@@ -123,6 +124,15 @@ class CustomerController {
       }
     } catch (error) {
       console.error('PDF Generation Error:', error);
+      return sendError(res, 500, error.message);
+    }
+  }
+
+  static async getUniqueReferences(req, res) {
+    try {
+      const references = await CustomerService.getUniqueReferences();
+      return sendResponse(res, 200, true, references, 'Unique references retrieved successfully');
+    } catch (error) {
       return sendError(res, 500, error.message);
     }
   }

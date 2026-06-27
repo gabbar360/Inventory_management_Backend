@@ -30,19 +30,21 @@ const productSchema = z.object({
 // Vendor schemas
 const vendorSchema = z.object({
   name: z.string().min(1, 'Vendor name is required'),
+  companyName: z.string().optional().nullable(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
 });
 
-// Customer schemas
 const customerSchema = z.object({
   name: z.string().min(1, 'Customer name is required'),
+  companyName: z.string().optional().nullable(),
   email: z.string().email().optional().or(z.literal('')),
   phone: z.string().optional(),
   address: z.string().optional(),
   gstNumber: z.string().optional().nullable(),
   state: z.string().optional().nullable(),
+  reference: z.string().optional().nullable(),
 });
 
 // Location schemas
