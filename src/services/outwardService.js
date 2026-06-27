@@ -93,8 +93,9 @@ class OutwardService {
         totalBaseSale += item.quantity * item.ratePerUnit;
       });
 
-      const grossProfit = totalBaseSale - totalCOGS - (invoice.expense || 0);
-      const grossProfitMargin = totalBaseSale > 0 ? (grossProfit / totalBaseSale) * 100 : 0;
+      const revenue = invoice.totalCost || 0;
+      const grossProfit = revenue - totalCOGS;
+      const grossProfitMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
 
       return {
         ...invoice,
