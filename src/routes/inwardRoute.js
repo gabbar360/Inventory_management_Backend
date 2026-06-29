@@ -12,4 +12,5 @@ router.get('/get-inward/:id', InwardController.getById);
 router.post('/add-inward', validateRequest(inwardInvoiceSchema), InwardController.create);
 router.put('/update-inward/:id', validateRequest(inwardInvoiceSchema), InwardController.update);
 router.delete('/delete-inward/:id', InwardController.delete);
+router.get('/inward-pdf/:id', InwardController.generateInwardPDF);
 module.exports = router;

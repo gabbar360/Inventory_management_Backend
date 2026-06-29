@@ -1,5 +1,10 @@
 const { sendResponse, sendError, parseQueryParams } = require("../utils/helpers");
 const { InwardService } = require('../services/inwardService');
+const settingsService = require('../services/settingsService');
+const ejs = require('ejs');
+const puppeteer = require('puppeteer');
+const path = require('path');
+const fs = require('fs');
 
 class InwardController {
   static async getAll(req, res) {
@@ -49,6 +54,42 @@ class InwardController {
       return sendResponse(res, 200, true, result, 'Inward invoice deleted successfully');
     } catch (error) {
       return sendError(res, 400, error.message);
+    }
+  }
+  static async generateInwardPDF(req, res) {
+    try {
+      const invoice = await InwardService.getById(req.params.id);
+      const settings = await settingsService.getSettings();
+
+      const logoPath = path.join(__dirname, '../public/images/vegnar.webp');
+      let logoBase64 = null;
+      if (fs.existsSync(logoPath)) {
+        logoBase64 = fs.readFileSync(logoPath).toString('base64');
+      }
+
+      const templatePath = path.join(__dirname, '../templates/inwardPdfTemplate.ejs');
+      const html = await ejs.renderFile(templatePath, { invoice, logoBase64, settings });
+
+      const browser = await puppeteer.launch({ headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+      const page = await browser.newPage();
+      await page.setContent(html, { waitUntil: 'networkidle0', timeout: 30000 });
+
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        preferCSSPageSize: true,
+        margin: { top: '10mm', right: '10mm', bottom: '10mm', left: '10mm' },
+      });
+
+      await browser.close();
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="Inward-${invoice.invoiceNo}.pdf"`);
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.end(pdfBuffer);
+    } catch (error) {
+      console.error('Inward PDF Error:', error);
+      return sendError(res, 500, error.message);
     }
   }
 }
