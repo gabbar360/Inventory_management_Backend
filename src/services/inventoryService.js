@@ -82,6 +82,31 @@ class InventoryService {
     });
   }
 
+  /**
+   * Returns ALL stock batches for a product (including fully-consumed ones),
+   * ordered newest-first. Used for P&L cost-price lookups so that even
+   * after stock runs out the historical purchase cost is still accessible.
+   */
+  static async getCostHistory(productId) {
+    return await prisma.stockBatch.findMany({
+      where: {
+        productId: parseInt(productId),
+      },
+      select: {
+        id: true,
+        productId: true,
+        inwardDate: true,
+        costPerBox: true,
+        costPerPack: true,
+        costPerPcs: true,
+        packPerBox: true,
+        packPerPiece: true,
+        batchCode: true,
+      },
+      orderBy: { inwardDate: 'desc' },
+    });
+  }
+
   static async validateStockAvailability(items) {
     for (const item of items) {
       const stockBatch = await prisma.stockBatch.findUnique({

@@ -46,6 +46,19 @@ class InventoryController {
     }
   }
 
+  static async getCostHistory(req, res) {
+    try {
+      const { productId } = req.query;
+      if (!productId) {
+        return sendError(res, 400, 'Product ID is required');
+      }
+      const result = await InventoryService.getCostHistory(productId);
+      return sendResponse(res, 200, true, result, 'Cost history retrieved successfully');
+    } catch (error) {
+      return sendError(res, 500, error.message);
+    }
+  }
+
   static async generateStockReportPDF(req, res) {
     let browser = null;
     try {
