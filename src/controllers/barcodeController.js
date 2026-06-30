@@ -74,9 +74,9 @@ class BarcodeController {
       
       console.log(`[Get Barcodes for Print] Request - Source: ${source}, ID: ${id}`);
       
-      if (!['po', 'inward'].includes(source)) {
+      if (!['po', 'inward', 'batch'].includes(source)) {
         console.log(`[Get Barcodes for Print] ❌ Invalid source: ${source}`);
-        return sendError(res, 400, 'Invalid source. Must be po or inward');
+        return sendError(res, 400, 'Invalid source. Must be po, inward or batch');
       }
       
       if (!id || isNaN(parseInt(id))) {

@@ -190,6 +190,10 @@ class BarcodeService {
     });
     if (!invoice) throw new Error('Inward Invoice not found');
 
+    const stockBatches = await tx.stockBatch.findMany({
+      where: { inwardInvoiceId: invoice.id }
+    });
+
     const existingBoxes = await tx.boxDetail.findMany({
       where: { inwardInvoiceId: invoice.id },
       select: { productId: true }
@@ -206,6 +210,8 @@ class BarcodeService {
       const packPerBox = item.packPerBox || 28;
       const packPerPiece = item.packPerPiece || 25;
 
+      const matchingBatch = stockBatches.find(sb => sb.productId === item.productId);
+
       for (let i = 1; i <= boxCount; i++) {
         const barcode = await generateBarcodeFromProduct(item.product, tx, generatedBarcodes);
         barcodes.push(barcode);
@@ -214,6 +220,7 @@ class BarcodeService {
         dataToCreate.push({
           barcode,
           productId: item.productId,
+          stockBatchId: matchingBatch ? matchingBatch.id : null,
           inwardInvoiceId: invoice.id,
           boxIndex: i,
           totalBoxes: boxCount,
@@ -223,6 +230,8 @@ class BarcodeService {
           status: 'inwarded',
           color: item.color || null,
           brand: item.brand || null,
+          batchCode: item.batchCode || null,
+          mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
         });
       }
     }
@@ -532,6 +541,70 @@ class BarcodeService {
     });
   }
 
+  static async generateBoxesForBatch(batchId, tx = prisma) {
+    const batch = await tx.stockBatch.findUnique({
+      where: { id: parseInt(batchId) },
+      include: { product: true }
+    });
+    if (!batch) throw new Error('Stock Batch not found');
+
+    const existingBoxes = await tx.boxDetail.findMany({
+      where: { stockBatchId: batch.id }
+    });
+    if (existingBoxes.length > 0) return existingBoxes;
+
+    const dataToCreate = [];
+    const barcodes = [];
+    const generatedBarcodes = new Set();
+    
+    const boxCount = batch.boxes || 1;
+    const packPerBox = batch.packPerBox || 28;
+    const packPerPiece = batch.packPerPiece || 25;
+
+    for (let i = 1; i <= boxCount; i++) {
+      const barcode = await generateBarcodeFromProduct(batch.product, tx, generatedBarcodes);
+      barcodes.push(barcode);
+      generatedBarcodes.add(barcode);
+      
+      dataToCreate.push({
+        barcode,
+        productId: batch.productId,
+        stockBatchId: batch.id,
+        inwardInvoiceId: batch.inwardInvoiceId || null,
+        boxIndex: i,
+        totalBoxes: boxCount,
+        packPerBox,
+        packPerPiece,
+        totalPcs: packPerBox * packPerPiece,
+        status: 'inwarded',
+        batchCode: batch.batchCode || null,
+        mfgDate: batch.mfgDate ? new Date(batch.mfgDate) : null,
+        color: batch.product.color || null,
+        brand: batch.product.brand || null,
+      });
+    }
+
+    if (dataToCreate.length > 0) {
+      await tx.boxDetail.createMany({
+        data: dataToCreate
+      });
+    }
+
+    return await tx.boxDetail.findMany({
+      where: {
+        stockBatchId: batch.id,
+        barcode: {
+          in: barcodes
+        }
+      },
+      include: {
+        product: { include: { category: true } },
+        stockBatch: { include: { location: true, vendor: true } }
+      },
+      orderBy: { boxIndex: 'asc' }
+    });
+  }
+
   static async getBarcodesForPrint(source, id) {
     const numId = parseInt(id);
     let boxes = [];
@@ -612,6 +685,34 @@ class BarcodeService {
           },
           orderBy: [{ productId: 'asc' }, { boxIndex: 'asc' }]
         });
+      }
+    } else if (source === 'batch') {
+      const batch = await prisma.stockBatch.findUnique({
+        where: { id: numId }
+      });
+      if (batch && batch.inwardInvoiceId) {
+        await prisma.boxDetail.updateMany({
+          where: {
+            inwardInvoiceId: batch.inwardInvoiceId,
+            productId: batch.productId,
+            stockBatchId: null
+          },
+          data: {
+            stockBatchId: batch.id
+          }
+        });
+      }
+
+      boxes = await prisma.boxDetail.findMany({
+        where: { stockBatchId: numId },
+        include: {
+          product: { include: { category: true } },
+          stockBatch: { include: { location: true, vendor: true } }
+        },
+        orderBy: [{ boxIndex: 'asc' }]
+      });
+      if (boxes.length === 0) {
+        boxes = await this.generateBoxesForBatch(numId);
       }
     } else {
       throw new Error(`Invalid source: ${source}`);
