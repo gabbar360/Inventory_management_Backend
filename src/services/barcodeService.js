@@ -253,6 +253,29 @@ class BarcodeService {
     return createdBoxes;
   }
 
+  static async updateBoxDetailsFromInwardItems(inwardInvoiceId, tx = prisma) {
+    const invoice = await tx.inwardInvoice.findUnique({
+      where: { id: parseInt(inwardInvoiceId) },
+      include: { items: { where: { parentItemId: null } } }
+    });
+    if (!invoice) throw new Error('Inward Invoice not found');
+
+    for (const item of invoice.items) {
+      await tx.boxDetail.updateMany({
+        where: {
+          inwardInvoiceId: invoice.id,
+          productId: item.productId
+        },
+        data: {
+          batchCode: item.batchCode || null,
+          mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+          color: item.color || null,
+          brand: item.brand || null
+        }
+      });
+    }
+  }
+
   static async lookupBarcode(barcode) {
     if (!validateBarcodeFormat(barcode)) {
       throw new Error('Invalid barcode format');
@@ -657,7 +680,40 @@ class BarcodeService {
         },
         orderBy: [{ productId: 'asc' }, { boxIndex: 'asc' }]
       });
-      if (boxes.length === 0) {
+      
+      if (boxes.length > 0) {
+        // Update existing boxes with latest InwardItem data
+        const invoice = await prisma.inwardInvoice.findUnique({
+          where: { id: numId },
+          include: { items: { where: { parentItemId: null } } }
+        });
+        if (invoice) {
+          for (const item of invoice.items) {
+            await prisma.boxDetail.updateMany({
+              where: {
+                inwardInvoiceId: numId,
+                productId: item.productId
+              },
+              data: {
+                batchCode: item.batchCode || null,
+                mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+                color: item.color || null,
+                brand: item.brand || null
+              }
+            });
+          }
+        }
+        // Re-fetch with updated data
+        boxes = await prisma.boxDetail.findMany({
+          where: { inwardInvoiceId: numId },
+          include: {
+            product: { include: { category: true } },
+            inwardInvoice: { include: { vendor: true, location: true } },
+            stockBatch: true
+          },
+          orderBy: [{ productId: 'asc' }, { boxIndex: 'asc' }]
+        });
+      } else if (boxes.length === 0) {
         boxes = await this.generateInwardedBoxesForInvoice(numId);
         const freshBatches = await prisma.stockBatch.findMany({
           where: { inwardInvoiceId: numId }
