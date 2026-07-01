@@ -647,10 +647,21 @@ const updatePurchaseOrder = async (id, data) => {
     }
 
     if (processedItems?.length > 0) {
-      await tx.boxDetail.deleteMany({
-        where: { purchaseOrderId: updated.id, status: 'expected' }
-      });
-      await BarcodeServiceClass.generateExpectedBoxesForPO(updated.id, tx);
+      // Update existing boxes with new fields - don't delete them!
+      for (const item of processedItems) {
+        await tx.boxDetail.updateMany({
+          where: {
+            purchaseOrderId: updated.id,
+            productId: parseInt(item.productId)
+          },
+          data: {
+            batchCode: item.batchCode || null,
+            mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+            color: item.color || null,
+            brand: item.brand || null
+          }
+        });
+      }
     }
 
     const updatedPo = await tx.purchaseOrder.findUnique({

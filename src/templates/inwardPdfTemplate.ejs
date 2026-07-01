@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Inward Invoice - <%= invoice.invoiceNo %></title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Roboto', sans-serif; font-size: 10pt; color: #333; background: #fff; }
+        .page { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 10mm 12mm; background: #fff; }
+        .top-container { border: 1.5px solid #bbb; margin-bottom: 0; }
+        .header { display: flex; align-items: stretch; padding: 8px 10px; border-bottom: 1.5px solid #bbb; }
+        .logo-block { width: 100px; display: flex; align-items: center; justify-content: flex-start; flex-shrink: 0; margin-right: 14px; }
+        .logo-block img { max-width: 90px; max-height: 70px; object-fit: contain; }
+        .company-block { flex: 1; }
+        .company-name { font-size: 16pt; font-weight: 700; color: #222; line-height: 1.1; }
+        .company-info { font-size: 8.5pt; color: #555; line-height: 1.5; margin-top: 3px; }
+        .invoice-title-block { width: 160px; display: flex; align-items: flex-end; justify-content: flex-end; flex-shrink: 0; }
+        .invoice-title-text { font-size: 18pt; font-weight: 700; color: #222; letter-spacing: 1px; text-align: right; }
+        .meta-row { display: flex; border-bottom: 1.5px solid #bbb; }
+        .meta-left { flex: 1; border-right: 1.5px solid #bbb; padding: 8px 10px; }
+        .meta-right { width: 260px; padding: 8px 10px; }
+        .meta-table { width: 100%; border-collapse: collapse; }
+        .meta-table td { padding: 2px 4px; font-size: 9.5pt; vertical-align: top; }
+        .meta-table td:first-child { color: #666; white-space: nowrap; }
+        .meta-table td:last-child { font-weight: 600; color: #222; }
+        .party-row { display: flex; }
+        .party-box { flex: 1; padding: 8px 10px; }
+        .party-box:first-child { border-right: 1.5px solid #bbb; }
+        .party-label { font-size: 9pt; color: #333; font-weight: 700; background: #e8e8e8; padding: 4px 10px; margin: -8px -10px 8px -10px; border-bottom: 1.5px solid #bbb; }
+        .party-name { font-size: 11pt; font-weight: 700; color: #222; margin-bottom: 2px; }
+        .party-addr { font-size: 9pt; color: #555; line-height: 1.5; }
+        .items-table { width: 100%; border-collapse: collapse; margin-top: 8px; border: 1.5px solid #bbb; }
+        .items-table thead tr { background: #f0f0f0; }
+        .items-table th { padding: 6px 6px; font-size: 9pt; font-weight: 700; color: #444; text-align: center; border: 1px solid #bbb; }
+        .items-table th.left { text-align: left; }
+        .items-table td { padding: 5px 6px; font-size: 9.5pt; border: 1px solid #ddd; vertical-align: top; }
+        .items-table td.center { text-align: center; }
+        .items-table td.right { text-align: right; }
+        .item-name { font-weight: 500; color: #222; }
+        .summary-table { width: 100%; border-collapse: collapse; border: 1.5px solid #bbb; border-top: none; }
+        .summary-table td { padding: 4px 10px; font-size: 9.5pt; border: 1px solid #ddd; }
+        .summary-table td.label { color: #555; font-weight: 600; text-align: right; }
+        .summary-table td.value { font-weight: 700; color: #222; text-align: right; width: 130px; }
+        .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #aaa; border-top: 1px solid #ccc; padding-top: 6px; }
+        .sign-section { display: flex; border: 1.5px solid #bbb; border-top: none; }
+        .sign-left { flex: 1; padding: 8px 10px; border-right: 1.5px solid #bbb; font-size: 8.5pt; color: #555; }
+        .sign-right { width: 220px; padding: 8px 10px; text-align: right; font-size: 8.5pt; }
+        .sig-col { text-align: center; font-size: 8pt; width: 160px; border-top: 1px solid #bbb; padding-top: 4px; margin-left: auto; margin-top: 40px; }
+        @page { size: A4; margin: 10mm 0 0 0; }
+        @media print { body { margin: 0; } .page { margin: 0; padding: 10mm 12mm; } }
+    </style>
+</head>
+<body>
+<div class="page">
+    <%
+        function fmt(num) {
+            if (num === undefined || num === null || isNaN(num)) return '0.00';
+            return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+        function fmtDate(d) {
+            if (!d) return '';
+            return new Date(d).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+        const expense = invoice.expense || 0;
+        const totalCost = invoice.totalCost || 0;
+        const amountPaid = invoice.amountPaid || 0;
+        const balanceDue = totalCost - amountPaid;
+    %>
+
+    <div class="top-container">
+        <div class="header">
+            <div class="logo-block">
+                <% if (logoBase64) { %>
+                    <img src="data:image/webp;base64,<%= logoBase64 %>" alt="Logo">
+                <% } %>
+            </div>
+            <div class="company-block">
+                <div class="company-name"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
+                <div class="company-info">
+                    <%= settings?.companyAddress || 'B-623, RK Iconic, 150 Feet Ring Road, Rajkot Gujarat 360007, India' %><br>
+                    GSTIN: <%= settings?.companyGstin || '24ABAFV3901A1ZV' %><br>
+                    <%= settings?.companyEmail || 'sales@vegnar.com' %> | <%= settings?.companyPhone || '+91 9998040482' %>
+                </div>
+            </div>
+            <div class="invoice-title-block" style="display:flex;flex-direction:column;align-items:flex-end;justify-content:space-between;">
+                <div style="font-size:8pt;font-weight:700;color:#333;letter-spacing:1px;">INWARD</div>
+                <div class="invoice-title-text">PURCHASE<br>INVOICE</div>
+            </div>
+        </div>
+
+        <div class="meta-row">
+            <div class="meta-left">
+                <table class="meta-table">
+                    <tr><td>Invoice No.</td><td><%= invoice.invoiceNo %></td></tr>
+                    <tr><td>Invoice Date</td><td><%= fmtDate(invoice.date) %></td></tr>
+                    <tr><td>Location</td><td><%= invoice.location?.name || '—' %></td></tr>
+                </table>
+            </div>
+            <div class="meta-right">
+                <table class="meta-table">
+                    <tr><td>Total Cost</td><td>₹ <%= fmt(totalCost) %></td></tr>
+                    <tr><td>Amount Paid</td><td>₹ <%= fmt(amountPaid) %></td></tr>
+                    <tr><td>Balance Due</td><td style="color:<%= balanceDue > 0.01 ? '#b91c1c' : '#15803d' %>;">₹ <%= fmt(balanceDue) %></td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="party-row">
+            <div class="party-box">
+                <div class="party-label">Vendor / Supplier</div>
+                <div class="party-name"><%= invoice.vendor?.name || '—' %></div>
+                <div class="party-addr">
+                    <% if (invoice.vendor?.code) { %>Code: <%= invoice.vendor.code %><br><% } %>
+                    <% if (invoice.vendor?.phone) { %>Phone: <%= invoice.vendor.phone %><br><% } %>
+                    <% if (invoice.vendor?.email) { %>Email: <%= invoice.vendor.email %><br><% } %>
+                    <% if (invoice.vendor?.gstNumber) { %>GSTIN: <%= invoice.vendor.gstNumber %><% } %>
+                </div>
+            </div>
+            <div class="party-box">
+                <div class="party-label">Ship To / Received At</div>
+                <div class="party-name"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
+                <div class="party-addr">
+                    <%= settings?.companyAddress || '' %><br>
+                    GSTIN: <%= settings?.companyGstin || '' %>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <table class="items-table">
+        <thead>
+            <tr>
+                <th style="width:4%">No.</th>
+                <th class="left" style="width:28%">Product</th>
+                <th style="width:8%">SKU</th>
+                <th style="width:8%">Boxes</th>
+                <th style="width:8%">Pack/Box</th>
+                <th style="width:8%">Pcs/Pack</th>
+                <th style="width:8%">Total Pcs</th>
+                <th style="width:10%">Rate/Box</th>
+                <th style="width:9%">GST Amt</th>
+                <th style="width:9%">Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% invoice.items?.forEach((item, i) => { %>
+            <tr>
+                <td class="center"><%= i + 1 %></td>
+                <td>
+                    <div class="item-name"><%= item.product?.name || '—' %><% if (item.product?.grade) { %> (<%= item.product.grade %>)<% } %></div>
+                    <% if (item.batchCode) { %><div style="font-size:8pt;color:#888;">Batch: <%= item.batchCode %></div><% } %>
+                    <% if (item.color) { %><div style="font-size:8pt;color:#888;">Color: <%= item.color %></div><% } %>
+                    <% if (item.brand) { %><div style="font-size:8pt;color:#888;">Brand: <%= item.brand %></div><% } %>
+                </td>
+                <td class="center"><%= item.product?.sku || '—' %></td>
+                <td class="center"><%= item.boxes %></td>
+                <td class="center"><%= item.packPerBox || '—' %></td>
+                <td class="center"><%= item.packPerPiece || 1 %></td>
+                <td class="center"><%= item.totalPcs || 0 %></td>
+                <td class="right">₹ <%= fmt(item.ratePerBox) %></td>
+                <td class="right">₹ <%= fmt(item.gstAmount) %></td>
+                <td class="right" style="font-weight:700;">₹ <%= fmt(item.totalCost) %></td>
+            </tr>
+            <% }) %>
+            <% if (expense > 0) { %>
+            <tr>
+                <td colspan="9" class="right" style="font-weight:600;color:#555;border-top:1px solid #bbb;">Expense / Additional Charges</td>
+                <td class="right" style="font-weight:700;border-top:1px solid #bbb;">₹ <%= fmt(expense) %></td>
+            </tr>
+            <% } %>
+            <tr style="background:#f9f9f9;">
+                <td colspan="9" class="right" style="font-weight:700;font-size:10pt;border-top:1.5px solid #bbb;">Grand Total</td>
+                <td class="right" style="font-weight:700;font-size:10pt;border-top:1.5px solid #bbb;">₹ <%= fmt(totalCost) %></td>
+            </tr>
+            <tr>
+                <td colspan="9" class="right" style="font-weight:600;color:#15803d;">Amount Paid</td>
+                <td class="right" style="font-weight:700;color:#15803d;">₹ <%= fmt(amountPaid) %></td>
+            </tr>
+            <tr>
+                <td colspan="9" class="right" style="font-weight:600;color:<%= balanceDue > 0.01 ? '#b91c1c' : '#15803d' %>;">Balance Due</td>
+                <td class="right" style="font-weight:700;color:<%= balanceDue > 0.01 ? '#b91c1c' : '#15803d' %>;">₹ <%= fmt(balanceDue) %></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="sign-section">
+        <div class="sign-left">
+            <strong>Note:</strong> This is a computer generated purchase/inward record.
+        </div>
+        <div class="sign-right">
+            <div style="font-weight:700;font-size:9pt;"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
+            <div class="sig-col">Authorised Signatory</div>
+        </div>
+    </div>
+
+    <div class="footer">This is a computer generated document.</div>
+</div>
+</body>
+</html>
