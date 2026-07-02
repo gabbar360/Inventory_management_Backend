@@ -4,14 +4,14 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
 class InventoryService {
-  static async createStockBatch(inwardItem, inwardInvoice) {
+  static async createStockBatch(inwardItem, inwardInvoice, tx = prisma) {
     const totalPacks = inwardItem.boxes * inwardItem.packPerBox;
     const totalPcs = totalPacks * inwardItem.packPerPiece;
-    const costPerBox = inwardItem.totalCost / inwardItem.boxes;
-    const costPerPack = inwardItem.totalCost / totalPacks;
-    const costPerPcs = inwardItem.totalCost / totalPcs;
+    const costPerBox = inwardItem.totalCost / (inwardItem.boxes || 1);
+    const costPerPack = inwardItem.totalCost / (totalPacks || 1);
+    const costPerPcs = inwardItem.totalCost / (totalPcs || 1);
 
-    return await prisma.stockBatch.create({
+    return await tx.stockBatch.create({
       data: {
         productId: inwardItem.productId,
         vendorId: inwardInvoice.vendorId,
@@ -206,7 +206,11 @@ class InventoryService {
       if (summary.has(key)) {
         const existing = summary.get(key);
         existing.totalBoxes += batch.remainingBoxes;
+        existing.totalPacks += batch.remainingPacks || 0;
         existing.totalPcs += batch.remainingPcs;
+        existing.totalBookedBoxes += batch.bookedBoxes || 0;
+        existing.totalBookedPacks += batch.bookedPacks || 0;
+        existing.totalBookedPcs += batch.bookedPcs || 0;
         existing.totalValue += value;
 
         const locIdx = existing.locations.findIndex(l => l.locationId === batch.locationId);
@@ -242,8 +246,13 @@ class InventoryService {
         summary.set(key, {
           productId: batch.productId,
           productName: batch.product.name,
+          categoryName: batch.product.category?.name || 'N/A',
           totalBoxes: batch.remainingBoxes,
+          totalPacks: batch.remainingPacks || 0,
           totalPcs: batch.remainingPcs,
+          totalBookedBoxes: batch.bookedBoxes || 0,
+          totalBookedPacks: batch.bookedPacks || 0,
+          totalBookedPcs: batch.bookedPcs || 0,
           totalValue: value,
           locations: [{
             locationId: batch.locationId,

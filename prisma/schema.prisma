@@ -262,8 +262,12 @@ model StockBatch {
   inwardInvoiceId Int?          @map("inward_invoice_id")
   batchCode       String?       @map("batch_code")
   mfgDate         DateTime?     @map("mfg_date")
+  bookedBoxes     Int           @default(0) @map("booked_boxes")
+  bookedPacks     Int           @default(0) @map("booked_packs")
+  bookedPcs       Int           @default(0) @map("booked_pcs")
   boxDetails      BoxDetail[]
   outwardItems    OutwardItem[]
+  salesOrderItems SalesOrderItem[]
   location        Location      @relation(fields: [locationId], references: [id], onDelete: Cascade)
   product         Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
   vendor          Vendor        @relation(fields: [vendorId], references: [id], onDelete: Cascade)
@@ -430,9 +434,13 @@ model SalesOrderItem {
   taxRate      Float      @default(0) @map("tax_rate")
   amount       Float
   description  String?
+  stockBatchId Int?       @map("stock_batch_id")
   product      Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
   salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  stockBatch   StockBatch? @relation(fields: [stockBatchId], references: [id], onDelete: SetNull)
 
+  @@index([salesOrderId])
+  @@index([productId])
   @@map("sales_order_items")
 }
 
