@@ -105,68 +105,123 @@ class InwardService {
 
   static async create(data) {
     return await prisma.$transaction(async (tx) => {
+      // Helper function to round a number to 2 decimal places
+      const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
+      // 1. Calculate base quantities and costs (without expense) for all parent items and their sub-items
       const processedItems = await Promise.all(
-        data.items.map(async (item) => {
+        data.items.map(async (parentInput) => {
           const product = await tx.product.findUnique({
-            where: { id: parseInt(item.productId) },
+            where: { id: parseInt(parentInput.productId) },
             include: { category: true },
           });
+          if (!product) throw new Error(`Product not found: ${parentInput.productId}`);
+          const gstRate = product.category?.gstRate || 0;
 
-          if (!product) {
-            throw new Error(`Product not found: ${item.productId}`);
+          const calculateItemRatesAndCost = (qtyBoxes, packPerBox, packPerPiece, rateInput, unitInput) => {
+            const totalPacks = qtyBoxes * packPerBox;
+            const totalPcs = totalPacks * packPerPiece;
+            const unit = unitInput || 'box';
+            let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
+
+            if (unit === 'box') {
+              ratePerBox = rateInput;
+              ratePerPack = ratePerBox / packPerBox;
+              ratePerPcs = ratePerPack / packPerPiece;
+              baseAmount = qtyBoxes * ratePerBox;
+            } else if (unit === 'pack') {
+              ratePerPack = rateInput;
+              ratePerBox = ratePerPack * packPerBox;
+              ratePerPcs = ratePerPack / packPerPiece;
+              baseAmount = totalPacks * ratePerPack;
+            } else {
+              ratePerPcs = rateInput;
+              ratePerPack = ratePerPcs * packPerPiece;
+              ratePerBox = ratePerPack * packPerBox;
+              baseAmount = totalPcs * ratePerPcs;
+            }
+            const gstAmount = (baseAmount * gstRate) / 100;
+            const totalCost = baseAmount + gstAmount;
+
+            return {
+              totalPacks,
+              totalPcs,
+              ratePerBox,
+              ratePerPack,
+              ratePerPcs,
+              gstAmount,
+              baseAmount,
+              totalCost
+            };
+          };
+
+          const parentOriginal = calculateItemRatesAndCost(
+            parentInput.boxes,
+            parentInput.packPerBox,
+            parentInput.packPerPiece,
+            parentInput.ratePerBox,
+            parentInput.unit
+          );
+
+          const subItemsProcessed = [];
+          let sumSubBoxes = 0;
+          let sumSubPcs = 0;
+
+          if (parentInput.subItems && parentInput.subItems.length > 0) {
+            for (const subItem of parentInput.subItems) {
+              const subProcessed = calculateItemRatesAndCost(
+                subItem.boxes,
+                subItem.packPerBox,
+                subItem.packPerPiece,
+                subItem.ratePerBox,
+                subItem.unit
+              );
+              subItemsProcessed.push({
+                ...subItem,
+                ...subProcessed
+              });
+              sumSubBoxes += subItem.boxes;
+              sumSubPcs += subProcessed.totalPcs;
+            }
           }
 
-          const totalPacks = item.boxes * item.packPerBox;
-          const totalPcs = totalPacks * item.packPerPiece;
-          
-          let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
-          const unit = item.unit || 'box';
-          
-          if (unit === 'box') {
-            ratePerBox = item.ratePerBox;
-            ratePerPack = ratePerBox / item.packPerBox;
-            ratePerPcs = ratePerPack / item.packPerPiece;
-            baseAmount = item.boxes * ratePerBox;
-          } else if (unit === 'pack') {
-            ratePerPack = item.ratePerBox;
-            ratePerBox = ratePerPack * item.packPerBox;
-            ratePerPcs = ratePerPack / item.packPerPiece;
-            baseAmount = totalPacks * ratePerPack;
-          } else {
-            ratePerPcs = item.ratePerBox;
-            ratePerPack = ratePerPcs * item.packPerPiece;
-            ratePerBox = ratePerPack * item.packPerBox;
-            baseAmount = totalPcs * ratePerPcs;
-          }
-          
-          const gstAmount = (baseAmount * product.category.gstRate) / 100;
-          const totalCost = baseAmount + gstAmount;
+          const remainderBoxes = parentInput.boxes;
+          const remainderPcs = parentOriginal.totalPcs;
+
+          const parentRemainder = calculateItemRatesAndCost(
+            remainderBoxes,
+            parentInput.packPerBox,
+            parentInput.packPerPiece,
+            parentInput.ratePerBox,
+            parentInput.unit
+          );
 
           return {
-            ...item,
-            unit,
-            totalPacks,
-            totalPcs,
-            ratePerBox,
-            ratePerPack,
-            ratePerPcs,
-            gstAmount,
-            totalCost,
+            parentInput,
+            parentOriginal,
+            parentRemainder,
+            remainderBoxes,
+            remainderPcs,
+            subItemsProcessed
           };
         })
       );
 
-      const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
+      // 2. Calculate the total actual pcs to allocate expense proportionally
+      let totalInvoiceActualPcs = 0;
+      for (const p of processedItems) {
+        if (p.parentRemainder) {
+          totalInvoiceActualPcs += p.parentRemainder.totalPcs;
+        }
+        for (const sub of p.subItemsProcessed) {
+          totalInvoiceActualPcs += sub.totalPcs;
+        }
+      }
+
       const expense = data.expense || 0;
-      const totalInvoicePcs = processedItems.reduce((sum, item) => sum + item.totalPcs, 0);
+      const expenseSharePerPc = totalInvoiceActualPcs > 0 ? expense / totalInvoiceActualPcs : 0;
 
-      // Distribute expense proportionally by pcs across items
-      const processedItemsWithExpense = processedItems.map((item) => {
-        const expenseShare = totalInvoicePcs > 0 ? (item.totalPcs / totalInvoicePcs) * expense : 0;
-        const totalCostWithExpense = item.totalCost + expenseShare;
-        return { ...item, totalCost: totalCostWithExpense };
-      });
-
+      // 3. Create Inward Invoice
       const invoice = await tx.inwardInvoice.create({
         data: {
           invoiceNo: data.invoiceNo,
@@ -174,141 +229,114 @@ class InwardService {
           vendorId: parseInt(data.vendorId),
           locationId: parseInt(data.locationId),
           expense,
-          totalCost: totalInvoiceCost + expense,
+          totalCost: 0, // Will update this after creating items with rounded totals
         },
       });
 
-      const items = await Promise.all(
-        processedItemsWithExpense.map((item) =>
-          tx.inwardItem.create({
-            data: {
-              inwardInvoiceId: invoice.id,
-              productId: parseInt(item.productId),
-              boxes: item.boxes,
-              packPerBox: item.packPerBox,
-              packPerPiece: item.packPerPiece,
-              totalPacks: item.totalPacks,
-              totalPcs: item.totalPcs,
-              unit: item.unit,
-              ratePerBox: item.ratePerBox,
-              ratePerPack: item.ratePerPack,
-              ratePerPcs: item.ratePerPcs,
-              gstAmount: item.gstAmount,
-              totalCost: item.totalCost,
-              batchCode: item.batchCode || null,
-              mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
-              color: item.color || null,
-              brand: item.brand || null,
-            },
-          })
-        )
-      );
+      // 4. Create inwardItems, stockBatches, and stockMovements
+      let invoiceTotalCost = 0;
 
-      // Create sub-items and calculate their total
-      let subItemsTotalCost = 0;
-      
-      for (let i = 0; i < processedItems.length; i++) {
-        const item = processedItems[i];
-        const parentItem = items[i];
-        
-        if (item.subItems && item.subItems.length > 0) {
-          for (const subItem of item.subItems) {
-            const subTotalPacks = subItem.boxes * subItem.packPerBox;
-            const subTotalPcs = subTotalPacks * subItem.packPerPiece;
-            
-            let subRatePerBox, subRatePerPack, subRatePerPcs, subBaseAmount;
-            const subUnit = subItem.unit || 'box';
-            
-            if (subUnit === 'box') {
-              subRatePerBox = subItem.ratePerBox;
-              subRatePerPack = subRatePerBox / subItem.packPerBox;
-              subRatePerPcs = subRatePerPack / subItem.packPerPiece;
-              subBaseAmount = subItem.boxes * subRatePerBox;
-            } else if (subUnit === 'pack') {
-              subRatePerPack = subItem.ratePerBox;
-              subRatePerBox = subRatePerPack * subItem.packPerBox;
-              subRatePerPcs = subRatePerPack / subItem.packPerPiece;
-              subBaseAmount = subTotalPacks * subRatePerPack;
-            } else {
-              subRatePerPcs = subItem.ratePerBox;
-              subRatePerPack = subRatePerPcs * subItem.packPerPiece;
-              subRatePerBox = subRatePerPack * subItem.packPerBox;
-              subBaseAmount = subTotalPcs * subRatePerPcs;
-            }
-            
-            const subProduct = await tx.product.findUnique({
-              where: { id: parseInt(item.productId) },
-              include: { category: true },
-            });
-            
-            const subGstAmount = (subBaseAmount * subProduct.category.gstRate) / 100;
-            const subTotalCost = subBaseAmount + subGstAmount;
-            subItemsTotalCost += subTotalCost;
+      for (const p of processedItems) {
+        let parentItemTotalCost = 0;
+        let parentRemainderPcs = 0;
+        let parentRemainderBoxes = 0;
+        let parentRemainderPacks = 0;
+        let parentRemainderGst = 0;
 
-            const createdSubItem = await tx.inwardItem.create({
-              data: {
-                inwardInvoiceId: invoice.id,
-                productId: parseInt(item.productId),
-                parentItemId: parentItem.id,
-                boxes: subItem.boxes,
-                packPerBox: subItem.packPerBox,
-                packPerPiece: subItem.packPerPiece,
-                totalPacks: subTotalPacks,
-                totalPcs: subTotalPcs,
-                unit: subUnit,
-                ratePerBox: subRatePerBox,
-                ratePerPack: subRatePerPack,
-                ratePerPcs: subRatePerPcs,
-                gstAmount: subGstAmount,
-                totalCost: subTotalCost,
-                batchCode: subItem.batchCode || null,
-                mfgDate: subItem.mfgDate ? new Date(subItem.mfgDate) : null,
-                color: subItem.color || null,
-                brand: subItem.brand || null,
-              },
-            });
-
-            await InventoryService.createStockBatch(createdSubItem, invoice);
-            await tx.stockMovement.create({
-              data: {
-                type: 'inward',
-                referenceId: invoice.id,
-                productId: parseInt(item.productId),
-                locationId: parseInt(data.locationId),
-                quantity: subTotalPcs,
-                movementDate: new Date(data.date),
-              },
-            });
-          }
+        if (p.parentRemainder) {
+          parentRemainderBoxes = p.remainderBoxes;
+          parentRemainderPacks = p.parentRemainder.totalPacks;
+          parentRemainderPcs = p.parentRemainder.totalPcs;
+          parentRemainderGst = round2(p.parentRemainder.gstAmount);
+          const share = parentRemainderPcs * expenseSharePerPc;
+          parentItemTotalCost = round2(p.parentRemainder.totalCost + share);
         }
-      }
 
-      // Update invoice total cost with sub-items
-      if (subItemsTotalCost > 0) {
-        await tx.inwardInvoice.update({
-          where: { id: invoice.id },
-          data: { totalCost: totalInvoiceCost + expense + subItemsTotalCost },
+        const createdParentItem = await tx.inwardItem.create({
+          data: {
+            inwardInvoiceId: invoice.id,
+            productId: parseInt(p.parentInput.productId),
+            boxes: parentRemainderBoxes,
+            packPerBox: p.parentInput.packPerBox,
+            packPerPiece: p.parentInput.packPerPiece,
+            totalPacks: parentRemainderPacks,
+            totalPcs: parentRemainderPcs,
+            unit: p.parentInput.unit || 'box',
+            ratePerBox: round2(p.parentRemainder ? p.parentRemainder.ratePerBox : p.parentOriginal.ratePerBox),
+            ratePerPack: round2(p.parentRemainder ? p.parentRemainder.ratePerPack : p.parentOriginal.ratePerPack),
+            ratePerPcs: round2(p.parentRemainder ? p.parentRemainder.ratePerPcs : p.parentOriginal.ratePerPcs),
+            gstAmount: parentRemainderGst,
+            totalCost: parentItemTotalCost,
+            batchCode: p.parentInput.batchCode || null,
+            mfgDate: p.parentInput.mfgDate ? new Date(p.parentInput.mfgDate) : null,
+            color: p.parentInput.color || null,
+            brand: p.parentInput.brand || null,
+          },
         });
-      }
 
-      await Promise.all(
-        items.map((item) => InventoryService.createStockBatch(item, invoice))
-      );
+        invoiceTotalCost += parentItemTotalCost;
 
-      await Promise.all(
-        items.map((item) =>
-          tx.stockMovement.create({
+        if (parentRemainderPcs > 0) {
+          await InventoryService.createStockBatch(createdParentItem, invoice);
+          await tx.stockMovement.create({
             data: {
               type: 'inward',
               referenceId: invoice.id,
-              productId: parseInt(item.productId),
+              productId: parseInt(p.parentInput.productId),
               locationId: parseInt(data.locationId),
-              quantity: item.totalPcs,
+              quantity: parentRemainderPcs,
               movementDate: new Date(data.date),
             },
-          })
-        )
-      );
+          });
+        }
+
+        for (const sub of p.subItemsProcessed) {
+          const share = sub.totalPcs * expenseSharePerPc;
+          const subTotalCostWithExpense = round2(sub.totalCost + share);
+
+          const createdSubItem = await tx.inwardItem.create({
+            data: {
+              inwardInvoiceId: invoice.id,
+              productId: parseInt(p.parentInput.productId),
+              parentItemId: createdParentItem.id,
+              boxes: sub.boxes,
+              packPerBox: sub.packPerBox,
+              packPerPiece: sub.packPerPiece,
+              totalPacks: sub.totalPacks,
+              totalPcs: sub.totalPcs,
+              unit: sub.unit,
+              ratePerBox: round2(sub.ratePerBox),
+              ratePerPack: round2(sub.ratePerPack),
+              ratePerPcs: round2(sub.ratePerPcs),
+              gstAmount: round2(sub.gstAmount),
+              totalCost: subTotalCostWithExpense,
+              batchCode: sub.batchCode || null,
+              mfgDate: sub.mfgDate ? new Date(sub.mfgDate) : null,
+              color: sub.color || null,
+              brand: sub.brand || null,
+            },
+          });
+
+          invoiceTotalCost += subTotalCostWithExpense;
+
+          await InventoryService.createStockBatch(createdSubItem, invoice);
+          await tx.stockMovement.create({
+            data: {
+              type: 'inward',
+              referenceId: invoice.id,
+              productId: parseInt(p.parentInput.productId),
+              locationId: parseInt(data.locationId),
+              quantity: sub.totalPcs,
+              movementDate: new Date(data.date),
+            },
+          });
+        }
+      }
+
+      await tx.inwardInvoice.update({
+        where: { id: invoice.id },
+        data: { totalCost: round2(invoiceTotalCost) },
+      });
 
       const { BarcodeService } = require('./barcodeService');
       const stockBatches = await tx.stockBatch.findMany({
@@ -407,6 +435,10 @@ class InwardService {
         existingBatches.filter(b => soldBatchIds.has(b.id)).map(b => b.productId)
       );
 
+      const soldItemsCost = existingInvoice.items
+        .filter(item => soldProductIds.has(item.productId))
+        .reduce((sum, item) => sum + item.totalCost, 0);
+
       // Delete only unsold batches
       const unsoldBatchIds = existingBatches.filter(b => !soldBatchIds.has(b.id)).map(b => b.id);
       if (unsoldBatchIds.length > 0) {
@@ -430,58 +462,132 @@ class InwardService {
         });
       }
 
+      // Helper function to round a number to 2 decimal places
+      const round2 = (num) => Math.round((num + Number.EPSILON) * 100) / 100;
+
       // Only process/recreate items for unsold products
       const itemsToProcess = data.items.filter(item => !soldProductIds.has(parseInt(item.productId)));
 
+      // 1. Calculate base quantities and costs (without expense) for all parent items and their sub-items
       const processedItems = await Promise.all(
-        itemsToProcess.map(async (item) => {
+        itemsToProcess.map(async (parentInput) => {
           const product = await tx.product.findUnique({
-            where: { id: parseInt(item.productId) },
+            where: { id: parseInt(parentInput.productId) },
             include: { category: true },
           });
-          if (!product) throw new Error(`Product not found: ${item.productId}`);
+          if (!product) throw new Error(`Product not found: ${parentInput.productId}`);
+          const gstRate = product.category?.gstRate || 0;
 
-          const totalPacks = item.boxes * item.packPerBox;
-          const totalPcs = totalPacks * item.packPerPiece;
+          const calculateItemRatesAndCost = (qtyBoxes, packPerBox, packPerPiece, rateInput, unitInput) => {
+            const totalPacks = qtyBoxes * packPerBox;
+            const totalPcs = totalPacks * packPerPiece;
+            const unit = unitInput || 'box';
+            let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
 
-          let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
-          const unit = item.unit || 'box';
+            if (unit === 'box') {
+              ratePerBox = rateInput;
+              ratePerPack = ratePerBox / packPerBox;
+              ratePerPcs = ratePerPack / packPerPiece;
+              baseAmount = qtyBoxes * ratePerBox;
+            } else if (unit === 'pack') {
+              ratePerPack = rateInput;
+              ratePerBox = ratePerPack * packPerBox;
+              ratePerPcs = ratePerPack / packPerPiece;
+              baseAmount = totalPacks * ratePerPack;
+            } else {
+              ratePerPcs = rateInput;
+              ratePerPack = ratePerPcs * packPerPiece;
+              ratePerBox = ratePerPack * packPerBox;
+              baseAmount = totalPcs * ratePerPcs;
+            }
+            const gstAmount = (baseAmount * gstRate) / 100;
+            const totalCost = baseAmount + gstAmount;
 
-          if (unit === 'box') {
-            ratePerBox = item.ratePerBox;
-            ratePerPack = ratePerBox / item.packPerBox;
-            ratePerPcs = ratePerPack / item.packPerPiece;
-            baseAmount = item.boxes * ratePerBox;
-          } else if (unit === 'pack') {
-            ratePerPack = item.ratePerBox;
-            ratePerBox = ratePerPack * item.packPerBox;
-            ratePerPcs = ratePerPack / item.packPerPiece;
-            baseAmount = totalPacks * ratePerPack;
-          } else {
-            ratePerPcs = item.ratePerBox;
-            ratePerPack = ratePerPcs * item.packPerPiece;
-            ratePerBox = ratePerPack * item.packPerBox;
-            baseAmount = totalPcs * ratePerPcs;
+            return {
+              totalPacks,
+              totalPcs,
+              ratePerBox,
+              ratePerPack,
+              ratePerPcs,
+              gstAmount,
+              baseAmount,
+              totalCost
+            };
+          };
+
+          const parentOriginal = calculateItemRatesAndCost(
+            parentInput.boxes,
+            parentInput.packPerBox,
+            parentInput.packPerPiece,
+            parentInput.ratePerBox,
+            parentInput.unit
+          );
+
+          const subItemsProcessed = [];
+          let sumSubBoxes = 0;
+          let sumSubPcs = 0;
+
+          if (parentInput.subItems && parentInput.subItems.length > 0) {
+            for (const subItem of parentInput.subItems) {
+              const subProcessed = calculateItemRatesAndCost(
+                subItem.boxes,
+                subItem.packPerBox,
+                subItem.packPerPiece,
+                subItem.ratePerBox,
+                subItem.unit
+              );
+              subItemsProcessed.push({
+                ...subItem,
+                ...subProcessed
+              });
+              sumSubBoxes += subItem.boxes;
+              sumSubPcs += subProcessed.totalPcs;
+            }
           }
 
-          const gstAmount = (baseAmount * product.category.gstRate) / 100;
-          const totalCost = baseAmount + gstAmount;
+          const remainderBoxes = parentInput.boxes;
+          const remainderPcs = parentOriginal.totalPcs;
 
-          return { ...item, unit, totalPacks, totalPcs, ratePerBox, ratePerPack, ratePerPcs, gstAmount, totalCost };
+          const parentRemainder = calculateItemRatesAndCost(
+            remainderBoxes,
+            parentInput.packPerBox,
+            parentInput.packPerPiece,
+            parentInput.ratePerBox,
+            parentInput.unit
+          );
+
+          return {
+            parentInput,
+            parentOriginal,
+            parentRemainder,
+            remainderBoxes,
+            remainderPcs,
+            subItemsProcessed
+          };
         })
       );
 
-      const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
+      // 2. Calculate the total actual pcs of unsold items and sold items to allocate expense proportionally
+      let unsoldActualPcs = 0;
+      for (const p of processedItems) {
+        if (p.parentRemainder) {
+          unsoldActualPcs += p.parentRemainder.totalPcs;
+        }
+        for (const sub of p.subItemsProcessed) {
+          unsoldActualPcs += sub.totalPcs;
+        }
+      }
+
+      const soldItemsPcs = existingInvoice.items
+        .filter(item => soldProductIds.has(item.productId))
+        .reduce((sum, item) => sum + item.totalPcs, 0);
+
+      const totalInvoiceActualPcs = unsoldActualPcs + soldItemsPcs;
+
       const expense = data.expense || 0;
-      const totalInvoicePcs = processedItems.reduce((sum, item) => sum + item.totalPcs, 0);
+      const expenseSharePerPc = totalInvoiceActualPcs > 0 ? expense / totalInvoiceActualPcs : 0;
 
-      // Distribute expense proportionally by pcs across items
-      const processedItemsWithExpense = processedItems.map((item) => {
-        const expenseShare = totalInvoicePcs > 0 ? (item.totalPcs / totalInvoicePcs) * expense : 0;
-        const totalCostWithExpense = item.totalCost + expenseShare;
-        return { ...item, totalCost: totalCostWithExpense };
-      });
-
+      // 3. Update inwardInvoice base fields
       const invoice = await tx.inwardInvoice.update({
         where: { id: parseInt(id) },
         data: {
@@ -490,134 +596,114 @@ class InwardService {
           vendorId: parseInt(data.vendorId),
           locationId: parseInt(data.locationId),
           expense,
-          totalCost: totalInvoiceCost + expense,
+          totalCost: 0, // Temporary totalCost
         },
       });
 
-      const items = await Promise.all(
-        processedItemsWithExpense.map((item) =>
-          tx.inwardItem.create({
+      // 4. Create new inwardItems, stockBatches, and stockMovements for unsold products
+      let unsoldTotalCost = 0;
+
+      for (const p of processedItems) {
+        let parentItemTotalCost = 0;
+        let parentRemainderPcs = 0;
+        let parentRemainderBoxes = 0;
+        let parentRemainderPacks = 0;
+        let parentRemainderGst = 0;
+
+        if (p.parentRemainder) {
+          parentRemainderBoxes = p.remainderBoxes;
+          parentRemainderPacks = p.parentRemainder.totalPacks;
+          parentRemainderPcs = p.parentRemainder.totalPcs;
+          parentRemainderGst = round2(p.parentRemainder.gstAmount);
+          const share = parentRemainderPcs * expenseSharePerPc;
+          parentItemTotalCost = round2(p.parentRemainder.totalCost + share);
+        }
+
+        const createdParentItem = await tx.inwardItem.create({
+          data: {
+            inwardInvoiceId: invoice.id,
+            productId: parseInt(p.parentInput.productId),
+            boxes: parentRemainderBoxes,
+            packPerBox: p.parentInput.packPerBox,
+            packPerPiece: p.parentInput.packPerPiece,
+            totalPacks: parentRemainderPacks,
+            totalPcs: parentRemainderPcs,
+            unit: p.parentInput.unit || 'box',
+            ratePerBox: round2(p.parentRemainder ? p.parentRemainder.ratePerBox : p.parentOriginal.ratePerBox),
+            ratePerPack: round2(p.parentRemainder ? p.parentRemainder.ratePerPack : p.parentOriginal.ratePerPack),
+            ratePerPcs: round2(p.parentRemainder ? p.parentRemainder.ratePerPcs : p.parentOriginal.ratePerPcs),
+            gstAmount: parentRemainderGst,
+            totalCost: parentItemTotalCost,
+            batchCode: p.parentInput.batchCode || null,
+            mfgDate: p.parentInput.mfgDate ? new Date(p.parentInput.mfgDate) : null,
+            color: p.parentInput.color || null,
+            brand: p.parentInput.brand || null,
+          },
+        });
+
+        unsoldTotalCost += parentItemTotalCost;
+
+        if (parentRemainderPcs > 0) {
+          await InventoryService.createStockBatch(createdParentItem, invoice);
+          await tx.stockMovement.create({
+            data: {
+              type: 'inward',
+              referenceId: invoice.id,
+              productId: parseInt(p.parentInput.productId),
+              locationId: parseInt(data.locationId),
+              quantity: parentRemainderPcs,
+              movementDate: new Date(data.date),
+            },
+          });
+        }
+
+        for (const sub of p.subItemsProcessed) {
+          const share = sub.totalPcs * expenseSharePerPc;
+          const subTotalCostWithExpense = round2(sub.totalCost + share);
+
+          const createdSubItem = await tx.inwardItem.create({
             data: {
               inwardInvoiceId: invoice.id,
-              productId: parseInt(item.productId),
-              boxes: item.boxes,
-              packPerBox: item.packPerBox,
-              packPerPiece: item.packPerPiece,
-              totalPacks: item.totalPacks,
-              totalPcs: item.totalPcs,
-              unit: item.unit,
-              ratePerBox: item.ratePerBox,
-              ratePerPack: item.ratePerPack,
-              ratePerPcs: item.ratePerPcs,
-              gstAmount: item.gstAmount,
-              totalCost: item.totalCost,
-              batchCode: item.batchCode || null,
-              mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
-              color: item.color || null,
-              brand: item.brand || null,
+              productId: parseInt(p.parentInput.productId),
+              parentItemId: createdParentItem.id,
+              boxes: sub.boxes,
+              packPerBox: sub.packPerBox,
+              packPerPiece: sub.packPerPiece,
+              totalPacks: sub.totalPacks,
+              totalPcs: sub.totalPcs,
+              unit: sub.unit,
+              ratePerBox: round2(sub.ratePerBox),
+              ratePerPack: round2(sub.ratePerPack),
+              ratePerPcs: round2(sub.ratePerPcs),
+              gstAmount: round2(sub.gstAmount),
+              totalCost: subTotalCostWithExpense,
+              batchCode: sub.batchCode || null,
+              mfgDate: sub.mfgDate ? new Date(sub.mfgDate) : null,
+              color: sub.color || null,
+              brand: sub.brand || null,
             },
-          })
-        )
-      );
+          });
 
-      let subItemsTotalCost = 0;
+          unsoldTotalCost += subTotalCostWithExpense;
 
-      for (let i = 0; i < processedItems.length; i++) {
-        const item = processedItems[i];
-        const parentItem = items[i];
-
-        if (item.subItems && item.subItems.length > 0) {
-          for (const subItem of item.subItems) {
-            const subTotalPacks = subItem.boxes * subItem.packPerBox;
-            const subTotalPcs = subTotalPacks * subItem.packPerPiece;
-
-            let subRatePerBox, subRatePerPack, subRatePerPcs, subBaseAmount;
-            const subUnit = subItem.unit || 'box';
-
-            if (subUnit === 'box') {
-              subRatePerBox = subItem.ratePerBox;
-              subRatePerPack = subRatePerBox / subItem.packPerBox;
-              subRatePerPcs = subRatePerPack / subItem.packPerPiece;
-              subBaseAmount = subItem.boxes * subRatePerBox;
-            } else if (subUnit === 'pack') {
-              subRatePerPack = subItem.ratePerBox;
-              subRatePerBox = subRatePerPack * subItem.packPerBox;
-              subRatePerPcs = subRatePerPack / subItem.packPerPiece;
-              subBaseAmount = subTotalPacks * subRatePerPack;
-            } else {
-              subRatePerPcs = subItem.ratePerBox;
-              subRatePerPack = subRatePerPcs * subItem.packPerPiece;
-              subRatePerBox = subRatePerPack * subItem.packPerBox;
-              subBaseAmount = subTotalPcs * subRatePerPcs;
-            }
-
-            const subProduct = await tx.product.findUnique({
-              where: { id: parseInt(item.productId) },
-              include: { category: true },
-            });
-
-            const subGstAmount = (subBaseAmount * subProduct.category.gstRate) / 100;
-            const subTotalCost = subBaseAmount + subGstAmount;
-            subItemsTotalCost += subTotalCost;
-
-            const createdSubItem = await tx.inwardItem.create({
-              data: {
-                inwardInvoiceId: invoice.id,
-                productId: parseInt(item.productId),
-                parentItemId: parentItem.id,
-                boxes: subItem.boxes,
-                packPerBox: subItem.packPerBox,
-                packPerPiece: subItem.packPerPiece,
-                totalPacks: subTotalPacks,
-                totalPcs: subTotalPcs,
-                unit: subUnit,
-                ratePerBox: subRatePerBox,
-                ratePerPack: subRatePerPack,
-                ratePerPcs: subRatePerPcs,
-                gstAmount: subGstAmount,
-                totalCost: subTotalCost,
-                batchCode: subItem.batchCode || null,
-                mfgDate: subItem.mfgDate ? new Date(subItem.mfgDate) : null,
-                color: subItem.color || null,
-                brand: subItem.brand || null,
-              },
-            });
-
-            await InventoryService.createStockBatch(createdSubItem, invoice);
-            await tx.stockMovement.create({
-              data: {
-                type: 'inward',
-                referenceId: invoice.id,
-                productId: parseInt(item.productId),
-                locationId: parseInt(data.locationId),
-                quantity: subTotalPcs,
-                movementDate: new Date(data.date),
-              },
-            });
-          }
+          await InventoryService.createStockBatch(createdSubItem, invoice);
+          await tx.stockMovement.create({
+            data: {
+              type: 'inward',
+              referenceId: invoice.id,
+              productId: parseInt(p.parentInput.productId),
+              locationId: parseInt(data.locationId),
+              quantity: sub.totalPcs,
+              movementDate: new Date(data.date),
+            },
+          });
         }
       }
 
-      if (subItemsTotalCost > 0) {
-        await tx.inwardInvoice.update({
-          where: { id: invoice.id },
-          data: { totalCost: totalInvoiceCost + expense + subItemsTotalCost },
-        });
-      }
-
-      for (const item of items) {
-        await InventoryService.createStockBatch(item, invoice);
-        await tx.stockMovement.create({
-          data: {
-            type: 'inward',
-            referenceId: invoice.id,
-            productId: parseInt(item.productId),
-            locationId: parseInt(data.locationId),
-            quantity: item.totalPcs,
-            movementDate: new Date(data.date),
-          },
-        });
-      }
+      await tx.inwardInvoice.update({
+        where: { id: invoice.id },
+        data: { totalCost: round2(unsoldTotalCost + soldItemsCost) },
+      });
 
       // Just update existing boxes with new fields - don't delete them!
       const { BarcodeService } = require('./barcodeService');

@@ -206,11 +206,17 @@ class BarcodeService {
 
     for (const item of invoice.items) {
       if (existingProductIds.has(item.productId)) continue;
-      const boxCount = item.boxes || 1;
+      const boxCount = item.boxes || 0;
+      if (boxCount <= 0) continue;
+      
       const packPerBox = item.packPerBox || 28;
       const packPerPiece = item.packPerPiece || 25;
 
-      const matchingBatch = stockBatches.find(sb => sb.productId === item.productId);
+      const matchingBatch = stockBatches.find(sb => 
+        sb.productId === item.productId &&
+        sb.batchCode === item.batchCode &&
+        (sb.mfgDate ? new Date(sb.mfgDate).getTime() : null) === (item.mfgDate ? new Date(item.mfgDate).getTime() : null)
+      ) || stockBatches.find(sb => sb.productId === item.productId);
 
       for (let i = 1; i <= boxCount; i++) {
         const barcode = await generateBarcodeFromProduct(item.product, tx, generatedBarcodes);
@@ -256,15 +262,27 @@ class BarcodeService {
   static async updateBoxDetailsFromInwardItems(inwardInvoiceId, tx = prisma) {
     const invoice = await tx.inwardInvoice.findUnique({
       where: { id: parseInt(inwardInvoiceId) },
-      include: { items: { where: { parentItemId: null } } }
+      include: { items: true }
     });
     if (!invoice) throw new Error('Inward Invoice not found');
 
     for (const item of invoice.items) {
+      if (item.boxes <= 0) continue;
+
+      const matchingBatch = await tx.stockBatch.findFirst({
+        where: {
+          inwardInvoiceId: invoice.id,
+          productId: item.productId,
+          batchCode: item.batchCode,
+          mfgDate: item.mfgDate ? new Date(item.mfgDate) : null
+        }
+      });
+
       await tx.boxDetail.updateMany({
         where: {
           inwardInvoiceId: invoice.id,
-          productId: item.productId
+          productId: item.productId,
+          stockBatchId: matchingBatch ? matchingBatch.id : null
         },
         data: {
           batchCode: item.batchCode || null,
