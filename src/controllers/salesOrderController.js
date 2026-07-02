@@ -57,7 +57,7 @@ const deleteSalesOrder = async (req, res) => {
 
 const convertFromQuote = async (req, res) => {
   try {
-    const order = await salesOrderService.convertFromQuote(req.params.quoteId);
+    const order = await salesOrderService.convertFromQuote(req.params.quoteId, req.body.items);
     res.status(201).json({ success: true, data: order });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });

@@ -268,7 +268,7 @@ class InwardService {
               },
             });
 
-            await InventoryService.createStockBatch(createdSubItem, invoice);
+            await InventoryService.createStockBatch(createdSubItem, invoice, tx);
             await tx.stockMovement.create({
               data: {
                 type: 'inward',
@@ -292,7 +292,7 @@ class InwardService {
       }
 
       await Promise.all(
-        items.map((item) => InventoryService.createStockBatch(item, invoice))
+        items.map((item) => InventoryService.createStockBatch(item, invoice, tx))
       );
 
       await Promise.all(
@@ -385,148 +385,225 @@ class InwardService {
 
   static async update(id, data) {
     return await prisma.$transaction(async (tx) => {
-      const existingInvoice = await tx.inwardInvoice.findUnique({
-        where: { id: parseInt(id) },
+      const invoiceId = parseInt(id);
+      const invoice = await tx.inwardInvoice.findUnique({
+        where: { id: invoiceId },
         include: { items: true },
       });
 
-      if (!existingInvoice) throw new Error('Invoice not found');
+      if (!invoice) throw new Error('Invoice not found');
 
-      // Identify which products have sold stock from this invoice's batches
+      // Fetch all existing InwardItems (only main parent items)
+      const existingItems = await tx.inwardItem.findMany({
+        where: { inwardInvoiceId: invoiceId, parentItemId: null },
+      });
+
+      // Fetch all existing StockBatches for this invoice
       const existingBatches = await tx.stockBatch.findMany({
-        where: { inwardInvoiceId: parseInt(id) },
+        where: { inwardInvoiceId: invoiceId },
       });
 
-      const soldOutwardItems = await tx.outwardItem.findMany({
-        where: { stockBatchId: { in: existingBatches.map(b => b.id) } },
-        select: { stockBatchId: true },
-      });
+      // 1. Identify deleted products and process deletions first
+      const newProductIds = new Set(data.items.map(item => parseInt(item.productId)));
+      const deletedItems = existingItems.filter(item => !newProductIds.has(item.productId));
 
-      const soldBatchIds = new Set(soldOutwardItems.map(i => i.stockBatchId));
-      const soldProductIds = new Set(
-        existingBatches.filter(b => soldBatchIds.has(b.id)).map(b => b.productId)
-      );
-
-      // Delete only unsold batches
-      const unsoldBatchIds = existingBatches.filter(b => !soldBatchIds.has(b.id)).map(b => b.id);
-      if (unsoldBatchIds.length > 0) {
-        await tx.stockBatch.deleteMany({ where: { id: { in: unsoldBatchIds } } });
-      }
-
-      // Delete inward items and stock movements for unsold products only
-      const unsoldInwardItemIds = existingInvoice.items
-        .filter(item => !soldProductIds.has(item.productId))
-        .map(item => item.id);
-      if (unsoldInwardItemIds.length > 0) {
-        await tx.inwardItem.deleteMany({ where: { id: { in: unsoldInwardItemIds } } });
-      }
-
-      const unsoldProductIds = existingInvoice.items
-        .filter(item => !soldProductIds.has(item.productId))
-        .map(item => item.productId);
-      if (unsoldProductIds.length > 0) {
-        await tx.stockMovement.deleteMany({
-          where: { referenceId: parseInt(id), type: 'inward', productId: { in: unsoldProductIds } },
-        });
-      }
-
-      // Only process/recreate items for unsold products
-      const itemsToProcess = data.items.filter(item => !soldProductIds.has(parseInt(item.productId)));
-
-      const processedItems = await Promise.all(
-        itemsToProcess.map(async (item) => {
-          const product = await tx.product.findUnique({
-            where: { id: parseInt(item.productId) },
-            include: { category: true },
-          });
-          if (!product) throw new Error(`Product not found: ${item.productId}`);
-
-          const totalPacks = item.boxes * item.packPerBox;
-          const totalPcs = totalPacks * item.packPerPiece;
-
-          let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
-          const unit = item.unit || 'box';
-
-          if (unit === 'box') {
-            ratePerBox = item.ratePerBox;
-            ratePerPack = ratePerBox / item.packPerBox;
-            ratePerPcs = ratePerPack / item.packPerPiece;
-            baseAmount = item.boxes * ratePerBox;
-          } else if (unit === 'pack') {
-            ratePerPack = item.ratePerBox;
-            ratePerBox = ratePerPack * item.packPerBox;
-            ratePerPcs = ratePerPack / item.packPerPiece;
-            baseAmount = totalPacks * ratePerPack;
-          } else {
-            ratePerPcs = item.ratePerBox;
-            ratePerPack = ratePerPcs * item.packPerPiece;
-            ratePerBox = ratePerPack * item.packPerBox;
-            baseAmount = totalPcs * ratePerPcs;
+      for (const item of deletedItems) {
+        // Find batch
+        const batch = existingBatches.find(eb => eb.productId === item.productId);
+        if (batch) {
+          const soldQuantity = batch.totalPcs - batch.remainingPcs;
+          const bookedQuantity = batch.bookedPcs || 0;
+          if (soldQuantity > 0 || bookedQuantity > 0) {
+            throw new Error(`Cannot delete product ${item.productId} from invoice because some stock has been sold or booked.`);
           }
+          await tx.stockBatch.delete({ where: { id: batch.id } });
+        }
+        await tx.stockMovement.deleteMany({
+          where: { referenceId: invoiceId, type: 'inward', productId: item.productId },
+        });
+        await tx.inwardItem.delete({ where: { id: item.id } });
+      }
 
-          const gstAmount = (baseAmount * product.category.gstRate) / 100;
-          const totalCost = baseAmount + gstAmount;
+      // Calculate totalInvoicePcs to distribute expense proportionally
+      const totalInvoicePcs = data.items.reduce((sum, it) => {
+        const mainPcs = (it.boxes || 0) * (it.packPerBox || 1) * (it.packPerPiece || 1);
+        const subPcs = it.subItems?.reduce((subSum, sub) => subSum + ((sub.boxes || 0) * (sub.packPerBox || 1) * (sub.packPerPiece || 1)), 0) || 0;
+        return sum + mainPcs + subPcs;
+      }, 0);
 
-          return { ...item, unit, totalPacks, totalPcs, ratePerBox, ratePerPack, ratePerPcs, gstAmount, totalCost };
-        })
-      );
-
-      const totalInvoiceCost = processedItems.reduce((sum, item) => sum + item.totalCost, 0);
       const expense = data.expense || 0;
-      const totalInvoicePcs = processedItems.reduce((sum, item) => sum + item.totalPcs, 0);
+      let totalInvoiceCost = 0;
+      let subItemsTotalCost = 0;
 
-      // Distribute expense proportionally by pcs across items
-      const processedItemsWithExpense = processedItems.map((item) => {
-        const expenseShare = totalInvoicePcs > 0 ? (item.totalPcs / totalInvoicePcs) * expense : 0;
-        const totalCostWithExpense = item.totalCost + expenseShare;
-        return { ...item, totalCost: totalCostWithExpense };
-      });
+      // 2. Loop through each item in data.items to update or create
+      for (const item of data.items) {
+        const productId = parseInt(item.productId);
+        const existingItem = existingItems.find(ei => ei.productId === productId);
+        const existingBatch = existingBatches.find(eb => eb.productId === productId);
 
-      const invoice = await tx.inwardInvoice.update({
-        where: { id: parseInt(id) },
-        data: {
-          invoiceNo: data.invoiceNo,
-          date: new Date(data.date),
-          vendorId: parseInt(data.vendorId),
-          locationId: parseInt(data.locationId),
-          expense,
-          totalCost: totalInvoiceCost + expense,
-        },
-      });
+        const totalPacks = item.boxes * item.packPerBox;
+        const totalPcs = totalPacks * item.packPerPiece;
 
-      const items = await Promise.all(
-        processedItemsWithExpense.map((item) =>
-          tx.inwardItem.create({
+        let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
+        const unit = item.unit || 'box';
+
+        const product = await tx.product.findUnique({
+          where: { id: productId },
+          include: { category: true },
+        });
+        if (!product) throw new Error(`Product not found: ${item.productId}`);
+
+        if (unit === 'box') {
+          ratePerBox = item.ratePerBox;
+          ratePerPack = ratePerBox / item.packPerBox;
+          ratePerPcs = ratePerPack / item.packPerPiece;
+          baseAmount = item.boxes * ratePerBox;
+        } else if (unit === 'pack') {
+          ratePerPack = item.ratePerBox;
+          ratePerBox = ratePerPack * item.packPerBox;
+          ratePerPcs = ratePerPack / item.packPerPiece;
+          baseAmount = totalPacks * ratePerPack;
+        } else {
+          ratePerPcs = item.ratePerBox;
+          ratePerPack = ratePerPcs * item.packPerPiece;
+          ratePerBox = ratePerPack * item.packPerBox;
+          baseAmount = totalPcs * ratePerPcs;
+        }
+
+        const gstAmount = (baseAmount * product.category.gstRate) / 100;
+        const expenseShare = totalInvoicePcs > 0 ? (totalPcs / totalInvoicePcs) * expense : 0;
+        const totalCost = baseAmount + gstAmount + expenseShare;
+        totalInvoiceCost += totalCost;
+
+        let currentParentItemId;
+
+        if (existingItem && existingBatch) {
+          currentParentItemId = existingItem.id;
+
+          // Calculate consumption details
+          const soldBoxes = Math.max(0, existingBatch.boxes - existingBatch.remainingBoxes);
+          const soldPacks = Math.max(0, existingBatch.totalPacks - existingBatch.remainingPacks);
+          const soldPcs = Math.max(0, existingBatch.totalPcs - existingBatch.remainingPcs);
+
+          const remainingBoxes = Math.max(0, item.boxes - soldBoxes);
+          const remainingPacks = Math.max(0, totalPacks - soldPacks);
+          const remainingPcs = Math.max(0, totalPcs - soldPcs);
+
+          // Update main inwardItem
+          await tx.inwardItem.update({
+            where: { id: existingItem.id },
             data: {
-              inwardInvoiceId: invoice.id,
-              productId: parseInt(item.productId),
               boxes: item.boxes,
               packPerBox: item.packPerBox,
               packPerPiece: item.packPerPiece,
-              totalPacks: item.totalPacks,
-              totalPcs: item.totalPcs,
-              unit: item.unit,
-              ratePerBox: item.ratePerBox,
-              ratePerPack: item.ratePerPack,
-              ratePerPcs: item.ratePerPcs,
-              gstAmount: item.gstAmount,
-              totalCost: item.totalCost,
+              totalPacks,
+              totalPcs,
+              unit,
+              ratePerBox,
+              ratePerPack,
+              ratePerPcs,
+              gstAmount,
+              totalCost,
               batchCode: item.batchCode || null,
               mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
               color: item.color || null,
               brand: item.brand || null,
-            },
-          })
-        )
-      );
+            }
+          });
 
-      let subItemsTotalCost = 0;
+          // Update main stockBatch
+          await tx.stockBatch.update({
+            where: { id: existingBatch.id },
+            data: {
+              boxes: item.boxes,
+              packPerBox: item.packPerBox,
+              packPerPiece: item.packPerPiece,
+              totalPacks,
+              totalPcs,
+              remainingBoxes,
+              remainingPacks,
+              remainingPcs,
+              costPerBox: totalCost / (item.boxes || 1),
+              costPerPack: totalCost / (totalPacks || 1),
+              costPerPcs: totalCost / (totalPcs || 1),
+              batchCode: item.batchCode || null,
+              mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+            }
+          });
 
-      for (let i = 0; i < processedItems.length; i++) {
-        const item = processedItems[i];
-        const parentItem = items[i];
+          // Re-create stock movement: delete and recreate main movement
+          await tx.stockMovement.deleteMany({
+            where: { referenceId: invoiceId, type: 'inward', productId }
+          });
 
+          await tx.stockMovement.create({
+            data: {
+              type: 'inward',
+              referenceId: invoiceId,
+              productId,
+              locationId: parseInt(data.locationId),
+              quantity: totalPcs,
+              movementDate: new Date(data.date),
+            }
+          });
+
+        } else {
+          // Create new main inwardItem
+          const newInwardItem = await tx.inwardItem.create({
+            data: {
+              inwardInvoiceId: invoiceId,
+              productId,
+              boxes: item.boxes,
+              packPerBox: item.packPerBox,
+              packPerPiece: item.packPerPiece,
+              totalPacks,
+              totalPcs,
+              unit,
+              ratePerBox,
+              ratePerPack,
+              ratePerPcs,
+              gstAmount,
+              totalCost,
+              batchCode: item.batchCode || null,
+              mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+              color: item.color || null,
+              brand: item.brand || null,
+            }
+          });
+
+          currentParentItemId = newInwardItem.id;
+
+          // Create new main stockBatch
+          const newBatch = await InventoryService.createStockBatch(newInwardItem, invoice, tx);
+
+          // Create new main stockMovement
+          await tx.stockMovement.create({
+            data: {
+              type: 'inward',
+              referenceId: invoiceId,
+              productId,
+              locationId: parseInt(data.locationId),
+              quantity: totalPcs,
+              movementDate: new Date(data.date),
+            }
+          });
+        }
+
+        // Handle subItems (if any)
         if (item.subItems && item.subItems.length > 0) {
+          // Delete old sub-items and their associated batches
+          await tx.stockBatch.deleteMany({
+            where: {
+              inwardInvoiceId: invoiceId,
+              productId,
+              NOT: { id: existingBatch ? existingBatch.id : -1 }
+            }
+          });
+
+          await tx.inwardItem.deleteMany({
+            where: { parentItemId: currentParentItemId }
+          });
+
           for (const subItem of item.subItems) {
             const subTotalPacks = subItem.boxes * subItem.packPerBox;
             const subTotalPcs = subTotalPacks * subItem.packPerPiece;
@@ -551,20 +628,15 @@ class InwardService {
               subBaseAmount = subTotalPcs * subRatePerPcs;
             }
 
-            const subProduct = await tx.product.findUnique({
-              where: { id: parseInt(item.productId) },
-              include: { category: true },
-            });
-
-            const subGstAmount = (subBaseAmount * subProduct.category.gstRate) / 100;
+            const subGstAmount = (subBaseAmount * product.category.gstRate) / 100;
             const subTotalCost = subBaseAmount + subGstAmount;
             subItemsTotalCost += subTotalCost;
 
             const createdSubItem = await tx.inwardItem.create({
               data: {
-                inwardInvoiceId: invoice.id,
-                productId: parseInt(item.productId),
-                parentItemId: parentItem.id,
+                inwardInvoiceId: invoiceId,
+                productId,
+                parentItemId: currentParentItemId,
                 boxes: subItem.boxes,
                 packPerBox: subItem.packPerBox,
                 packPerPiece: subItem.packPerPiece,
@@ -583,12 +655,12 @@ class InwardService {
               },
             });
 
-            await InventoryService.createStockBatch(createdSubItem, invoice);
+            await InventoryService.createStockBatch(createdSubItem, invoice, tx);
             await tx.stockMovement.create({
               data: {
                 type: 'inward',
-                referenceId: invoice.id,
-                productId: parseInt(item.productId),
+                referenceId: invoiceId,
+                productId,
                 locationId: parseInt(data.locationId),
                 quantity: subTotalPcs,
                 movementDate: new Date(data.date),
@@ -598,33 +670,25 @@ class InwardService {
         }
       }
 
-      if (subItemsTotalCost > 0) {
-        await tx.inwardInvoice.update({
-          where: { id: invoice.id },
-          data: { totalCost: totalInvoiceCost + expense + subItemsTotalCost },
-        });
-      }
+      // Update parent invoice header details
+      await tx.inwardInvoice.update({
+        where: { id: invoiceId },
+        data: {
+          invoiceNo: data.invoiceNo,
+          date: new Date(data.date),
+          vendorId: parseInt(data.vendorId),
+          locationId: parseInt(data.locationId),
+          expense,
+          totalCost: totalInvoiceCost + subItemsTotalCost,
+        },
+      });
 
-      for (const item of items) {
-        await InventoryService.createStockBatch(item, invoice);
-        await tx.stockMovement.create({
-          data: {
-            type: 'inward',
-            referenceId: invoice.id,
-            productId: parseInt(item.productId),
-            locationId: parseInt(data.locationId),
-            quantity: item.totalPcs,
-            movementDate: new Date(data.date),
-          },
-        });
-      }
-
-      // Just update existing boxes with new fields - don't delete them!
+      // Update BoxDetail records with new metadata
       const { BarcodeService } = require('./barcodeService');
-      await BarcodeService.updateBoxDetailsFromInwardItems(invoice.id, tx);
+      await BarcodeService.updateBoxDetailsFromInwardItems(invoiceId, tx);
 
       return await tx.inwardInvoice.findUnique({
-        where: { id: invoice.id },
+        where: { id: invoiceId },
         include: {
           vendor: true,
           location: true,
@@ -637,7 +701,7 @@ class InwardService {
           },
         },
       });
-    }, { timeout: 10000 });
+    }, { timeout: 15000 });
   }
 
   static async delete(id) {
