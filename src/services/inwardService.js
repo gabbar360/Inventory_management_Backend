@@ -403,24 +403,33 @@ class InwardService {
         where: { inwardInvoiceId: invoiceId },
       });
 
-      // 1. Identify deleted products and process deletions first
+      // 1. Identify deleted items by itemId (if provided) or productId fallback
+      const newItemIds = new Set(
+        data.items.filter(item => item.id).map(item => parseInt(item.id))
+      );
       const newProductIds = new Set(data.items.map(item => parseInt(item.productId)));
-      const deletedItems = existingItems.filter(item => !newProductIds.has(item.productId));
+
+      // If any item has id, use id-based matching; otherwise fall back to productId
+      const useIdMatching = data.items.some(item => item.id);
+
+      const deletedItems = useIdMatching
+        ? existingItems.filter(item => !newItemIds.has(item.id))
+        : existingItems.filter(item => !newProductIds.has(item.productId));
 
       for (const item of deletedItems) {
-        // Find batch
-        const batch = existingBatches.find(eb => eb.productId === item.productId);
+        const batch = existingBatches.find(eb => eb.productId === item.productId && eb.inwardInvoiceId === invoiceId);
         if (batch) {
           const soldQuantity = batch.totalPcs - batch.remainingPcs;
           const bookedQuantity = batch.bookedPcs || 0;
           if (soldQuantity > 0 || bookedQuantity > 0) {
-            throw new Error(`Cannot delete product ${item.productId} from invoice because some stock has been sold or booked.`);
+            throw new Error(`Cannot delete product from invoice because some stock has been sold or booked.`);
           }
           await tx.stockBatch.delete({ where: { id: batch.id } });
         }
         await tx.stockMovement.deleteMany({
           where: { referenceId: invoiceId, type: 'inward', productId: item.productId },
         });
+        await tx.inwardItem.deleteMany({ where: { parentItemId: item.id } });
         await tx.inwardItem.delete({ where: { id: item.id } });
       }
 
@@ -438,8 +447,12 @@ class InwardService {
       // 2. Loop through each item in data.items to update or create
       for (const item of data.items) {
         const productId = parseInt(item.productId);
-        const existingItem = existingItems.find(ei => ei.productId === productId);
-        const existingBatch = existingBatches.find(eb => eb.productId === productId);
+        const existingItem = item.id
+          ? existingItems.find(ei => ei.id === parseInt(item.id))
+          : existingItems.find(ei => ei.productId === productId);
+        const existingBatch = existingItem
+          ? existingBatches.find(eb => eb.productId === existingItem.productId && eb.inwardInvoiceId === invoiceId)
+          : null;
 
         const totalPacks = item.boxes * item.packPerBox;
         const totalPcs = totalPacks * item.packPerPiece;
