@@ -2,18 +2,19 @@ const { sendResponse, sendError, parseQueryParams } = require("../utils/helpers"
 const { AuthService } = require('../services/authService');
 
 const setCookies = (res, accessToken, refreshToken) => {
+  const isProduction = process.env.NODE_ENV === 'production';
   res.cookie('accessToken', accessToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: isProduction,
+    sameSite: isProduction ? 'lax' : 'strict',
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     path: '/'
   });
 
   res.cookie('refreshToken', refreshToken, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    secure: isProduction,
+    sameSite: isProduction ? 'lax' : 'strict',
     maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
     path: '/'
   });
@@ -80,8 +81,10 @@ class AuthController {
         accessToken: result.accessToken 
       }, 'Token refreshed successfully');
     } catch (error) {
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      const isProduction = process.env.NODE_ENV === 'production';
+      const cookieOpts = { path: '/', secure: isProduction, sameSite: isProduction ? 'lax' : 'strict' };
+      res.clearCookie('accessToken', cookieOpts);
+      res.clearCookie('refreshToken', cookieOpts);
       return sendError(res, 401, error.message);
     }
   }
@@ -94,8 +97,10 @@ class AuthController {
         await AuthService.logout(refreshToken);
       }
       
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      const isProduction = process.env.NODE_ENV === 'production';
+      const cookieOpts = { path: '/', secure: isProduction, sameSite: isProduction ? 'lax' : 'strict' };
+      res.clearCookie('accessToken', cookieOpts);
+      res.clearCookie('refreshToken', cookieOpts);
       return sendResponse(res, 200, true, null, 'Logout successful');
     } catch (error) {
       return sendError(res, 400, error.message);
@@ -106,8 +111,10 @@ class AuthController {
     try {
       await AuthService.logoutAllDevices(req.user.id);
       
-      res.clearCookie('accessToken');
-      res.clearCookie('refreshToken');
+      const isProduction = process.env.NODE_ENV === 'production';
+      const cookieOpts = { path: '/', secure: isProduction, sameSite: isProduction ? 'lax' : 'strict' };
+      res.clearCookie('accessToken', cookieOpts);
+      res.clearCookie('refreshToken', cookieOpts);
       return sendResponse(res, 200, true, null, 'Logged out from all devices');
     } catch (error) {
       return sendError(res, 400, error.message);

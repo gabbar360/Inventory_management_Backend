@@ -94,7 +94,8 @@ class OutwardService {
       });
 
       const revenue = invoice.totalCost || 0;
-      const grossProfit = revenue - totalCOGS;
+      const expense = invoice.expense || 0;
+      const grossProfit = revenue - totalCOGS - expense;
       const grossProfitMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
 
       return {
