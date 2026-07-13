@@ -293,83 +293,109 @@ const convertFromQuote = async (quoteId, itemsPayload = []) => {
 
     // 2. Loop through each item from quote and create salesOrderItem + book stock
     for (const item of quote.items) {
-      // Find matching selection from payload (supporting both quoteItemId and productId)
-      const payloadItem = itemsPayload.find(p => 
+      // Find all matching selections from payload (supporting both quoteItemId and productId)
+      const payloadSelections = itemsPayload.filter(p => 
         (p.quoteItemId && parseInt(p.quoteItemId) === item.id) || 
         (p.productId && p.productId.toString() === item.productId.toString())
       );
-      const stockBatchId = payloadItem?.stockBatchId ? parseInt(payloadItem.stockBatchId) : null;
-      const saleUnit = payloadItem?.saleUnit || item.unit || 'box';
 
-      if (stockBatchId) {
-        const stockBatch = await tx.stockBatch.findUnique({
-          where: { id: stockBatchId }
-        });
-        if (!stockBatch) {
-          throw new Error(`Stock batch #${stockBatchId} not found for product ${item.product?.name}`);
+      if (payloadSelections.length > 0) {
+        // Validate total quantity selected equals the required quote item quantity
+        const totalSelectedQty = payloadSelections.reduce((sum, p) => sum + (parseFloat(p.quantity) || 0), 0);
+        if (Math.abs(totalSelectedQty - item.quantity) > 0.001) {
+          throw new Error(`Total selected quantity (${totalSelectedQty}) for product ${item.product?.name || item.productId} must equal quote quantity (${item.quantity})`);
         }
 
-        // Calculate booking increments
-        const qty = item.quantity;
-        let boxIncrement = 0;
-        let packIncrement = 0;
-        let pcsIncrement = 0;
+        for (const sel of payloadSelections) {
+          const stockBatchId = sel.stockBatchId ? parseInt(sel.stockBatchId) : null;
+          const saleUnit = sel.saleUnit || item.unit || 'box';
+          const qty = parseFloat(sel.quantity) || 0;
 
-        if (saleUnit === 'box') {
-          boxIncrement = qty;
-          packIncrement = qty * stockBatch.packPerBox;
-          pcsIncrement = qty * stockBatch.packPerBox * stockBatch.packPerPiece;
-        } else if (saleUnit === 'pack') {
-          packIncrement = qty;
-          pcsIncrement = qty * stockBatch.packPerPiece;
-          boxIncrement = Math.floor(qty / stockBatch.packPerBox);
-        } else {
-          pcsIncrement = qty;
-          const packsReduced = Math.floor(qty / stockBatch.packPerPiece);
-          packIncrement = packsReduced;
-          boxIncrement = Math.floor(packsReduced / stockBatch.packPerBox);
-        }
+          if (stockBatchId) {
+            const stockBatch = await tx.stockBatch.findUnique({
+              where: { id: stockBatchId }
+            });
+            if (!stockBatch) {
+              throw new Error(`Stock batch #${stockBatchId} not found for product ${item.product?.name}`);
+            }
 
-        // Check if available stock (remaining - current booked) is sufficient
-        const availableBoxes = stockBatch.remainingBoxes - (stockBatch.bookedBoxes || 0);
-        const availablePacks = stockBatch.remainingPacks - (stockBatch.bookedPacks || 0);
-        const availablePcs = stockBatch.remainingPcs - (stockBatch.bookedPcs || 0);
+            // Calculate booking increments for this specific selection quantity
+            let boxIncrement = 0;
+            let packIncrement = 0;
+            let pcsIncrement = 0;
 
-        if (saleUnit === 'box' && availableBoxes < qty) {
-          throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
-        }
-        if (saleUnit === 'pack' && availablePacks < qty) {
-          throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
-        }
-        if (saleUnit === 'piece' && availablePcs < qty) {
-          throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
-        }
+            if (saleUnit === 'box') {
+              boxIncrement = qty;
+              packIncrement = qty * stockBatch.packPerBox;
+              pcsIncrement = qty * stockBatch.packPerBox * stockBatch.packPerPiece;
+            } else if (saleUnit === 'pack') {
+              packIncrement = qty;
+              pcsIncrement = qty * stockBatch.packPerPiece;
+              boxIncrement = Math.floor(qty / stockBatch.packPerBox);
+            } else {
+              pcsIncrement = qty;
+              const packsReduced = Math.floor(qty / stockBatch.packPerPiece);
+              packIncrement = packsReduced;
+              boxIncrement = Math.floor(packsReduced / stockBatch.packPerBox);
+            }
 
-        // Update StockBatch booking fields
-        await tx.stockBatch.update({
-          where: { id: stockBatchId },
+            // Check if available stock (remaining - current booked) is sufficient
+            const availableBoxes = stockBatch.remainingBoxes - (stockBatch.bookedBoxes || 0);
+            const availablePacks = stockBatch.remainingPacks - (stockBatch.bookedPacks || 0);
+            const availablePcs = stockBatch.remainingPcs - (stockBatch.bookedPcs || 0);
+
+            if (saleUnit === 'box' && availableBoxes < qty) {
+              throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
+            }
+            if (saleUnit === 'pack' && availablePacks < qty) {
+              throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
+            }
+            if (saleUnit === 'piece' && availablePcs < qty) {
+              throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
+            }
+
+            // Update StockBatch booking fields
+            await tx.stockBatch.update({
+              where: { id: stockBatchId },
+              data: {
+                bookedBoxes: { increment: boxIncrement },
+                bookedPacks: { increment: packIncrement },
+                bookedPcs: { increment: pcsIncrement },
+              }
+            });
+          }
+
+          // Create the SalesOrderItem for this split portion
+          await tx.salesOrderItem.create({
+            data: {
+              salesOrderId: order.id,
+              productId: item.productId,
+              quantity: qty,
+              unit: saleUnit,
+              rate: item.rate,
+              taxRate: item.taxRate || 0,
+              amount: qty * item.rate,
+              description: item.description,
+              stockBatchId: stockBatchId,
+            }
+          });
+        }
+      } else {
+        // Fallback if no selections were provided in payload (e.g. backward compatibility)
+        await tx.salesOrderItem.create({
           data: {
-            bookedBoxes: { increment: boxIncrement },
-            bookedPacks: { increment: packIncrement },
-            bookedPcs: { increment: pcsIncrement },
+            salesOrderId: order.id,
+            productId: item.productId,
+            quantity: item.quantity,
+            unit: item.unit || 'box',
+            rate: item.rate,
+            taxRate: item.taxRate || 0,
+            amount: item.quantity * item.rate,
+            description: item.description,
+            stockBatchId: null,
           }
         });
       }
-
-      // Create the SalesOrderItem
-      await tx.salesOrderItem.create({
-        data: {
-          salesOrderId: order.id,
-          productId: item.productId,
-          quantity: item.quantity,
-          unit: saleUnit,
-          rate: item.rate,
-          taxRate: item.taxRate || 0,
-          amount: item.quantity * item.rate,
-          description: item.description,
-          stockBatchId: stockBatchId,
-        }
-      });
     }
 
     // Update Quote status to accepted

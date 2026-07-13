@@ -776,6 +776,9 @@ class BarcodeService {
     
     return boxes;
   }
+  static async _generateBarcode(product, tx = prisma, generatedBarcodes = new Set()) {
+    return await generateBarcodeFromProduct(product, tx, generatedBarcodes);
+  }
 }
 
 module.exports = { BarcodeService, validateBarcodeFormat, barcodeCache, clearCache };

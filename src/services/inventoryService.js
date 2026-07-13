@@ -51,7 +51,7 @@ class InventoryService {
       where.locationId = parseInt(locationId);
     }
 
-    return await prisma.stockBatch.findMany({
+    const stockBatches = await prisma.stockBatch.findMany({
       where,
       include: {
         product: {
@@ -80,6 +80,24 @@ class InventoryService {
       },
       orderBy: { inwardDate: 'asc' },
     });
+
+    const inwardInvoiceIds = stockBatches.map(b => b.inwardInvoiceId).filter(Boolean);
+    const invoices = await prisma.inwardInvoice.findMany({
+      where: {
+        id: { in: inwardInvoiceIds }
+      },
+      select: {
+        id: true,
+        invoiceNo: true
+      }
+    });
+
+    const invoiceMap = new Map(invoices.map(inv => [inv.id, inv.invoiceNo]));
+
+    return stockBatches.map(batch => ({
+      ...batch,
+      inwardInvoice: batch.inwardInvoiceId ? { invoiceNo: invoiceMap.get(batch.inwardInvoiceId) || 'N/A' } : null
+    }));
   }
 
   /**

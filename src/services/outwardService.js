@@ -93,7 +93,13 @@ class OutwardService {
         totalBaseSale += item.quantity * item.ratePerUnit;
       });
 
-      const revenue = invoice.totalCost || 0;
+      const shippingVal = parseFloat(invoice.shippingCharge || 0);
+      const itemGstRates = invoice.items?.map(it => it.product?.category?.gstRate || 0) || [];
+      const shippingGstRate = itemGstRates.includes(18) ? 18 : itemGstRates.includes(5) ? 5 : 0;
+      const shippingGstAmt = shippingVal > 0 ? shippingVal * (shippingGstRate / 100) : 0;
+      const shippingDeduction = shippingVal + shippingGstAmt;
+
+      const revenue = Math.max(0, (invoice.totalCost || 0) - shippingDeduction);
       const expense = invoice.expense || 0;
       const grossProfit = revenue - totalCOGS - expense;
       const grossProfitMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
@@ -542,7 +548,13 @@ class OutwardService {
 
     return Promise.all(
       invoices.map(async (invoice) => {
-        const revenue = invoice.totalCost;
+        const shippingVal = parseFloat(invoice.shippingCharge || 0);
+        const itemGstRates = invoice.items?.map(it => it.stockBatch?.product?.category?.gstRate || 0) || [];
+        const shippingGstRate = itemGstRates.includes(18) ? 18 : itemGstRates.includes(5) ? 5 : 0;
+        const shippingGstAmt = shippingVal > 0 ? shippingVal * (shippingGstRate / 100) : 0;
+        const shippingDeduction = shippingVal + shippingGstAmt;
+
+        const revenue = Math.max(0, invoice.totalCost - shippingDeduction);
         const cogs = await InventoryService.calculateCOGS(invoice.items);
         const grossProfit = revenue - cogs - invoice.expense;
         const margin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;

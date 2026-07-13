@@ -1,21 +1,35 @@
 const { PrismaClient } = require('@prisma/client');
+const { sendResponse, sendError } = require('../utils/helpers');
 const prisma = new PrismaClient();
 
 const transferStock = async (req, res) => {
   try {
-    const { stockBatchId, toLocationId, boxes = 0, packs = 0, pieces = 0, remarks } = req.body;
+    const stockBatchId = parseInt(req.body.stockBatchId);
+    const toLocationId = parseInt(req.body.toLocationId);
+    const boxes = parseInt(req.body.boxes) || 0;
+    const packs = parseInt(req.body.packs) || 0;
+    const pieces = parseInt(req.body.pieces) || 0;
+    const remarks = req.body.remarks;
+
+    if (!stockBatchId || isNaN(stockBatchId)) {
+      return sendError(res, 400, 'Valid stock batch ID is required');
+    }
+
+    if (!toLocationId || isNaN(toLocationId)) {
+      return sendError(res, 400, 'Valid destination location is required');
+    }
 
     const stockBatch = await prisma.stockBatch.findUnique({
-      where: { id: parseInt(stockBatchId) },
+      where: { id: stockBatchId },
       include: { product: true, location: true, vendor: true },
     });
 
     if (!stockBatch) {
-      return res.status(404).json({ message: 'Stock batch not found' });
+      return sendError(res, 404, 'Stock batch not found');
     }
 
-    if (stockBatch.locationId === parseInt(toLocationId)) {
-      return res.status(400).json({ message: 'Cannot transfer to same location' });
+    if (stockBatch.locationId === toLocationId) {
+      return sendError(res, 400, 'Cannot transfer to same location');
     }
 
     const totalPcsToTransfer =
@@ -25,11 +39,11 @@ const transferStock = async (req, res) => {
 
     // Bug 3 Fix: zero quantity check
     if (totalPcsToTransfer <= 0) {
-      return res.status(400).json({ message: 'Transfer quantity must be greater than 0' });
+      return sendError(res, 400, 'Transfer quantity must be greater than 0');
     }
 
     if (totalPcsToTransfer > stockBatch.remainingPcs) {
-      return res.status(400).json({ message: 'Insufficient stock' });
+      return sendError(res, 400, 'Insufficient stock');
     }
 
     const transferNo = `TRF-${Date.now()}`;
@@ -49,18 +63,20 @@ const transferStock = async (req, res) => {
         },
       });
 
-      // Bug 1 & 2 Fix: calculate dest packs/boxes from totalPcsToTransfer
+      // Calculate dest packs/boxes from totalPcsToTransfer
       const destPacks = Math.floor(totalPcsToTransfer / stockBatch.packPerPiece);
       const destBoxes = Math.floor(destPacks / stockBatch.packPerBox);
 
-      // Create or update batch at destination
+      // Create or update batch at destination (include invoice & batch tracking)
       const existingBatch = await tx.stockBatch.findFirst({
         where: {
           productId: stockBatch.productId,
           vendorId: stockBatch.vendorId,
-          locationId: parseInt(toLocationId),
+          locationId: toLocationId,
           inwardDate: stockBatch.inwardDate,
           costPerBox: stockBatch.costPerBox,
+          inwardInvoiceId: stockBatch.inwardInvoiceId,
+          batchCode: stockBatch.batchCode,
         },
       });
 
@@ -76,7 +92,7 @@ const transferStock = async (req, res) => {
             remainingPacks: newDestPacks,
             remainingPcs: newDestPcs,
             boxes: existingBatch.boxes + destBoxes,
-            totalPacks: existingBatch.totalPacks + newDestPacks,
+            totalPacks: existingBatch.totalPacks + destPacks,
             totalPcs: existingBatch.totalPcs + totalPcsToTransfer,
           },
         });
@@ -85,7 +101,10 @@ const transferStock = async (req, res) => {
           data: {
             productId: stockBatch.productId,
             vendorId: stockBatch.vendorId,
-            locationId: parseInt(toLocationId),
+            locationId: toLocationId,
+            inwardInvoiceId: stockBatch.inwardInvoiceId,
+            batchCode: stockBatch.batchCode,
+            mfgDate: stockBatch.mfgDate,
             inwardDate: stockBatch.inwardDate,
             boxes: destBoxes,
             packPerBox: stockBatch.packPerBox,
@@ -108,7 +127,7 @@ const transferStock = async (req, res) => {
           transferNo,
           stockBatchId: stockBatch.id,
           fromLocationId: stockBatch.locationId,
-          toLocationId: parseInt(toLocationId),
+          toLocationId: toLocationId,
           boxes,
           packs,
           pieces,
@@ -118,10 +137,10 @@ const transferStock = async (req, res) => {
       });
     });
 
-    res.json({ message: 'Stock transferred successfully', transferNo });
+    return sendResponse(res, 200, true, { transferNo }, 'Stock transferred successfully');
   } catch (error) {
     console.error('Transfer stock error:', error);
-    res.status(500).json({ message: 'Failed to transfer stock' });
+    return sendError(res, 500, 'Failed to transfer stock');
   }
 };
 
@@ -130,25 +149,67 @@ const getTransferHistory = async (req, res) => {
     const { page = 1, limit = 10 } = req.query;
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
-    // Bug 5 Fix: use include instead of N+1 queries
     const [transfers, total] = await Promise.all([
       prisma.stockTransfer.findMany({
         skip,
         take: parseInt(limit),
         orderBy: { createdAt: 'desc' },
-        include: {
-          stockBatch: { include: { product: true, vendor: true } },
-          fromLocation: true,
-          toLocation: true,
-        },
       }),
       prisma.stockTransfer.count(),
     ]);
 
-    res.json({ transfers, total, page: parseInt(page), limit: parseInt(limit) });
+    // Fetch batch details manually
+    const batchIds = [...new Set(transfers.map((t) => t.stockBatchId).filter(Boolean))];
+    const batches = await prisma.stockBatch.findMany({
+      where: { id: { in: batchIds } },
+      include: { product: true, vendor: true },
+    });
+
+    // Fetch Inward Invoices for batches manually
+    const inwardInvoiceIds = batches.map((b) => b.inwardInvoiceId).filter(Boolean);
+    const invoices = await prisma.inwardInvoice.findMany({
+      where: { id: { in: inwardInvoiceIds } },
+      select: { id: true, invoiceNo: true },
+    });
+    const invoiceMap = new Map(invoices.map((inv) => [inv.id, inv.invoiceNo]));
+
+    const populatedBatches = batches.map((b) => ({
+      ...b,
+      inwardInvoice: b.inwardInvoiceId ? { invoiceNo: invoiceMap.get(b.inwardInvoiceId) || 'N/A' } : null,
+    }));
+    const batchMap = new Map(populatedBatches.map((b) => [b.id, b]));
+
+    // Fetch location details manually
+    const locationIds = [
+      ...new Set([
+        ...transfers.map((t) => t.fromLocationId),
+        ...transfers.map((t) => t.toLocationId),
+      ].filter(Boolean)),
+    ];
+    const locations = await prisma.location.findMany({
+      where: { id: { in: locationIds } },
+    });
+    const locationMap = new Map(locations.map((l) => [l.id, l]));
+
+    // Merge manually
+    const populatedTransfers = transfers.map((t) => ({
+      ...t,
+      stockBatch: batchMap.get(t.stockBatchId) || null,
+      fromLocation: locationMap.get(t.fromLocationId) || null,
+      toLocation: locationMap.get(t.toLocationId) || null,
+    }));
+
+    return sendResponse(
+      res,
+      200,
+      true,
+      { transfers: populatedTransfers, total },
+      'Transfer history retrieved successfully',
+      { page: parseInt(page), limit: parseInt(limit), total }
+    );
   } catch (error) {
     console.error('Get transfer history error:', error);
-    res.status(500).json({ message: 'Failed to fetch transfer history' });
+    return sendError(res, 500, 'Failed to fetch transfer history');
   }
 };
 

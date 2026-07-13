@@ -42,7 +42,27 @@ const getPurchaseOrderById = async (req, res) => {
 const updatePurchaseOrder = async (req, res) => {
   try {
     const po = await purchaseOrderService.updatePurchaseOrder(req.params.id, req.body);
-    res.status(200).json({ success: true, data: po });
+    // Convert numeric IDs to strings to match frontend expectations
+    const normalized = {
+      ...po,
+      id: String(po.id),
+      vendorId: String(po.vendorId),
+      vendor: po.vendor ? { ...po.vendor, id: String(po.vendor.id) } : null,
+      items: po.items?.map(item => ({
+        ...item,
+        id: String(item.id),
+        purchaseOrderId: String(item.purchaseOrderId),
+        productId: String(item.productId),
+        subItems: item.subItems?.map(sub => ({
+          ...sub,
+          id: String(sub.id),
+          purchaseOrderId: String(sub.purchaseOrderId),
+          productId: String(sub.productId),
+          parentItemId: String(sub.parentItemId)
+        }))
+      }))
+    };
+    res.status(200).json({ success: true, data: normalized });
   } catch (error) {
     res.status(400).json({ success: false, message: error.message });
   }
