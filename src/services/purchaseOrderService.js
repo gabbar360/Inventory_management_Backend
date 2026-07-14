@@ -646,23 +646,196 @@ const updatePurchaseOrder = async (id, data) => {
       }
     }
 
-    if (processedItems?.length > 0) {
-      // Update existing boxes with new fields - don't delete them!
+    const isConfirmedOrSent = updated.status === 'confirmed' || updated.status === 'sent';
+    const isDraft = updated.status === 'draft';
+
+    if (updated.status === 'cancelled') {
+      // Cancelled POs should not have expected boxes in the database
+      await tx.boxDetail.deleteMany({
+        where: {
+          purchaseOrderId: updated.id,
+          status: 'expected'
+        }
+      });
+    } else if ((isConfirmedOrSent || isDraft) && processedItems?.length > 0) {
+      const { BarcodeService: BarcodeServiceClass } = require('./barcodeService');
+
+      // 1. Delete expected boxes for products that were completely removed from the PO
+      const newProductIds = processedItems.map(item => parseInt(item.productId));
+      await tx.boxDetail.deleteMany({
+        where: {
+          purchaseOrderId: updated.id,
+          status: 'expected',
+          productId: {
+            notIn: newProductIds
+          }
+        }
+      });
+
+      // 2. Sync boxes for each remaining/new product
       for (const item of processedItems) {
-        await tx.boxDetail.updateMany({
+        const productId = parseInt(item.productId);
+        const newBoxCount = item.boxes || 1;
+        const packPerBox  = item.packPerBox  || 28;
+        const packPerPiece = item.packPerPiece || 25;
+        const totalPcs = packPerBox * packPerPiece;
+
+        // Fetch all existing boxes for this product in this PO
+        const allBoxes = await tx.boxDetail.findMany({
           where: {
             purchaseOrderId: updated.id,
-            productId: parseInt(item.productId)
-          },
-          data: {
-            batchCode: item.batchCode || null,
-            mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
-            color: item.color || null,
-            brand: item.brand || null
+            productId
           }
         });
+
+        const nonExpectedBoxes = allBoxes.filter(b => b.status !== 'expected');
+        const expectedBoxes = allBoxes.filter(b => b.status === 'expected');
+
+        const nonExpectedCount = nonExpectedBoxes.length;
+        const currentCount = expectedBoxes.length;
+
+        // Target number of expected boxes should account for already inwarded/outwarded boxes
+        const targetExpectedCount = Math.max(0, newBoxCount - nonExpectedCount);
+        const maxBoxIndex = allBoxes.reduce((max, b) => Math.max(max, b.boxIndex), 0);
+
+        if (currentCount > 0 || nonExpectedCount > 0) {
+          // Always update all fields on every existing expected box
+          await tx.boxDetail.updateMany({
+            where: {
+              purchaseOrderId: updated.id,
+              productId,
+              status: 'expected',
+            },
+            data: {
+              packPerBox,
+              packPerPiece,
+              totalBoxes: newBoxCount,
+              totalPcs,
+              batchCode: item.batchCode || null,
+              mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+              color: item.color || null,
+              brand: item.brand || null,
+            },
+          });
+
+          // Also update totalBoxes count on the non-expected (inwarded/outwarded) boxes
+          if (nonExpectedCount > 0) {
+            await tx.boxDetail.updateMany({
+              where: {
+                purchaseOrderId: updated.id,
+                productId,
+                status: { not: 'expected' }
+              },
+              data: {
+                totalBoxes: newBoxCount
+              }
+            });
+          }
+
+          if (targetExpectedCount > currentCount) {
+            // Create additional boxes for the difference
+            const po = await tx.purchaseOrder.findUnique({
+              where: { id: updated.id },
+              include: { items: { where: { productId, parentItemId: null }, include: { product: true } } }
+            });
+            const poItem = po?.items?.[0];
+
+            if (poItem?.product) {
+              const { generateBarcodeFromProduct } = require('./barcodeService');
+              const generatedBarcodes = new Set();
+              const newBoxData = [];
+              const boxesToCreate = targetExpectedCount - currentCount;
+
+              for (let i = 1; i <= boxesToCreate; i++) {
+                let barcode;
+                try {
+                  const { BarcodeService: BSClass } = require('./barcodeService');
+                  barcode = await BSClass._generateBarcode(poItem.product, tx, generatedBarcodes);
+                } catch {
+                  barcode = null;
+                }
+                if (!barcode) continue;
+                generatedBarcodes.add(barcode);
+                newBoxData.push({
+                  barcode,
+                  productId,
+                  purchaseOrderId: updated.id,
+                  boxIndex: maxBoxIndex + i,
+                  totalBoxes: newBoxCount,
+                  packPerBox,
+                  packPerPiece,
+                  totalPcs,
+                  status: 'expected',
+                  batchCode: item.batchCode || null,
+                  mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+                  color: item.color || null,
+                  brand: item.brand || null,
+                });
+              }
+              if (newBoxData.length > 0) {
+                await tx.boxDetail.createMany({ data: newBoxData });
+              }
+            }
+          } else if (targetExpectedCount < currentCount) {
+            // Remove excess expected boxes (highest boxIndex first)
+            const excessCount = currentCount - targetExpectedCount;
+            const sortedExpected = expectedBoxes.sort((a, b) => b.boxIndex - a.boxIndex);
+            const excessIds = sortedExpected.slice(0, excessCount).map(b => b.id);
+            await tx.boxDetail.deleteMany({
+              where: { id: { in: excessIds } },
+            });
+          }
+        } else if (isConfirmedOrSent) {
+          // New product added to this PO (or draft PO with 0 boxes) — generate all expected boxes now
+          const poWithProduct = await tx.purchaseOrder.findUnique({
+            where: { id: updated.id },
+            include: {
+              items: {
+                where: { productId, parentItemId: null },
+                include: { product: true }
+              }
+            }
+          });
+          const poItem = poWithProduct?.items?.[0];
+
+          if (poItem?.product?.sku && poItem?.product?.upc) {
+            const { BarcodeService: BSClass } = require('./barcodeService');
+            const generatedBarcodes = new Set();
+            const newBoxData = [];
+
+            for (let i = 1; i <= newBoxCount; i++) {
+              let barcode;
+              try {
+                barcode = await BSClass._generateBarcode(poItem.product, tx, generatedBarcodes);
+              } catch {
+                barcode = null;
+              }
+              if (!barcode) continue;
+              generatedBarcodes.add(barcode);
+              newBoxData.push({
+                barcode,
+                productId,
+                purchaseOrderId: updated.id,
+                boxIndex: i,
+                totalBoxes: newBoxCount,
+                packPerBox,
+                packPerPiece,
+                totalPcs,
+                status: 'expected',
+                batchCode: item.batchCode || null,
+                mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+                color: item.color || null,
+                brand: item.brand || null,
+              });
+            }
+            if (newBoxData.length > 0) {
+              await tx.boxDetail.createMany({ data: newBoxData });
+            }
+          }
+        }
       }
     }
+
 
     const updatedPo = await tx.purchaseOrder.findUnique({
       where: { id: numId },

@@ -165,6 +165,25 @@
 <body>
 <div class="page">
     <%
+        // Group invoice.items by product + unit + rate
+        const groupedItemsMap = new Map();
+        invoice.items?.forEach(item => {
+            const key = `${item.productId}-${item.saleUnit || item.unit}-${item.ratePerUnit || item.rate}`;
+            if (groupedItemsMap.has(key)) {
+                const existing = groupedItemsMap.get(key);
+                existing.quantity += item.quantity;
+                existing.totalCost = (existing.totalCost || 0) + (item.totalCost || 0);
+                if (item.description && existing.description && !existing.description.includes(item.description)) {
+                    existing.description = `${existing.description}, ${item.description}`;
+                } else if (item.description && !existing.description) {
+                    existing.description = item.description;
+                }
+            } else {
+                groupedItemsMap.set(key, { ...item });
+            }
+        });
+        invoice.items = Array.from(groupedItemsMap.values());
+
         function fmt(num) {
             if (num === undefined || num === null || isNaN(num)) return '0.00';
             return parseFloat(num).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });

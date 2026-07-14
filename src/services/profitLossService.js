@@ -49,7 +49,10 @@ class ProfitLossService {
         }
 
         const totalPurchasePrice = purchasePrice * item.quantity;
-        const totalSalesPrice = item.totalCost;
+        const baseSalePrice = item.totalCost;
+        const gstRate = item.product?.category?.gstRate || 0;
+        const gstAmt = (baseSalePrice * gstRate) / 100;
+        const totalSalesPrice = baseSalePrice + gstAmt;
         const profit = totalSalesPrice - totalPurchasePrice;
         const profitMargin = totalSalesPrice > 0 ? ((profit / totalSalesPrice) * 100).toFixed(2) : 0;
 
@@ -69,7 +72,7 @@ class ProfitLossService {
           saleUnit: item.saleUnit,
           vendorName: stockBatch.vendor.name,
           purchasePrice: purchasePrice.toFixed(2),
-          salesPrice: (item.ratePerUnit).toFixed(2),
+          salesPrice: item.ratePerUnit.toFixed(2),
           totalPurchasePrice: totalPurchasePrice.toFixed(2),
           totalSalesPrice: totalSalesPrice.toFixed(2),
           difference: profit.toFixed(2),
@@ -186,7 +189,10 @@ class ProfitLossService {
         }
 
         const totalPurchasePrice = purchasePrice * item.quantity;
-        const totalSalesPrice = item.totalCost;
+        const baseSalePrice = item.totalCost;
+        const gstRate = item.product?.category?.gstRate || 0;
+        const gstAmt = (baseSalePrice * gstRate) / 100;
+        const totalSalesPrice = baseSalePrice + gstAmt;
         const profit = totalSalesPrice - totalPurchasePrice;
         const profitMargin = totalSalesPrice > 0 ? ((profit / totalSalesPrice) * 100).toFixed(2) : 0;
 
@@ -206,7 +212,7 @@ class ProfitLossService {
           saleUnit: item.saleUnit,
           vendorName: stockBatch.vendor.name,
           purchasePrice: purchasePrice.toFixed(2),
-          salesPrice: (item.ratePerUnit).toFixed(2),
+          salesPrice: item.ratePerUnit.toFixed(2),
           totalPurchasePrice: totalPurchasePrice.toFixed(2),
           totalSalesPrice: totalSalesPrice.toFixed(2),
           difference: profit.toFixed(2),
@@ -323,7 +329,10 @@ class ProfitLossService {
         }
 
         const totalPurchasePrice = purchasePrice * item.quantity;
-        const totalSalesPrice = item.totalCost;
+        const baseSalePrice = item.totalCost;
+        const gstRate = item.product?.category?.gstRate || 0;
+        const gstAmt = (baseSalePrice * gstRate) / 100;
+        const totalSalesPrice = baseSalePrice + gstAmt;
         const profit = totalSalesPrice - totalPurchasePrice;
 
         if (!productMap.has(productKey)) {

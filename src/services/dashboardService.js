@@ -87,8 +87,23 @@ class DashboardService {
       include: { items: { include: { stockBatch: { include: { product: true } } } } },
     });
 
-    const totalRevenue = outwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
-    const previousRevenue = previousOutwardInvoices.reduce((sum, invoice) => sum + invoice.totalCost, 0);
+    const totalRevenue = outwardInvoices.reduce((sum, invoice) => {
+      const shippingVal = parseFloat(invoice.shippingCharge || 0);
+      const itemGstRates = invoice.items?.map(it => it.stockBatch?.product?.category?.gstRate || 0) || [];
+      const shippingGstRate = itemGstRates.includes(18) ? 18 : itemGstRates.includes(5) ? 5 : 0;
+      const shippingGstAmt = shippingVal > 0 ? shippingVal * (shippingGstRate / 100) : 0;
+      const shippingDeduction = shippingVal + shippingGstAmt;
+      return sum + Math.max(0, invoice.totalCost - shippingDeduction);
+    }, 0);
+
+    const previousRevenue = previousOutwardInvoices.reduce((sum, invoice) => {
+      const shippingVal = parseFloat(invoice.shippingCharge || 0);
+      const itemGstRates = invoice.items?.map(it => it.stockBatch?.product?.category?.gstRate || 0) || [];
+      const shippingGstRate = itemGstRates.includes(18) ? 18 : itemGstRates.includes(5) ? 5 : 0;
+      const shippingGstAmt = shippingVal > 0 ? shippingVal * (shippingGstRate / 100) : 0;
+      const shippingDeduction = shippingVal + shippingGstAmt;
+      return sum + Math.max(0, invoice.totalCost - shippingDeduction);
+    }, 0);
 
     // Calculate total purchase
     const inwardInvoices = await prisma.inwardInvoice.findMany({

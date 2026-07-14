@@ -632,6 +632,7 @@ class BarcodeService {
     const numId = parseInt(id);
     let boxes = [];
     if (source === 'po') {
+      await this.generateExpectedBoxesForPO(numId);
       boxes = await prisma.boxDetail.findMany({
         where: { purchaseOrderId: numId },
         include: {
@@ -640,17 +641,6 @@ class BarcodeService {
         },
         orderBy: [{ productId: 'asc' }, { boxIndex: 'asc' }]
       });
-      if (boxes.length === 0) {
-        boxes = await this.generateExpectedBoxesForPO(numId);
-        boxes = await prisma.boxDetail.findMany({
-          where: { purchaseOrderId: numId },
-          include: {
-            product: { include: { category: true } },
-            purchaseOrder: { include: { vendor: true } }
-          },
-          orderBy: [{ productId: 'asc' }, { boxIndex: 'asc' }]
-        });
-      }
     } else if (source === 'inward') {
       const stockBatches = await prisma.stockBatch.findMany({
         where: { inwardInvoiceId: numId }
@@ -775,6 +765,9 @@ class BarcodeService {
     }
     
     return boxes;
+  }
+  static async _generateBarcode(product, tx = prisma, generatedBarcodes = new Set()) {
+    return await generateBarcodeFromProduct(product, tx, generatedBarcodes);
   }
 }
 
