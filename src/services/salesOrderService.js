@@ -219,6 +219,17 @@ const convertFromQuote = async (quoteId, itemsPayload = []) => {
   return await prisma.$transaction(async (tx) => {
     let order;
 
+    const hasUnbookedItems = quote.items.some(item => {
+      const payloadSelections = itemsPayload.filter(p => 
+        (p.quoteItemId && parseInt(p.quoteItemId) === item.id) || 
+        (p.productId && p.productId.toString() === item.productId.toString())
+      );
+      if (payloadSelections.length === 0) return true;
+      return payloadSelections.some(sel => !sel.stockBatchId);
+    });
+
+    const targetStatus = hasUnbookedItems ? 'draft' : 'confirmed';
+
     if (existingOrder) {
       // 1. Release booked stock for all existing items of the existing sales order
       for (const oldItem of existingOrder.items) {
@@ -271,6 +282,7 @@ const convertFromQuote = async (quoteId, itemsPayload = []) => {
           totalAmount,
           orderDate: new Date(),
           shippingCharge: quote.shippingCharge || 0,
+          status: targetStatus,
         }
       });
     } else {
@@ -281,7 +293,7 @@ const convertFromQuote = async (quoteId, itemsPayload = []) => {
           customerId: quote.customerId,
           quoteId: quote.id,
           orderDate: new Date(),
-          status: 'confirmed',
+          status: targetStatus,
           saleType: 'domestic',
           totalAmount,
           reference: quote.quoteNo,
