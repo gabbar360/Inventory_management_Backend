@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 class InwardService {
   static async getAll(page, limit, search, sortBy, sortOrder, startDate, endDate, vendorId) {
     const where = {};
-    
+
     if (search) {
       where.OR = [
         { invoiceNo: { contains: search, mode: 'insensitive' } },
@@ -18,7 +18,7 @@ class InwardService {
     if (vendorId) {
       where.vendorId = parseInt(vendorId);
     }
-    
+
     if (startDate || endDate) {
       where.date = {};
       if (startDate) {
@@ -118,10 +118,10 @@ class InwardService {
 
           const totalPacks = item.boxes * item.packPerBox;
           const totalPcs = totalPacks * item.packPerPiece;
-          
+
           let ratePerBox, ratePerPack, ratePerPcs, baseAmount;
           const unit = item.unit || 'box';
-          
+
           if (unit === 'box') {
             ratePerBox = item.ratePerBox;
             ratePerPack = ratePerBox / item.packPerBox;
@@ -138,7 +138,7 @@ class InwardService {
             ratePerBox = ratePerPack * item.packPerBox;
             baseAmount = totalPcs * ratePerPcs;
           }
-          
+
           const gstAmount = (baseAmount * product.category.gstRate) / 100;
           const totalCost = baseAmount + gstAmount;
 
@@ -206,19 +206,19 @@ class InwardService {
 
       // Create sub-items and calculate their total
       let subItemsTotalCost = 0;
-      
+
       for (let i = 0; i < processedItems.length; i++) {
         const item = processedItems[i];
         const parentItem = items[i];
-        
+
         if (item.subItems && item.subItems.length > 0) {
           for (const subItem of item.subItems) {
             const subTotalPacks = subItem.boxes * subItem.packPerBox;
             const subTotalPcs = subTotalPacks * subItem.packPerPiece;
-            
+
             let subRatePerBox, subRatePerPack, subRatePerPcs, subBaseAmount;
             const subUnit = subItem.unit || 'box';
-            
+
             if (subUnit === 'box') {
               subRatePerBox = subItem.ratePerBox;
               subRatePerPack = subRatePerBox / subItem.packPerBox;
@@ -235,12 +235,12 @@ class InwardService {
               subRatePerBox = subRatePerPack * subItem.packPerBox;
               subBaseAmount = subTotalPcs * subRatePerPcs;
             }
-            
+
             const subProduct = await tx.product.findUnique({
               where: { id: parseInt(item.productId) },
               include: { category: true },
             });
-            
+
             const subGstAmount = (subBaseAmount * subProduct.category.gstRate) / 100;
             const subTotalCost = subBaseAmount + subGstAmount;
             subItemsTotalCost += subTotalCost;
@@ -316,7 +316,7 @@ class InwardService {
       });
       if (data.scannedBarcodes && data.scannedBarcodes.length > 0) {
         const boxes = await tx.boxDetail.findMany({
-          where: { 
+          where: {
             barcode: { in: data.scannedBarcodes },
             status: 'expected'
           }
@@ -740,7 +740,7 @@ class InwardService {
 
         for (const batch of stockBatches) {
           const soldQuantity = batch.totalPcs - batch.remainingPcs;
-          
+
           if (soldQuantity > 0) {
             throw new Error(`Cannot delete invoice. Stock from this batch has been sold.`);
           }

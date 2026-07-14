@@ -75,6 +75,7 @@ class OutwardService {
       let totalBoxes = 0;
       let totalCOGS = 0;
       let totalBaseSale = 0;
+      let totalItemsGST = 0;
 
       invoice.items?.forEach((item) => {
         totalQty += item.quantity;
@@ -90,16 +91,15 @@ class OutwardService {
           item.saleUnit === 'pack' ? (item.stockBatch?.costPerPack || item.stockBatch?.costPerBox / (item.stockBatch?.packPerBox || 1)) :
           item.stockBatch?.costPerPcs;
         totalCOGS += (unitCost || 0) * item.quantity;
-        totalBaseSale += item.quantity * item.ratePerUnit;
+        const itemBase = item.quantity * item.ratePerUnit;
+        totalBaseSale += itemBase;
+        const gstRate = item.product?.category?.gstRate || 0;
+        totalItemsGST += (itemBase * gstRate) / 100;
       });
 
       const shippingVal = parseFloat(invoice.shippingCharge || 0);
-      const itemGstRates = invoice.items?.map(it => it.product?.category?.gstRate || 0) || [];
-      const shippingGstRate = itemGstRates.includes(18) ? 18 : itemGstRates.includes(5) ? 5 : 0;
-      const shippingGstAmt = shippingVal > 0 ? shippingVal * (shippingGstRate / 100) : 0;
-      const shippingDeduction = shippingVal + shippingGstAmt;
-
-      const revenue = Math.max(0, (invoice.totalCost || 0) - shippingDeduction);
+      // Revenue = baseSale + itemsGST - shippingCharge (shipping is pass-through, not profit)
+      const revenue = totalBaseSale + totalItemsGST - shippingVal;
       const expense = invoice.expense || 0;
       const grossProfit = revenue - totalCOGS - expense;
       const grossProfitMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
@@ -121,6 +121,7 @@ class OutwardService {
       where: { id: parseInt(id) },
       include: {
         customer: true,
+        boxDetails: true,
         items: {
           include: {
             product: { include: { category: true } },

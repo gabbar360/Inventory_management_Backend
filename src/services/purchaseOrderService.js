@@ -646,15 +646,18 @@ const updatePurchaseOrder = async (id, data) => {
       }
     }
 
-    if (updated.status === 'draft' || updated.status === 'cancelled') {
-      // Draft/Cancelled POs should not have expected boxes in the database
+    const isConfirmedOrSent = updated.status === 'confirmed' || updated.status === 'sent';
+    const isDraft = updated.status === 'draft';
+
+    if (updated.status === 'cancelled') {
+      // Cancelled POs should not have expected boxes in the database
       await tx.boxDetail.deleteMany({
         where: {
           purchaseOrderId: updated.id,
           status: 'expected'
         }
       });
-    } else if ((updated.status === 'confirmed' || updated.status === 'sent') && processedItems?.length > 0) {
+    } else if ((isConfirmedOrSent || isDraft) && processedItems?.length > 0) {
       const { BarcodeService: BarcodeServiceClass } = require('./barcodeService');
 
       // 1. Delete expected boxes for products that were completely removed from the PO
@@ -782,7 +785,7 @@ const updatePurchaseOrder = async (id, data) => {
               where: { id: { in: excessIds } },
             });
           }
-        } else {
+        } else if (isConfirmedOrSent) {
           // New product added to this PO (or draft PO with 0 boxes) — generate all expected boxes now
           const poWithProduct = await tx.purchaseOrder.findUnique({
             where: { id: updated.id },
