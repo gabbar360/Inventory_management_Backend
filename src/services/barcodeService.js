@@ -127,8 +127,9 @@ class BarcodeService {
     });
     if (!po) throw new Error('Purchase Order not found');
 
+    // Check ALL statuses — if any box exists for this product+PO, skip generation
     const existingBoxes = await tx.boxDetail.findMany({
-      where: { purchaseOrderId: po.id, status: 'expected' },
+      where: { purchaseOrderId: po.id },
       select: { productId: true }
     });
     const existingProductIds = new Set(existingBoxes.map(b => b.productId));
@@ -206,11 +207,12 @@ class BarcodeService {
 
     for (const item of invoice.items) {
       if (existingProductIds.has(item.productId)) continue;
-      const boxCount = item.boxes || 1;
       const packPerBox = item.packPerBox || 28;
       const packPerPiece = item.packPerPiece || 25;
 
       const matchingBatch = stockBatches.find(sb => sb.productId === item.productId);
+      // Use remainingBoxes from stock batch so stickers match available stock only
+      const boxCount = matchingBatch ? (matchingBatch.remainingBoxes || matchingBatch.boxes || item.boxes || 1) : (item.boxes || 1);
 
       for (let i = 1; i <= boxCount; i++) {
         const barcode = await generateBarcodeFromProduct(item.product, tx, generatedBarcodes);
@@ -580,7 +582,8 @@ class BarcodeService {
     const barcodes = [];
     const generatedBarcodes = new Set();
     
-    const boxCount = batch.boxes || 1;
+    // Use remainingBoxes so stickers match available stock only
+    const boxCount = batch.remainingBoxes || batch.boxes || 1;
     const packPerBox = batch.packPerBox || 28;
     const packPerPiece = batch.packPerPiece || 25;
 
@@ -642,6 +645,76 @@ class BarcodeService {
         orderBy: [{ productId: 'asc' }, { boxIndex: 'asc' }]
       });
     } else if (source === 'inward') {
+      // Check if any BoxDetails for this inward invoice came from a PO
+      const poLinkedBox = await prisma.boxDetail.findFirst({
+        where: { inwardInvoiceId: numId, purchaseOrderId: { not: null } },
+        select: { purchaseOrderId: true }
+      });
+
+      // Also check expected PO boxes that haven't been linked yet
+      // by looking at the inward items and matching PO boxes
+      let poId = poLinkedBox?.purchaseOrderId || null;
+
+      if (!poId) {
+        // Check if any expected PO boxes exist for products in this invoice
+        const invoiceItems = await prisma.inwardItem.findMany({
+          where: { inwardInvoiceId: numId, parentItemId: null },
+          select: { productId: true }
+        });
+        const productIds = invoiceItems.map(i => i.productId);
+        if (productIds.length > 0) {
+          const expectedPoBox = await prisma.boxDetail.findFirst({
+            where: {
+              productId: { in: productIds },
+              purchaseOrderId: { not: null },
+              OR: [{ inwardInvoiceId: numId }, { inwardInvoiceId: null, status: 'expected' }]
+            },
+            select: { purchaseOrderId: true }
+          });
+          poId = expectedPoBox?.purchaseOrderId || null;
+        }
+      }
+
+      // If linked to PO → return PO's BoxDetails (those are the stickers)
+      if (poId) {
+        // Link any unlinked PO boxes to this inward invoice
+        await prisma.boxDetail.updateMany({
+          where: { purchaseOrderId: poId, inwardInvoiceId: null },
+          data: { inwardInvoiceId: numId }
+        });
+
+        // Update metadata from inward items
+        const invoice = await prisma.inwardInvoice.findUnique({
+          where: { id: numId },
+          include: { items: { where: { parentItemId: null } } }
+        });
+        if (invoice) {
+          for (const item of invoice.items) {
+            await prisma.boxDetail.updateMany({
+              where: { purchaseOrderId: poId, productId: item.productId },
+              data: {
+                batchCode: item.batchCode || null,
+                mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
+                color: item.color || null,
+                brand: item.brand || null
+              }
+            });
+          }
+        }
+
+        boxes = await prisma.boxDetail.findMany({
+          where: { purchaseOrderId: poId },
+          include: {
+            product: { include: { category: true } },
+            inwardInvoice: { include: { vendor: true, location: true } },
+            stockBatch: true
+          },
+          orderBy: [{ productId: 'asc' }, { boxIndex: 'asc' }]
+        });
+        return boxes;
+      }
+
+      // No PO → normal inward flow (generate new barcodes based on remainingBoxes)
       const stockBatches = await prisma.stockBatch.findMany({
         where: { inwardInvoiceId: numId }
       });
@@ -654,15 +727,13 @@ class BarcodeService {
               productId: batch.productId,
               stockBatchId: null
             },
-            data: {
-              stockBatchId: batch.id
-            }
+            data: { stockBatchId: batch.id }
           });
         }
       }
 
       boxes = await prisma.boxDetail.findMany({
-        where: { inwardInvoiceId: numId },
+        where: { inwardInvoiceId: numId, status: { not: 'outwarded' } },
         include: {
           product: { include: { category: true } },
           inwardInvoice: { include: { vendor: true, location: true } },
@@ -680,10 +751,7 @@ class BarcodeService {
         if (invoice) {
           for (const item of invoice.items) {
             await prisma.boxDetail.updateMany({
-              where: {
-                inwardInvoiceId: numId,
-                productId: item.productId
-              },
+              where: { inwardInvoiceId: numId, productId: item.productId },
               data: {
                 batchCode: item.batchCode || null,
                 mfgDate: item.mfgDate ? new Date(item.mfgDate) : null,
@@ -693,9 +761,8 @@ class BarcodeService {
             });
           }
         }
-        // Re-fetch with updated data
         boxes = await prisma.boxDetail.findMany({
-          where: { inwardInvoiceId: numId },
+          where: { inwardInvoiceId: numId, status: { not: 'outwarded' } },
           include: {
             product: { include: { category: true } },
             inwardInvoice: { include: { vendor: true, location: true } },
@@ -703,7 +770,8 @@ class BarcodeService {
           },
           orderBy: [{ productId: 'asc' }, { boxIndex: 'asc' }]
         });
-      } else if (boxes.length === 0) {
+      } else {
+        // Generate new barcodes — count based on remainingBoxes in stock batch
         boxes = await this.generateInwardedBoxesForInvoice(numId);
         const freshBatches = await prisma.stockBatch.findMany({
           where: { inwardInvoiceId: numId }
@@ -711,19 +779,13 @@ class BarcodeService {
         if (freshBatches.length > 0) {
           for (const batch of freshBatches) {
             await prisma.boxDetail.updateMany({
-              where: {
-                inwardInvoiceId: numId,
-                productId: batch.productId,
-                stockBatchId: null
-              },
-              data: {
-                stockBatchId: batch.id
-              }
+              where: { inwardInvoiceId: numId, productId: batch.productId, stockBatchId: null },
+              data: { stockBatchId: batch.id }
             });
           }
         }
         boxes = await prisma.boxDetail.findMany({
-          where: { inwardInvoiceId: numId },
+          where: { inwardInvoiceId: numId, status: { not: 'outwarded' } },
           include: {
             product: { include: { category: true } },
             inwardInvoice: { include: { vendor: true, location: true } },
@@ -750,7 +812,7 @@ class BarcodeService {
       }
 
       boxes = await prisma.boxDetail.findMany({
-        where: { stockBatchId: numId },
+        where: { stockBatchId: numId, status: { not: 'outwarded' } },
         include: {
           product: { include: { category: true } },
           stockBatch: { include: { location: true, vendor: true } }
