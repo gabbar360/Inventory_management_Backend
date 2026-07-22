@@ -498,33 +498,68 @@ class OutwardService {
       });
       if (!invoice) throw new Error('Invoice not found');
 
+      // Check if a Sales Order exists that was converted into this invoice
+      const linkedSalesOrder = invoice.referenceNo
+        ? await tx.salesOrder.findFirst({ where: { orderNo: invoice.referenceNo }, include: { items: true } })
+        : null;
+
       for (const item of invoice.items) {
         const stockBatch = await tx.stockBatch.findUnique({ where: { id: item.stockBatchId } });
         if (stockBatch) {
           let restoredPcs = stockBatch.remainingPcs;
+          let boxRestore = 0, packRestore = 0;
 
           if (item.saleUnit === 'box') {
+            boxRestore = item.quantity;
+            packRestore = item.quantity * stockBatch.packPerBox;
             restoredPcs += item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece;
           } else if (item.saleUnit === 'pack') {
+            packRestore = item.quantity;
+            boxRestore = Math.floor(item.quantity / stockBatch.packPerBox);
             restoredPcs += item.quantity * stockBatch.packPerPiece;
           } else {
             restoredPcs += item.quantity;
+            const packsRestored = Math.floor(item.quantity / stockBatch.packPerPiece);
+            packRestore = packsRestored;
+            boxRestore = Math.floor(packsRestored / stockBatch.packPerBox);
           }
 
           const restoredPacks = Math.floor(restoredPcs / stockBatch.packPerPiece);
           const restoredBoxes = Math.floor(restoredPacks / stockBatch.packPerBox);
 
+          // If a linked SO exists, restore booked stock too (SO is still active)
+          let bookedBoxes = stockBatch.bookedBoxes || 0;
+          let bookedPacks = stockBatch.bookedPacks || 0;
+          let bookedPcs = stockBatch.bookedPcs || 0;
+
+          if (linkedSalesOrder) {
+            const soItem = linkedSalesOrder.items.find(i => i.stockBatchId === item.stockBatchId);
+            if (soItem) {
+              bookedBoxes += boxRestore;
+              bookedPacks += packRestore;
+              bookedPcs += item.saleUnit === 'box'
+                ? item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece
+                : item.saleUnit === 'pack'
+                ? item.quantity * stockBatch.packPerPiece
+                : item.quantity;
+            }
+          }
+
           await tx.stockBatch.update({
             where: { id: item.stockBatchId },
-            data: { remainingBoxes: restoredBoxes, remainingPacks: restoredPacks, remainingPcs: restoredPcs },
+            data: {
+              remainingBoxes: restoredBoxes,
+              remainingPacks: restoredPacks,
+              remainingPcs: restoredPcs,
+              bookedBoxes,
+              bookedPacks,
+              bookedPcs,
+            },
           });
 
           await tx.boxDetail.updateMany({
             where: { stockBatchId: item.stockBatchId, outwardInvoiceId: invoice.id },
-            data: {
-              status: 'inwarded',
-              outwardInvoiceId: null
-            }
+            data: { status: 'inwarded', outwardInvoiceId: null },
           });
         }
       }
