@@ -208,6 +208,10 @@ class SampleService {
       throw new Error('Sample not found');
     }
 
+    if (sample.source === 'website') {
+      throw new Error('Website samples cannot be deleted');
+    }
+
     await prisma.sample.delete({
       where: { id: parseInt(id) },
     });
