@@ -147,7 +147,7 @@ router.post('/website-quote', restrictToVegnar, async (req, res) => {
         quoteNo: quoteNo || `WQ-${Date.now()}`,
         companyName,
         contactPerson: contactPerson || null,
-        email: email || null,
+        email: email ? email.toLowerCase() : null,
         mobile: mobile || null,
         orderType: orderType || 'domestic',
         gstin: gstin || null,
