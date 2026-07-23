@@ -254,6 +254,7 @@ class InventoryService {
           existing.locations.push({
             locationId: batch.locationId,
             locationName: batch.location.name,
+            vendorName: batch.vendor?.name || 'N/A',
             boxes: batch.remainingBoxes,
             pcs: batch.remainingPcs,
             value,
@@ -265,6 +266,7 @@ class InventoryService {
           productId: batch.productId,
           productName: batch.product.name,
           categoryName: batch.product.category?.name || 'N/A',
+          vendorName: batch.vendor?.name || 'N/A',
           totalBoxes: batch.remainingBoxes,
           totalPacks: batch.remainingPacks || 0,
           totalPcs: batch.remainingPcs,
@@ -275,6 +277,7 @@ class InventoryService {
           locations: [{
             locationId: batch.locationId,
             locationName: batch.location.name,
+            vendorName: batch.vendor?.name || 'N/A',
             boxes: batch.remainingBoxes,
             pcs: batch.remainingPcs,
             value,

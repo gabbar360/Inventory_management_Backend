@@ -191,13 +191,14 @@
         <thead>
             <tr>
                 <th style="width:4%">S.No</th>
-                <th style="width:22%" class="left">Product Name</th>
-                <th style="width:14%">Location</th>
-                <th style="width:14%">Packaging</th>
-                <th style="width:9%">Boxes</th>
-                <th style="width:9%">Pieces</th>
-                <th style="width:14%">Landing Cost</th>
-                <th style="width:14%">Stock Value</th>
+                <th style="width:18%" class="left">Product Name</th>
+                <th style="width:12%">Vendor</th>
+                <th style="width:12%">Location</th>
+                <th style="width:12%">Packaging</th>
+                <th style="width:8%">Boxes</th>
+                <th style="width:8%">Pieces</th>
+                <th style="width:12%">Landing Cost</th>
+                <th style="width:12%">Stock Value</th>
             </tr>
         </thead>
         <tbody>
@@ -217,6 +218,7 @@
                             <% if (isFirstRow) { %>
                                 <td class="center" rowspan="<%= totalRows %>"><%= idx + 1 %></td>
                                 <td rowspan="<%= totalRows %>"><div class="item-name"><%= product.productName %></div></td>
+                                <td rowspan="<%= totalRows %>" class="center" style="font-size:9pt;"><%= product.vendorName %></td>
                             <% } %>
                             <% if (isFirstVariant) { %>
                                 <td class="center" rowspan="<%= locVariants.length %>" style="font-size:9pt; background:#fafafa;">
