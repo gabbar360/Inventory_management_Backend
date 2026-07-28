@@ -527,33 +527,12 @@ class OutwardService {
           const restoredPacks = Math.floor(restoredPcs / stockBatch.packPerPiece);
           const restoredBoxes = Math.floor(restoredPacks / stockBatch.packPerBox);
 
-          // If a linked SO exists, restore booked stock too (SO is still active)
-          let bookedBoxes = stockBatch.bookedBoxes || 0;
-          let bookedPacks = stockBatch.bookedPacks || 0;
-          let bookedPcs = stockBatch.bookedPcs || 0;
-
-          if (linkedSalesOrder) {
-            const soItem = linkedSalesOrder.items.find(i => i.stockBatchId === item.stockBatchId);
-            if (soItem) {
-              bookedBoxes += boxRestore;
-              bookedPacks += packRestore;
-              bookedPcs += item.saleUnit === 'box'
-                ? item.quantity * stockBatch.packPerBox * stockBatch.packPerPiece
-                : item.saleUnit === 'pack'
-                ? item.quantity * stockBatch.packPerPiece
-                : item.quantity;
-            }
-          }
-
           await tx.stockBatch.update({
             where: { id: item.stockBatchId },
             data: {
               remainingBoxes: restoredBoxes,
               remainingPacks: restoredPacks,
               remainingPcs: restoredPcs,
-              bookedBoxes,
-              bookedPacks,
-              bookedPcs,
             },
           });
 

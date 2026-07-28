@@ -226,9 +226,6 @@ class InventoryService {
         existing.totalBoxes += batch.remainingBoxes;
         existing.totalPacks += batch.remainingPacks || 0;
         existing.totalPcs += batch.remainingPcs;
-        existing.totalBookedBoxes += batch.bookedBoxes || 0;
-        existing.totalBookedPacks += batch.bookedPacks || 0;
-        existing.totalBookedPcs += batch.bookedPcs || 0;
         existing.totalValue += value;
 
         const locIdx = existing.locations.findIndex(l => l.locationId === batch.locationId);
@@ -270,9 +267,6 @@ class InventoryService {
           totalBoxes: batch.remainingBoxes,
           totalPacks: batch.remainingPacks || 0,
           totalPcs: batch.remainingPcs,
-          totalBookedBoxes: batch.bookedBoxes || 0,
-          totalBookedPacks: batch.bookedPacks || 0,
-          totalBookedPcs: batch.bookedPcs || 0,
           totalValue: value,
           locations: [{
             locationId: batch.locationId,
