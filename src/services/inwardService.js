@@ -420,9 +420,8 @@ class InwardService {
         const batch = existingBatches.find(eb => eb.productId === item.productId && eb.inwardInvoiceId === invoiceId);
         if (batch) {
           const soldQuantity = batch.totalPcs - batch.remainingPcs;
-          const bookedQuantity = batch.bookedPcs || 0;
-          if (soldQuantity > 0 || bookedQuantity > 0) {
-            throw new Error(`Cannot delete product from invoice because some stock has been sold or booked.`);
+          if (soldQuantity > 0) {
+            throw new Error(`Cannot delete product from invoice because some stock has been sold.`);
           }
           await tx.stockBatch.delete({ where: { id: batch.id } });
         }

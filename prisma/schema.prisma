@@ -262,9 +262,6 @@ model StockBatch {
   inwardInvoiceId Int?          @map("inward_invoice_id")
   batchCode       String?       @map("batch_code")
   mfgDate         DateTime?     @map("mfg_date")
-  bookedBoxes     Int           @default(0) @map("booked_boxes")
-  bookedPacks     Int           @default(0) @map("booked_packs")
-  bookedPcs       Int           @default(0) @map("booked_pcs")
   boxDetails      BoxDetail[]
   outwardItems    OutwardItem[]
   salesOrderItems SalesOrderItem[]

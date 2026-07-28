@@ -153,46 +153,6 @@ const deleteSalesOrder = async (id) => {
   });
 
   await prisma.$transaction(async (tx) => {
-    // Only release booked stock if NOT already converted to invoice
-    // (conversion already moved booked -> remaining, so decrementing again would go negative)
-    if (!linkedInvoice) {
-      for (const item of order.items) {
-        if (item.stockBatchId) {
-          const stockBatch = await tx.stockBatch.findUnique({
-            where: { id: item.stockBatchId }
-          });
-          if (stockBatch) {
-            const qty = item.quantity;
-            const saleUnit = item.unit || 'box';
-            let boxDecrement = 0, packDecrement = 0, pcsDecrement = 0;
-
-            if (saleUnit === 'box') {
-              boxDecrement = qty;
-              packDecrement = qty * stockBatch.packPerBox;
-              pcsDecrement = qty * stockBatch.packPerBox * stockBatch.packPerPiece;
-            } else if (saleUnit === 'pack') {
-              packDecrement = qty;
-              pcsDecrement = qty * stockBatch.packPerPiece;
-              boxDecrement = Math.floor(qty / stockBatch.packPerBox);
-            } else {
-              pcsDecrement = qty;
-              const packsReduced = Math.floor(qty / stockBatch.packPerPiece);
-              packDecrement = packsReduced;
-              boxDecrement = Math.floor(packsReduced / stockBatch.packPerBox);
-            }
-
-            await tx.stockBatch.update({
-              where: { id: item.stockBatchId },
-              data: {
-                bookedBoxes: Math.max(0, (stockBatch.bookedBoxes || 0) - boxDecrement),
-                bookedPacks: Math.max(0, (stockBatch.bookedPacks || 0) - packDecrement),
-                bookedPcs: Math.max(0, (stockBatch.bookedPcs || 0) - pcsDecrement),
-              }
-            });
-          }
-        }
-      }
-    }
 
     // Update Quote status back to 'sent' if it was converted from a Quote
     if (order.quoteId) {
@@ -227,58 +187,10 @@ const convertFromQuote = async (quoteId, itemsPayload = []) => {
   return await prisma.$transaction(async (tx) => {
     let order;
 
-    const hasUnbookedItems = quote.items.some(item => {
-      const payloadSelections = itemsPayload.filter(p => 
-        (p.quoteItemId && parseInt(p.quoteItemId) === item.id) || 
-        (p.productId && p.productId.toString() === item.productId.toString())
-      );
-      if (payloadSelections.length === 0) return true;
-      return payloadSelections.some(sel => !sel.stockBatchId);
-    });
-
-    const targetStatus = hasUnbookedItems ? 'draft' : 'confirmed';
+    const targetStatus = 'confirmed';
 
     if (existingOrder) {
-      // 1. Release booked stock for all existing items of the existing sales order
-      for (const oldItem of existingOrder.items) {
-        if (oldItem.stockBatchId) {
-          const stockBatch = await tx.stockBatch.findUnique({
-            where: { id: oldItem.stockBatchId }
-          });
-          if (stockBatch) {
-            const qty = oldItem.quantity;
-            const saleUnit = oldItem.unit || 'box';
-            let boxDecrement = 0, packDecrement = 0, pcsDecrement = 0;
-
-            if (saleUnit === 'box') {
-              boxDecrement = qty;
-              packDecrement = qty * stockBatch.packPerBox;
-              pcsDecrement = qty * stockBatch.packPerBox * stockBatch.packPerPiece;
-            } else if (saleUnit === 'pack') {
-              packDecrement = qty;
-              pcsDecrement = qty * stockBatch.packPerPiece;
-              boxDecrement = Math.floor(qty / stockBatch.packPerBox);
-            } else {
-              pcsDecrement = qty;
-              const packsReduced = Math.floor(qty / stockBatch.packPerPiece);
-              packDecrement = packsReduced;
-              boxDecrement = Math.floor(packsReduced / stockBatch.packPerBox);
-            }
-
-            // Decrement booked fields (release them)
-            await tx.stockBatch.update({
-              where: { id: oldItem.stockBatchId },
-              data: {
-                bookedBoxes: { decrement: Math.max(0, boxDecrement) },
-                bookedPacks: { decrement: Math.max(0, packDecrement) },
-                bookedPcs: { decrement: Math.max(0, pcsDecrement) },
-              }
-            });
-          }
-        }
-      }
-
-      // 2. Delete all existing items for this sales order
+      // 1. Delete all existing items for this sales order
       await tx.salesOrderItem.deleteMany({
         where: { salesOrderId: existingOrder.id }
       });
@@ -332,57 +244,11 @@ const convertFromQuote = async (quoteId, itemsPayload = []) => {
           const qty = parseFloat(sel.quantity) || 0;
 
           if (stockBatchId) {
-            const stockBatch = await tx.stockBatch.findUnique({
-              where: { id: stockBatchId }
-            });
-            if (!stockBatch) {
-              throw new Error(`Stock batch #${stockBatchId} not found for product ${item.product?.name}`);
-            }
-
-            // Calculate booking increments for this specific selection quantity
-            let boxIncrement = 0;
-            let packIncrement = 0;
-            let pcsIncrement = 0;
-
-            if (saleUnit === 'box') {
-              boxIncrement = qty;
-              packIncrement = qty * stockBatch.packPerBox;
-              pcsIncrement = qty * stockBatch.packPerBox * stockBatch.packPerPiece;
-            } else if (saleUnit === 'pack') {
-              packIncrement = qty;
-              pcsIncrement = qty * stockBatch.packPerPiece;
-              boxIncrement = Math.floor(qty / stockBatch.packPerBox);
-            } else {
-              pcsIncrement = qty;
-              const packsReduced = Math.floor(qty / stockBatch.packPerPiece);
-              packIncrement = packsReduced;
-              boxIncrement = Math.floor(packsReduced / stockBatch.packPerBox);
-            }
-
-            // Check if available stock (remaining - current booked) is sufficient
-            const availableBoxes = stockBatch.remainingBoxes - (stockBatch.bookedBoxes || 0);
-            const availablePacks = stockBatch.remainingPacks - (stockBatch.bookedPacks || 0);
-            const availablePcs = stockBatch.remainingPcs - (stockBatch.bookedPcs || 0);
-
-            if (saleUnit === 'box' && availableBoxes < qty) {
-              throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
-            }
-            if (saleUnit === 'pack' && availablePacks < qty) {
-              throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
-            }
-            if (saleUnit === 'piece' && availablePcs < qty) {
-              throw new Error(`Insufficient available stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
-            }
-
-            // Update StockBatch booking fields
-            await tx.stockBatch.update({
-              where: { id: stockBatchId },
-              data: {
-                bookedBoxes: { increment: boxIncrement },
-                bookedPacks: { increment: packIncrement },
-                bookedPcs: { increment: pcsIncrement },
-              }
-            });
+            const stockBatch = await tx.stockBatch.findUnique({ where: { id: stockBatchId } });
+            if (!stockBatch) throw new Error(`Stock batch #${stockBatchId} not found for product ${item.product?.name}`);
+            if (saleUnit === 'box' && stockBatch.remainingBoxes < qty) throw new Error(`Insufficient stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
+            if (saleUnit === 'pack' && stockBatch.remainingPacks < qty) throw new Error(`Insufficient stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
+            if (saleUnit === 'piece' && stockBatch.remainingPcs < qty) throw new Error(`Insufficient stock in batch ${stockBatch.batchCode || stockBatch.id} for ${item.product?.name || item.productId}`);
           }
 
           // Create the SalesOrderItem for this split portion
@@ -442,16 +308,11 @@ const convertSalesOrderToInvoice = async (id, itemSelections = []) => {
 
   let selections = itemSelections;
   if (!selections || selections.length === 0) {
-    selections = order.items.map(item => {
-      if (!item.stockBatchId) {
-        throw new Error(`Item "${item.product?.name || item.productId}" does not have a booked stock batch. Please select a batch first.`);
-      }
-      return {
-        salesOrderItemId: item.id,
-        stockBatchId: item.stockBatchId,
-        saleUnit: item.unit
-      };
-    });
+    selections = order.items.map(item => ({
+      salesOrderItemId: item.id,
+      stockBatchId: item.stockBatchId,
+      saleUnit: item.unit
+    }));
   }
 
   const lastInvoice = await prisma.outwardInvoice.findFirst({ orderBy: { id: 'desc' }, select: { invoiceNo: true } });
@@ -523,20 +384,12 @@ const convertSalesOrderToInvoice = async (id, itemSelections = []) => {
         boxDecrement = Math.floor(packsReduced / stockBatch.packPerBox);
       }
 
-      // Check if this item had booking
-      const hasBooking = orderItem.stockBatchId !== null;
-
       await tx.stockBatch.update({
         where: { id: stockBatch.id },
         data: {
           remainingBoxes: { decrement: boxDecrement },
           remainingPacks: { decrement: packDecrement },
           remainingPcs: { decrement: pcsDecrement },
-          ...(hasBooking && {
-            bookedBoxes: { decrement: Math.max(0, boxDecrement) },
-            bookedPacks: { decrement: Math.max(0, packDecrement) },
-            bookedPcs: { decrement: Math.max(0, pcsDecrement) },
-          })
         },
       });
 
