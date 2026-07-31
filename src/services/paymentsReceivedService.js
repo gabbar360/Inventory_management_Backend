@@ -2,6 +2,28 @@ const { calculatePagination } = require("../utils/helpers");
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+const calculateInvoiceGrandTotal = (invoice) => {
+  if (!invoice) return 0;
+  let baseCost = 0;
+  let gstCost = 0;
+  const allGstRates = [];
+  invoice.items?.forEach((item) => {
+    const gstRate = item.product?.category?.gstRate || 0;
+    const itemBase = item.quantity * item.ratePerUnit;
+    baseCost += itemBase;
+    gstCost += (itemBase * gstRate) / 100;
+    allGstRates.push(gstRate);
+  });
+  const expense = invoice.expense || 0;
+  const adjustment = invoice.adjustment || 0;
+  const shippingCharge = invoice.shippingCharge || 0;
+  const discount = invoice.discount || 0;
+  const shippingGstRate = allGstRates.includes(18) ? 18 : allGstRates.includes(5) ? 5 : 0;
+  const shippingGstAmt = shippingCharge > 0 ? shippingCharge * (shippingGstRate / 100) : 0;
+  const grandTotal = baseCost + gstCost + shippingGstAmt + expense + shippingCharge - adjustment - discount;
+  return Math.round(grandTotal * 100) / 100;
+};
+
 class PaymentsReceivedService {
   static async getAll(page, limit, search, sortBy, sortOrder, customerId, paymentMode, startDate, endDate, unusedCreditsOnly) {
     const where = {};
@@ -65,10 +87,28 @@ class PaymentsReceivedService {
         invoices: {
           include: {
             invoice: {
-              select: { invoiceNo: true, totalCost: true }
+              include: {
+                items: {
+                  include: {
+                    product: {
+                      select: { category: { select: { gstRate: true } } }
+                    }
+                  }
+                }
+              }
             }
           }
         }
+      }
+    });
+
+    payments.forEach((payment) => {
+      if (payment.invoices) {
+        payment.invoices.forEach((inv) => {
+          if (inv.invoice) {
+            inv.invoice.totalCost = calculateInvoiceGrandTotal(inv.invoice);
+          }
+        });
       }
     });
 
@@ -125,20 +165,7 @@ class PaymentsReceivedService {
     if (payment.invoices) {
       payment.invoices = payment.invoices.map((inv) => {
         if (inv.invoice) {
-          let baseCost = 0;
-          let gstCost = 0;
-          inv.invoice.items?.forEach((item) => {
-            const gstRate = item.product?.category?.gstRate || 0;
-            const itemBase = item.quantity * item.ratePerUnit;
-            baseCost += itemBase;
-            gstCost += (itemBase * gstRate) / 100;
-          });
-          const expense = inv.invoice.expense || 0;
-          const adjustment = inv.invoice.adjustment || 0;
-          const shippingCharge = inv.invoice.shippingCharge || 0;
-          const discount = inv.invoice.discount || 0;
-          const grandTotal = baseCost + gstCost + expense + shippingCharge - adjustment - discount;
-          inv.invoice.totalCost = Math.round(grandTotal * 100) / 100;
+          inv.invoice.totalCost = calculateInvoiceGrandTotal(inv.invoice);
         }
         return inv;
       });
@@ -205,10 +232,7 @@ class PaymentsReceivedService {
         }
       }
 
-      return await tx.paymentReceived.findUnique({
-        where: { id: payment.id },
-        include: { customer: true, invoices: true }
-      });
+      return await PaymentsReceivedService.getById(payment.id);
     }, { timeout: 15000 });
   }
 
@@ -299,10 +323,7 @@ class PaymentsReceivedService {
         }
       }
 
-      return await tx.paymentReceived.findUnique({
-        where: { id: paymentId },
-        include: { customer: true, invoices: true }
-      });
+      return await PaymentsReceivedService.getById(paymentId);
     }, { timeout: 15000 });
   }
 
@@ -349,10 +370,20 @@ class PaymentsReceivedService {
           throw new Error(`Insufficient unused credits in payment ${sourcePayment.paymentNumber}`);
         }
 
-        const invoice = await tx.outwardInvoice.findUnique({ where: { id: invoiceId } });
+        const invoice = await tx.outwardInvoice.findUnique({
+          where: { id: invoiceId },
+          include: {
+            items: {
+              include: {
+                product: { select: { category: { select: { gstRate: true } } } }
+              }
+            }
+          }
+        });
         if (!invoice) throw new Error(`Invoice ${invoiceId} not found`);
 
-        const balanceDue = invoice.totalCost - invoice.amountReceived;
+        const grandTotal = calculateInvoiceGrandTotal(invoice);
+        const balanceDue = grandTotal - invoice.amountReceived;
         if (amountToApply > balanceDue + 0.001) {
           throw new Error(`Amount exceeds balance due for invoice ${invoice.invoiceNo}`);
         }
@@ -372,10 +403,7 @@ class PaymentsReceivedService {
         });
       }
 
-      return await tx.paymentReceived.findUnique({
-        where: { id: newPayment.id },
-        include: { customer: true, invoices: { include: { invoice: true } } }
-      });
+      return await PaymentsReceivedService.getById(newPayment.id);
     }, { timeout: 15000 });
   }
 
