@@ -64,9 +64,6 @@ const getQuotes = async (filters = {}) => {
   if (filters.customerId) where.customerId = parseInt(filters.customerId);
   if (filters.status) {
     where.status = filters.status;
-  } else {
-    // By default, exclude 'accepted' quotes (they've been converted to sales orders)
-    where.status = { not: 'accepted' };
   }
   if (filters.search) {
     where.OR = [
