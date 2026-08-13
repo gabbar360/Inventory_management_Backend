@@ -130,6 +130,7 @@ const createPurchaseOrder = async (data) => {
         termsAndConditions: data.termsAndConditions,
         paymentTerms: data.paymentTerms,
         deliveryTerms: data.deliveryTerms,
+        deliverToAddress: data.deliverToAddress || null,
       }
     });
 
@@ -542,6 +543,7 @@ const updatePurchaseOrder = async (id, data) => {
         termsAndConditions: data.termsAndConditions || po.termsAndConditions,
         paymentTerms: data.paymentTerms || po.paymentTerms,
         deliveryTerms: data.deliveryTerms || po.deliveryTerms,
+        deliverToAddress: data.deliverToAddress !== undefined ? data.deliverToAddress : po.deliverToAddress,
       }
     });
 

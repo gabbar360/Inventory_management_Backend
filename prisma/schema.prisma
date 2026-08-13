@@ -571,6 +571,7 @@ model PurchaseOrder {
   termsAndConditions String?             @map("terms_and_conditions")
   paymentTerms       String?             @map("payment_terms")
   deliveryTerms      String?             @map("delivery_terms")
+  deliverToAddress   String?             @map("deliver_to_address")
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   reference          String?
