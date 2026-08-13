@@ -294,10 +294,14 @@
                 <div class="party-label">Deliver To</div>
                 <div class="party-name"><%= settings?.companyName || 'Vegnar Global LLP' %></div>
                 <div class="party-addr">
-                    <%= settings?.companyAddress || '' %><br>
-                    <% if (settings?.companyPhone) { %>Phone: <%= settings.companyPhone %><br><% } %>
-                    <% if (settings?.companyEmail) { %>Email: <%= settings.companyEmail %><br><% } %>
-                    GSTIN: <%= companyGstin %>
+                    <% if (po.deliverToAddress) { %>
+                        <%= po.deliverToAddress.replace(/\n/g, '<br>') %>
+                    <% } else { %>
+                        <%= settings?.companyAddress || '' %><br>
+                        <% if (settings?.companyPhone) { %>Phone: <%= settings.companyPhone %><br><% } %>
+                        <% if (settings?.companyEmail) { %>Email: <%= settings.companyEmail %><br><% } %>
+                        GSTIN: <%= companyGstin %>
+                    <% } %>
                 </div>
             </div>
         </div>
