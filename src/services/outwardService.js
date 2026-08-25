@@ -28,6 +28,28 @@ const ITEM_INCLUDE = {
   location: { select: { name: true } },
 };
 
+const calculateInvoiceGrandTotal = (invoice) => {
+  if (!invoice) return 0;
+  let baseCost = 0;
+  let gstCost = 0;
+  const allGstRates = [];
+  invoice.items?.forEach((item) => {
+    const gstRate = item.product?.category?.gstRate || 0;
+    const itemBase = item.quantity * item.ratePerUnit;
+    baseCost += itemBase;
+    gstCost += (itemBase * gstRate) / 100;
+    allGstRates.push(gstRate);
+  });
+  const expense = invoice.expense || 0;
+  const adjustment = invoice.adjustment || 0;
+  const shippingCharge = invoice.shippingCharge || 0;
+  const discount = invoice.discount || 0;
+  const shippingGstRate = allGstRates.includes(18) ? 18 : allGstRates.includes(5) ? 5 : 0;
+  const shippingGstAmt = shippingCharge > 0 ? shippingCharge * (shippingGstRate / 100) : 0;
+  const grandTotal = baseCost + gstCost + shippingGstAmt + expense + shippingCharge - adjustment - discount;
+  return Math.round(grandTotal * 100) / 100;
+};
+
 class OutwardService {
   static async getAll(page, limit, search, sortBy, sortOrder, startDate, endDate, customerId) {
     const where = {};
@@ -103,9 +125,11 @@ class OutwardService {
       const expense = invoice.expense || 0;
       const grossProfit = revenue - totalCOGS - expense;
       const grossProfitMargin = revenue > 0 ? (grossProfit / revenue) * 100 : 0;
+      const grandTotal = calculateInvoiceGrandTotal(invoice);
 
       return {
         ...invoice,
+        totalCost: grandTotal,
         totalQty,
         totalBoxes: Math.round(totalBoxes * 100) / 100,
         grossProfit: Math.round(grossProfit * 100) / 100,
@@ -133,6 +157,7 @@ class OutwardService {
     });
 
     if (!invoice) throw new Error('Invoice not found');
+    invoice.totalCost = calculateInvoiceGrandTotal(invoice);
     return invoice;
   }
 

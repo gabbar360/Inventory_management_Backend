@@ -130,8 +130,8 @@ class PaymentsReceivedService {
     };
   }
 
-  static async getById(id) {
-    const payment = await prisma.paymentReceived.findUnique({
+  static async getById(id, client = prisma) {
+    const payment = await client.paymentReceived.findUnique({
       where: { id: parseInt(id) },
       include: {
         customer: true,
@@ -232,7 +232,7 @@ class PaymentsReceivedService {
         }
       }
 
-      return await PaymentsReceivedService.getById(payment.id);
+      return await PaymentsReceivedService.getById(payment.id, tx);
     }, { timeout: 15000 });
   }
 
@@ -323,7 +323,7 @@ class PaymentsReceivedService {
         }
       }
 
-      return await PaymentsReceivedService.getById(paymentId);
+      return await PaymentsReceivedService.getById(paymentId, tx);
     }, { timeout: 15000 });
   }
 
@@ -403,7 +403,7 @@ class PaymentsReceivedService {
         });
       }
 
-      return await PaymentsReceivedService.getById(newPayment.id);
+      return await PaymentsReceivedService.getById(newPayment.id, tx);
     }, { timeout: 15000 });
   }
 
