@@ -103,62 +103,115 @@
             border-top: none;
         }
         .bottom-left-panel {
-            flex: 1.2;
-            padding: 8px 10px;
+            flex: 1.3;
+            padding: 6px 8px;
             border-right: 1.5px solid #bbb;
-            font-size: 8.5pt;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            font-size: 8pt;
         }
         .bottom-right-panel {
-            flex: 0.8;
-            padding: 8px 10px;
-            font-size: 8.5pt;
+            flex: 0.7;
+            padding: 6px 8px;
+            font-size: 8pt;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
             align-items: stretch;
-            min-height: 140px;
+            min-height: 80px;
+        }
+        .terms-container {
+            border: 1.5px solid #f87171;
+            border-top: none;
+            padding: 5px 9px;
+            background: #fff8f8;
+        }
+        .terms-header {
+            font-size: 7.8pt;
+            font-weight: 700;
+            color: #b91c1c;
+            border-bottom: 1px solid #fecaca;
+            padding-bottom: 2px;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .terms-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5px;
+        }
+        .term-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+            font-size: 7.2pt;
+            line-height: 1.35;
+            color: #3f1d1d;
+        }
+        .term-subitem {
+            padding-left: 15px;
+        }
+        .term-num {
+            font-weight: 700;
+            color: #dc2626;
+            min-width: 15px;
+            flex-shrink: 0;
+            text-align: left;
+            font-size: 7.2pt;
+        }
+        .term-sub-bullet {
+            font-weight: 700;
+            color: #ef4444;
+            min-width: 10px;
+            flex-shrink: 0;
+            text-align: center;
+            font-size: 7.2pt;
+        }
+        .term-key {
+            font-weight: 700;
+            color: #991b1b;
+        }
+        .term-text {
+            flex: 1;
+            word-break: break-word;
         }
         .panel-label {
-            font-size: 8.5pt;
+            font-size: 8pt;
             font-weight: bold;
             color: #444;
             border-bottom: 1px solid #ddd;
             padding-bottom: 2px;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         
         .signatory-company {
             text-align: right;
             font-weight: bold;
-            font-size: 9pt;
+            font-size: 8.5pt;
             margin-bottom: auto;
-            padding-top: 4px;
+            padding-top: 2px;
         }
         .signatory-signatures {
             display: flex;
             justify-content: flex-end;
             align-items: flex-end;
             margin-top: auto;
-            padding-bottom: 4px;
+            padding-bottom: 2px;
         }
         .sig-col {
             text-align: center;
-            font-size: 8pt;
-            width: 160px;
+            font-size: 7.5pt;
+            width: 140px;
             border-top: 1px solid #bbb;
-            padding-top: 4px;
+            padding-top: 3px;
             margin-left: auto;
         }
 
-        .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #aaa; border-top: 1px solid #ccc; padding-top: 6px; }
+        .footer { margin-top: 8px; text-align: center; font-size: 7.5pt; color: #aaa; border-top: 1px solid #eee; padding-top: 4px; }
 
-        @page { size: A4; margin: 10mm 0 0 0; }
+        @page { size: A4; margin: 8mm 8mm; }
         @media print {
             body { margin: 0; }
-            .page { margin: 0; padding: 10mm 12mm; }
+            .page { margin: 0; padding: 0; }
         }
     </style>
 </head>
@@ -208,6 +261,63 @@
                 words += ' and ' + convertInt(paise) + ' Paise';
             }
             return words + ' Only';
+        }
+
+        function formatTermsAndConditions(terms) {
+            if (!terms || !terms.trim()) {
+                return '<div class="term-item"><span class="term-num">1.</span><span class="term-text">Prices are valid till the expiry date mentioned above. Payment must be clear against the receipt of the invoice. Subject to Rajkot Jurisdiction.</span></div>';
+            }
+
+            let raw = terms.trim();
+            // Normalize leading typo or bullet e.g. ". Dispatch" or "- Dispatch" -> "Dispatch"
+            raw = raw.replace(/^\s*[\.\-•*]\s+([A-Za-z])/g, '$1');
+
+            let rawParts = [];
+            if (raw.includes('\n')) {
+                rawParts = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+            } else {
+                // Generic split on numbered points (1., 2., etc.) or bullet symbols (*, •, -)
+                rawParts = raw.split(/(?=(?:^\s*\d+[\.\)]|\s+\d+[\.\)]|^\s*[\*\•\-]\s+|\s+[\*\•\-]\s+))/g)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+            }
+
+            // Clean markers and merge short orphan headings with subsequent text
+            let cleanPoints = [];
+            for (let i = 0; i < rawParts.length; i++) {
+                let part = rawParts[i].replace(/^(\d+[\.\)]|[\*\•\-\.])\s*/, '').trim();
+                if (!part) continue;
+
+                // If this chunk is a short title without colon/period and next chunk exists, merge them cleanly
+                if (part.length <= 45 && !part.includes(':') && !part.includes('.') && i + 1 < rawParts.length) {
+                    let nextPart = rawParts[i + 1].replace(/^(\d+[\.\)]|[\*\•\-\.])\s*/, '').trim();
+                    cleanPoints.push(`${part}: ${nextPart}`);
+                    i++;
+                } else {
+                    cleanPoints.push(part);
+                }
+            }
+
+            let html = '';
+            let pointNumber = 1;
+
+            cleanPoints.forEach((point) => {
+                let text = point.trim();
+                if (!text) return;
+
+                // 1. Replace markdown bold *text* or **text** with highlighted class
+                text = text.replace(/\*{1,2}([^\*]+)\*{1,2}/g, '<span class="term-key">$1</span>');
+
+                // 2. Highlight any key/title before colon: e.g. "Dispatch Schedule:" or "Standard Delivery Timeline:"
+                text = text.replace(/(?:^|(?<=>\s*))([^:<>\n]{2,50}):/g, '<span class="term-key">$1:</span>');
+
+                html += `<div class="term-item">
+                    <span class="term-num">${pointNumber++}.</span>
+                    <span class="term-text">${text}</span>
+                </div>`;
+            });
+
+            return html || `<div class="term-item"><span class="term-num">1.</span><span class="term-text">${raw}</span></div>`;
         }
 
         // Aggregate units dynamically
@@ -626,35 +736,22 @@
 
     <!-- BOTTOM PANELS -->
     <div class="invoice-bottom-container">
-        <!-- Left Panel: Bank details, Terms -->
-        <div class="bottom-left-panel" style="display: flex; flex-direction: row; align-items: stretch; justify-content: space-between; gap: 15px;">
-            <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
-                <div>
-                    <div class="panel-label" style="font-size: 8pt; margin-bottom: 2px;">Bank Details</div>
-                    <div style="font-size: 8pt; color: #333; line-height: 1.4;">
-                        Beneficiary Name: <span class="text-bold">Vegnar Global LLP</span> | Bank Name: <span class="text-bold"><%= settings?.bankName || 'Axis Bank' %></span><br>
-                        Account Number: <span class="text-bold"><%= settings?.accountNumber || '' %></span> | IFSC Code: <span class="text-bold"><%= settings?.ifscCode || '' %></span><br>
-                        <% if (settings?.branchAddress) { %>Bank Address: <span class="text-bold"><%= settings.branchAddress %></span><% } %>
-                        <% if (settings?.swiftCode) { %> | Swift Code: <span class="text-bold"><%= settings.swiftCode %></span><% } %>
-                    </div>
-                </div>
-
-                <div style="margin-top: 4px;">
-                    <div class="panel-label" style="font-size: 8pt; margin-bottom: 2px;">Terms & Conditions</div>
-                    <div style="font-size: 7.5pt; color: #555; line-height: 1.3;">
-                        <% if (quote.termsAndConditions) { %>
-                            <%= quote.termsAndConditions %>
-                        <% } else { %>
-                            Prices are valid till the expiry date mentioned above. Payment must be clear against the receipt of the invoice. Subject to Rajkot Jurisdiction.
-                        <% } %>
-                    </div>
+        <!-- Left Panel: Bank details + Scan to Pay -->
+        <div class="bottom-left-panel" style="display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 10px;">
+            <div style="flex: 1;">
+                <div class="panel-label" style="margin-bottom: 2px;">Bank Details</div>
+                <div style="font-size: 7.5pt; color: #333; line-height: 1.35;">
+                    Beneficiary Name: <span class="text-bold">Vegnar Global LLP</span> | Bank Name: <span class="text-bold"><%= settings?.bankName || 'Axis Bank' %></span><br>
+                    Account Number: <span class="text-bold"><%= settings?.accountNumber || '' %></span> | IFSC Code: <span class="text-bold"><%= settings?.ifscCode || '' %></span><br>
+                    <% if (settings?.branchAddress) { %>Bank Address: <span class="text-bold"><%= settings.branchAddress %></span><% } %>
+                    <% if (settings?.swiftCode) { %> | Swift Code: <span class="text-bold"><%= settings.swiftCode %></span><% } %>
                 </div>
             </div>
 
             <!-- Scan to Pay Card -->
-            <div style="padding: 8px; text-align: center; width: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0;">
-                <div style="font-size: 7.5pt; font-weight: bold; color: #0f2a24; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;">Scan to Pay</div>
-                <img src="<%= qrCodeDataUrl %>" style="width: 85px; height: 85px; object-fit: contain; border: 1px solid #eee; padding: 2px; background: #fff; border-radius: 4px;" alt="UPI QR Code" />
+            <div style="padding: 2px 6px; text-align: center; width: 100px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex-shrink: 0; border-left: 1px solid #eee;">
+                <div style="font-size: 6.8pt; font-weight: bold; color: #0f2a24; margin-bottom: 2px; text-transform: uppercase; letter-spacing: 0.5px;">Scan to Pay</div>
+                <img src="<%= qrCodeDataUrl %>" style="width: 60px; height: 60px; object-fit: contain; border: 1px solid #eee; padding: 2px; background: #fff; border-radius: 4px;" alt="UPI QR Code" />
             </div>
         </div>
 
@@ -670,7 +767,15 @@
         </div>
     </div>
 
-    <div class="footer">This is a Computer Generated Invoice</div>
+    <!-- FULL WIDTH TERMS & CONDITIONS (LIGHT RED HIGHLIGHTED) -->
+    <div class="terms-container">
+        <div class="terms-header">Terms & Conditions</div>
+        <div class="terms-content">
+            <%- formatTermsAndConditions(quote.termsAndConditions) %>
+        </div>
+    </div>
+
+    <div class="footer">This is a Computer Generated Quote</div>
 </div>
 </body>
 </html>

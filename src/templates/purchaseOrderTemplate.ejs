@@ -80,31 +80,88 @@
 
         .invoice-bottom-container { display: flex; border: 1.5px solid #bbb; border-top: none; page-break-inside: avoid; }
         .bottom-left-panel {
-            flex: 1.2; padding: 8px 10px; border-right: 1.5px solid #bbb;
-            font-size: 8.5pt; display: flex; flex-direction: column; gap: 10px;
+            flex: 1.2; padding: 6px 10px; border-right: 1.5px solid #bbb;
+            font-size: 8pt; display: flex; flex-direction: column; gap: 4px;
         }
         .bottom-right-panel {
-            flex: 0.8; padding: 8px 10px; font-size: 8.5pt;
+            flex: 0.8; padding: 6px 10px; font-size: 8pt;
             display: flex; flex-direction: column; justify-content: space-between;
-            align-items: stretch; min-height: 140px;
+            align-items: stretch; min-height: 80px;
         }
-        .panel-label { font-size: 8.5pt; font-weight: bold; color: #444; border-bottom: 1px solid #ddd; padding-bottom: 2px; margin-bottom: 4px; }
+        .terms-container {
+            border: 1.5px solid #f87171;
+            border-top: none;
+            padding: 5px 9px;
+            background: #fff8f8;
+        }
+        .terms-header {
+            font-size: 7.8pt;
+            font-weight: 700;
+            color: #b91c1c;
+            border-bottom: 1px solid #fecaca;
+            padding-bottom: 2px;
+            margin-bottom: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+        }
+        .terms-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2.5px;
+        }
+        .term-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 5px;
+            font-size: 7.2pt;
+            line-height: 1.35;
+            color: #3f1d1d;
+        }
+        .term-subitem {
+            padding-left: 15px;
+        }
+        .term-num {
+            font-weight: 700;
+            color: #dc2626;
+            min-width: 15px;
+            flex-shrink: 0;
+            text-align: left;
+            font-size: 7.2pt;
+        }
+        .term-sub-bullet {
+            font-weight: 700;
+            color: #ef4444;
+            min-width: 10px;
+            flex-shrink: 0;
+            text-align: center;
+            font-size: 7.2pt;
+        }
+        .term-key {
+            font-weight: 700;
+            color: #991b1b;
+        }
+        .term-text {
+            flex: 1;
+            word-break: break-word;
+        }
+        .panel-label { font-size: 8pt; font-weight: bold; color: #444; border-bottom: 1px solid #ddd; padding-bottom: 2px; margin-bottom: 3px; }
 
-        .signatory-company { text-align: right; font-weight: bold; font-size: 9pt; margin-bottom: auto; padding-top: 4px; }
-        .signatory-signatures { display: flex; justify-content: flex-end; align-items: flex-end; margin-top: auto; padding-bottom: 4px; }
-        .sig-col { text-align: center; font-size: 8pt; width: 160px; border-top: 1px solid #bbb; padding-top: 4px; margin-left: auto; }
+        .signatory-company { text-align: right; font-weight: bold; font-size: 8.5pt; margin-bottom: auto; padding-top: 2px; }
+        .signatory-signatures { display: flex; justify-content: flex-end; align-items: flex-end; margin-top: auto; padding-bottom: 2px; }
+        .sig-col { text-align: center; font-size: 7.5pt; width: 140px; border-top: 1px solid #bbb; padding-top: 3px; margin-left: auto; }
 
-        .footer { margin-top: 14px; text-align: center; font-size: 8pt; color: #aaa; border-top: 1px solid #ccc; padding-top: 6px; page-break-inside: avoid; }
+        .footer { margin-top: 10px; text-align: center; font-size: 7.5pt; color: #aaa; border-top: 1px solid #ccc; padding-top: 4px; page-break-inside: avoid; }
 
-        @page { size: A4; margin: 10mm 12mm; }
+        @page { size: A4; margin: 8mm; }
         @media print {
             body { margin: 0; }
-            .page { margin: 0; padding: 10mm 12mm; }
+            .page { margin: 0; padding: 0; }
             .top-container { page-break-inside: avoid; }
             .items-table tbody tr { page-break-inside: avoid; }
             .words-section { page-break-inside: avoid; }
             .gst-table-container { page-break-inside: avoid; }
             .invoice-bottom-container { page-break-inside: avoid; }
+            .terms-container { page-break-inside: avoid; }
         }
     </style>
 </head>
@@ -151,6 +208,56 @@
             let words = 'INR ' + convertInt(rupees);
             if (paise > 0) words += ' and ' + convertInt(paise) + ' Paise';
             return words + ' Only';
+        }
+
+        function formatTermsAndConditions(terms) {
+            if (!terms || !terms.trim()) {
+                return '<div class="term-item"><span class="term-num">1.</span><span class="term-text">Material must be supplied as per specifications and scheduled delivery timeline. Subject to Rajkot Jurisdiction "E&OE"</span></div>';
+            }
+
+            let raw = terms.trim();
+            raw = raw.replace(/^\s*[\.\-•*]\s+([A-Za-z])/g, '$1');
+
+            let rawParts = [];
+            if (raw.includes('\n')) {
+                rawParts = raw.split(/\r?\n/).map(s => s.trim()).filter(Boolean);
+            } else {
+                rawParts = raw.split(/(?=(?:^\s*\d+[\.\)]|\s+\d+[\.\)]|^\s*[\*\•\-]\s+|\s+[\*\•\-]\s+))/g)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+            }
+
+            let cleanPoints = [];
+            for (let i = 0; i < rawParts.length; i++) {
+                let part = rawParts[i].replace(/^(\d+[\.\)]|[\*\•\-\.])\s*/, '').trim();
+                if (!part) continue;
+
+                if (part.length <= 45 && !part.includes(':') && !part.includes('.') && i + 1 < rawParts.length) {
+                    let nextPart = rawParts[i + 1].replace(/^(\d+[\.\)]|[\*\•\-\.])\s*/, '').trim();
+                    cleanPoints.push(`${part}: ${nextPart}`);
+                    i++;
+                } else {
+                    cleanPoints.push(part);
+                }
+            }
+
+            let html = '';
+            let pointNumber = 1;
+
+            cleanPoints.forEach((point) => {
+                let text = point.trim();
+                if (!text) return;
+
+                text = text.replace(/\*{1,2}([^\*]+)\*{1,2}/g, '<span class="term-key">$1</span>');
+                text = text.replace(/(?:^|(?<=>\s*))([^:<>\n]{2,50}):/g, '<span class="term-key">$1:</span>');
+
+                html += `<div class="term-item">
+                    <span class="term-num">${pointNumber++}.</span>
+                    <span class="term-text">${text}</span>
+                </div>`;
+            });
+
+            return html || `<div class="term-item"><span class="term-num">1.</span><span class="term-text">${raw}</span></div>`;
         }
 
         // Determine GST type (intra vs inter state)
@@ -484,11 +591,15 @@
     <div class="invoice-bottom-container">
         <div class="bottom-left-panel">
             <div>
-                <div class="panel-label">Terms & Conditions</div>
-                <div style="font-size: 7.5pt; color: #444; line-height: 1.7;">
-                    <% if (po.notes) { %>
-                        <%= po.notes %>
+                <div class="panel-label">Delivery & Order Info</div>
+                <div style="font-size: 7.5pt; color: #333; line-height: 1.35;">
+                    <% if (po.deliveryAddress) { %>
+                        <span class="text-bold">Delivery Address:</span> <%= po.deliveryAddress %><br>
                     <% } %>
+                    <% if (po.expectedDeliveryDate) { %>
+                        <span class="text-bold">Expected Delivery:</span> <%= fmtDate(po.expectedDeliveryDate) %><br>
+                    <% } %>
+                    <span class="text-bold">PO Reference:</span> <%= po.poNo %>
                 </div>
             </div>
         </div>
@@ -498,6 +609,14 @@
             <div class="signatory-signatures">
                 <div class="sig-col">Authorised Signatory</div>
             </div>
+        </div>
+    </div>
+
+    <!-- FULL WIDTH TERMS & CONDITIONS (LIGHT RED HIGHLIGHTED) -->
+    <div class="terms-container">
+        <div class="terms-header">Terms & Conditions</div>
+        <div class="terms-content">
+            <%- formatTermsAndConditions(po.notes) %>
         </div>
     </div>
 
