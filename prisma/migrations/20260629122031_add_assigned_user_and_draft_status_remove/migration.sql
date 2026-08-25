@@ -8,19 +8,19 @@
 
 */
 -- DropForeignKey
-ALTER TABLE "purchase_orders" DROP CONSTRAINT "purchase_orders_assigned_user_id_fkey";
+ALTER TABLE "purchase_orders" DROP CONSTRAINT IF EXISTS "purchase_orders_assigned_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sales_orders" DROP CONSTRAINT "sales_orders_assigned_user_id_fkey";
+ALTER TABLE "sales_orders" DROP CONSTRAINT IF EXISTS "sales_orders_assigned_user_id_fkey";
 
 -- AlterTable
-ALTER TABLE "inward_invoices" DROP COLUMN "status";
+ALTER TABLE "inward_invoices" DROP COLUMN IF EXISTS "status";
 
 -- AlterTable
-ALTER TABLE "outward_invoices" DROP COLUMN "status";
+ALTER TABLE "outward_invoices" DROP COLUMN IF EXISTS "status";
 
 -- AlterTable
-ALTER TABLE "purchase_orders" DROP COLUMN "assigned_user_id";
+ALTER TABLE "purchase_orders" DROP COLUMN IF EXISTS "assigned_user_id";
 
 -- AlterTable
-ALTER TABLE "sales_orders" DROP COLUMN "assigned_user_id";
+ALTER TABLE "sales_orders" DROP COLUMN IF EXISTS "assigned_user_id";

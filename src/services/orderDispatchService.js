@@ -38,7 +38,6 @@ const createOrderDispatch = async (data) => {
       packageCount: data.packageCount || 1,
       shippingCost: data.shippingCost || 0,
       insuranceAmount: data.insuranceAmount || 0,
-      notes: data.notes || null,
       toTheOrder: data.toTheOrder || false,
       courierName: data.courierName || null,
       courierPhone: data.courierPhone || null,
@@ -115,7 +114,6 @@ const updateOrderDispatch = async (id, data) => {
   if (data.packageCount) updateData.packageCount = data.packageCount;
   if (data.shippingCost !== undefined) updateData.shippingCost = data.shippingCost;
   if (data.insuranceAmount !== undefined) updateData.insuranceAmount = data.insuranceAmount;
-  if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.toTheOrder !== undefined) updateData.toTheOrder = data.toTheOrder;
   if (data.courierName !== undefined) updateData.courierName = data.courierName;
   if (data.courierPhone !== undefined) updateData.courierPhone = data.courierPhone;

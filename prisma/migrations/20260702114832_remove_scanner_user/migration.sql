@@ -7,31 +7,31 @@
 
 */
 -- DropForeignKey
-ALTER TABLE "pending_scans" DROP CONSTRAINT "pending_scans_product_id_fkey";
+ALTER TABLE "pending_scans" DROP CONSTRAINT IF EXISTS "pending_scans_product_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "pending_scans" DROP CONSTRAINT "pending_scans_reviewed_by_fkey";
+ALTER TABLE "pending_scans" DROP CONSTRAINT IF EXISTS "pending_scans_reviewed_by_fkey";
 
 -- DropForeignKey
-ALTER TABLE "pending_scans" DROP CONSTRAINT "pending_scans_scanned_by_fkey";
+ALTER TABLE "pending_scans" DROP CONSTRAINT IF EXISTS "pending_scans_scanned_by_fkey";
 
 -- DropForeignKey
-ALTER TABLE "purchase_orders" DROP CONSTRAINT "purchase_orders_assigned_user_id_fkey";
+ALTER TABLE "purchase_orders" DROP CONSTRAINT IF EXISTS "purchase_orders_assigned_user_id_fkey";
 
 -- DropForeignKey
-ALTER TABLE "sales_orders" DROP CONSTRAINT "sales_orders_assigned_user_id_fkey";
+ALTER TABLE "sales_orders" DROP CONSTRAINT IF EXISTS "sales_orders_assigned_user_id_fkey";
 
 -- DropIndex
-DROP INDEX "purchase_orders_assigned_user_id_idx";
+DROP INDEX IF EXISTS "purchase_orders_assigned_user_id_idx";
 
 -- DropIndex
-DROP INDEX "sales_orders_assigned_user_id_idx";
+DROP INDEX IF EXISTS "sales_orders_assigned_user_id_idx";
 
 -- AlterTable
-ALTER TABLE "purchase_orders" DROP COLUMN "assigned_user_id";
+ALTER TABLE "purchase_orders" DROP COLUMN IF EXISTS "assigned_user_id";
 
 -- AlterTable
-ALTER TABLE "sales_orders" DROP COLUMN "assigned_user_id";
+ALTER TABLE "sales_orders" DROP COLUMN IF EXISTS "assigned_user_id";
 
 -- DropTable
-DROP TABLE "pending_scans";
+DROP TABLE IF EXISTS "pending_scans";

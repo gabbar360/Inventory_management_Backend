@@ -518,7 +518,7 @@ model OrderDispatch {
   packageCount      Int        @default(1) @map("package_count")
   shippingCost      Float      @default(0) @map("shipping_cost")
   insuranceAmount   Float      @default(0) @map("insurance_amount")
-  notes             String?
+
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   toTheOrder        Boolean    @default(false) @map("to_the_order")

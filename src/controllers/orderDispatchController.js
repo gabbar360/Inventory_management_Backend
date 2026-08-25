@@ -7,7 +7,7 @@ const fs = require('fs');
 
 const createOrderDispatch = async (req, res) => {
   try {
-    const { salesOrderId, dispatchDate, shippingMethod, shippingAddress, shippingCity, shippingState, shippingPincode, trackingNumber, carrier, estimatedDelivery, weight, dimensions, packageCount, shippingCost, insuranceAmount, notes, toTheOrder, courierName, courierPhone, truckNumber, driverName, driverPhone, airlineCode, flightNumber, containerNumber, vesselName, portOfLoading, portOfDischarge } = req.body;
+    const { salesOrderId, dispatchDate, shippingMethod, shippingAddress, shippingCity, shippingState, shippingPincode, trackingNumber, carrier, estimatedDelivery, weight, dimensions, packageCount, shippingCost, insuranceAmount, toTheOrder, courierName, courierPhone, truckNumber, driverName, driverPhone, airlineCode, flightNumber, containerNumber, vesselName, portOfLoading, portOfDischarge } = req.body;
 
     if (!salesOrderId || !dispatchDate || !shippingMethod || !shippingAddress || !shippingCity || !shippingState || !shippingPincode) {
       return res.status(400).json({ success: false, error: 'Missing required fields' });
@@ -29,7 +29,6 @@ const createOrderDispatch = async (req, res) => {
       packageCount,
       shippingCost,
       insuranceAmount,
-      notes,
       toTheOrder,
       courierName,
       courierPhone,
