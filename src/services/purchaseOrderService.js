@@ -4,12 +4,21 @@ const { BarcodeService: BarcodeServiceClass } = require('./barcodeService');
 const prisma = new PrismaClient();
 
 const generatePONumber = async () => {
-  const count = await prisma.purchaseOrder.count();
-  return `PO-${String(count + 1).padStart(5, '0')}`;
+  const last = await prisma.purchaseOrder.findFirst({
+    orderBy: { id: 'desc' },
+    select: { poNo: true },
+  });
+  const lastNum = last ? parseInt(last.poNo.replace('PO-', ''), 10) : 0;
+  return `PO-${String(lastNum + 1).padStart(5, '0')}`;
 };
 
 const createPurchaseOrder = async (data) => {
-  const poNo = await generatePONumber();
+  let poNo;
+  for (let attempt = 0; attempt < 5; attempt++) {
+    poNo = await generatePONumber();
+    const exists = await prisma.purchaseOrder.findUnique({ where: { poNo } });
+    if (!exists) break;
+  }
   const items = data.items || [];
 
   return await prisma.$transaction(async (tx) => {
