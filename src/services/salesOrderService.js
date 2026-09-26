@@ -311,8 +311,19 @@ const convertSalesOrderToInvoice = async (id, itemSelections = []) => {
     selections = order.items.map(item => ({
       salesOrderItemId: item.id,
       stockBatchId: item.stockBatchId,
-      saleUnit: item.unit
+      saleUnit: item.unit,
+      quantity: item.quantity,
     }));
+  }
+
+  // Validate total selected quantity per salesOrderItem matches order item quantity
+  for (const orderItem of order.items) {
+    const itemSelections = selections.filter(s => s.salesOrderItemId === orderItem.id);
+    if (itemSelections.length === 0) continue;
+    const totalSelected = itemSelections.reduce((sum, s) => sum + (parseFloat(s.quantity) || 0), 0);
+    if (Math.abs(totalSelected - orderItem.quantity) > 0.001) {
+      throw new Error(`Total selected quantity (${totalSelected}) for "${orderItem.product?.name || orderItem.productId}" must equal order quantity (${orderItem.quantity})`);
+    }
   }
 
   const lastInvoice = await prisma.outwardInvoice.findFirst({ orderBy: { id: 'desc' }, select: { invoiceNo: true } });
@@ -344,14 +355,14 @@ const convertSalesOrderToInvoice = async (id, itemSelections = []) => {
       const stockBatch = await tx.stockBatch.findUnique({ where: { id: parseInt(sel.stockBatchId) } });
       if (!stockBatch) throw new Error(`Stock batch not found for item: ${orderItem.productId}`);
 
-      const qty = orderItem.quantity;
+      const qty = parseFloat(sel.quantity) || orderItem.quantity;
       const saleUnit = sel.saleUnit || 'box';
 
-      if (saleUnit === 'box' && stockBatch.remainingBoxes < qty) throw new Error(`Insufficient box stock for product ID ${orderItem.productId}`);
-      if (saleUnit === 'pack' && stockBatch.remainingPacks < qty) throw new Error(`Insufficient pack stock for product ID ${orderItem.productId}`);
-      if (saleUnit === 'piece' && stockBatch.remainingPcs < qty) throw new Error(`Insufficient piece stock for product ID ${orderItem.productId}`);
+      if (saleUnit === 'box' && stockBatch.remainingBoxes < qty) throw new Error(`Insufficient box stock in batch for "${orderItem.product?.name || orderItem.productId}" (available: ${stockBatch.remainingBoxes}, required: ${qty})`);
+      if (saleUnit === 'pack' && stockBatch.remainingPacks < qty) throw new Error(`Insufficient pack stock in batch for "${orderItem.product?.name || orderItem.productId}" (available: ${stockBatch.remainingPacks}, required: ${qty})`);
+      if (saleUnit === 'piece' && stockBatch.remainingPcs < qty) throw new Error(`Insufficient piece stock in batch for "${orderItem.product?.name || orderItem.productId}" (available: ${stockBatch.remainingPcs}, required: ${qty})`);
 
-      const itemTotal = qty * orderItem.rate;
+      const itemTotal = qty * (parseFloat(sel.ratePerUnit) || orderItem.rate);
       totalCost += itemTotal;
 
       await tx.outwardItem.create({
@@ -362,7 +373,7 @@ const convertSalesOrderToInvoice = async (id, itemSelections = []) => {
           locationId: stockBatch.locationId,
           saleUnit,
           quantity: qty,
-          ratePerUnit: orderItem.rate,
+          ratePerUnit: parseFloat(sel.ratePerUnit) || orderItem.rate,
           totalCost: itemTotal,
           description: orderItem.description || orderItem.product?.description || null,
         },
